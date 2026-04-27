@@ -16,6 +16,7 @@ interface Product {
   part: number[];
   shelf: number[];
   series: number[];
+  serial_number?: string;
 }
 
 const baseUrl =

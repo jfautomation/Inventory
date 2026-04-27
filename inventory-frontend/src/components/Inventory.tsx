@@ -12,6 +12,7 @@ interface Product {
   part: number[];
   shelf: number[];
   series: number[];
+  serial_number?: string;
 }
 
 // safe fallback for BOTH environments
@@ -39,7 +40,8 @@ const Inventory: React.FC = () => {
 
       {products.map((product) => (
         <div key={product.id}>
-          {product.title.rendered}
+           <strong>{product.title.rendered}</strong>
+           <div>Serial: {product.serial_number || "-"}</div>
         </div>
       ))}
     </div>

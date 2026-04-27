@@ -110,9 +110,15 @@ add_action('init', function() {
 
     foreach ($fields as $key) {
         register_post_meta('product', $key, [
-            'show_in_rest' => true,
             'single' => true,
             'type' => $key === 'test_status' ? 'boolean' : 'string',
+
+            // 🔥 THIS is the important fix
+           'show_in_rest' => true,
+
+            'auth_callback' => function() {
+                return current_user_can('edit_posts');
+            },
         ]);
     }
 
@@ -290,3 +296,74 @@ add_action('edited_part', function($term_id) {
         update_term_meta($term_id, 'brand_id', intval($_POST['brand_id']));
     }
 });
+
+//////////////////////////////////////////////////////////
+// Handle Taxonomies from REST API (React POST)
+//////////////////////////////////////////////////////////
+
+add_action('rest_insert_product', function($post, $request, $creating) {
+
+    if (!$creating) return; // only on create
+
+    $taxonomies = ['brand', 'part', 'shelf', 'series'];
+
+    foreach ($taxonomies as $taxonomy) {
+        $terms = $request->get_param($taxonomy);
+
+        if (!empty($terms) && is_array($terms)) {
+            wp_set_object_terms($post->ID, $terms, $taxonomy);
+        }
+    }
+
+}, 10, 3);
+
+//////////////////////////////////////////////////////////
+// Handle Taxonomies on UPDATE (React PUT/POST edit)
+//////////////////////////////////////////////////////////
+
+add_action('rest_after_insert_product', function($post, $request, $creating) {
+
+    if ($creating) return; // only run on update
+
+    $taxonomies = ['brand', 'part', 'shelf', 'series'];
+
+    foreach ($taxonomies as $taxonomy) {
+
+        $terms = $request->get_param($taxonomy);
+
+        if (!empty($terms) && is_array($terms)) {
+            wp_set_object_terms($post->ID, $terms, $taxonomy);
+        }
+    }
+
+}, 10, 3);
+
+add_filter('rest_prepare_product', function($response, $post, $request) {
+
+    $data = $response->data;
+
+    $fields = [
+        'serial_number',
+        'condition',
+        'list_price',
+        'notes',
+        'test_status',
+        'test_date'
+    ];
+
+    foreach ($fields as $field) {
+
+    $value = get_post_meta($post->ID, $field, true);
+
+    if ($field === 'test_status') {
+        $data[$field] = $value === '1' || $value === 1 || $value === true;
+    } else {
+        $data[$field] = $value;
+    }
+}
+
+    $response->data = $data;
+
+    return $response;
+
+}, 10, 3);

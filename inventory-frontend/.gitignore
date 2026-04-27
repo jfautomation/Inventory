@@ -21,3 +21,17 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# WordPress core config (NEVER commit)
+wp-config.php
+
+# WordPress uploads (can be huge + dynamic)
+wp-content/uploads/
+
+# WordPress logs
+wp-content/debug.log
+
+# Local environment files
+*.log
+
+# Optional: local WP salts / keys if you ever add them
