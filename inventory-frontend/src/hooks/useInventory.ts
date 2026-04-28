@@ -1,23 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Term, Product } from "../types";
+import { normalizeProduct } from "../utils/normalizeProduct";
 
-// -----------------------
-// Types
-// -----------------------
-interface Term {
-  id: number;
-  name: string;
-}
-
-interface Product {
-  id: number;
-  title: { rendered: string };
-  brand: number[];
-  part: number[];
-  shelf: number[];
-  series: number[];
-  serial_number?: string;
-}
 
 const baseUrl =
   "http://jf-auto-inventory-clone-2.local/wp-json/wp/v2";
@@ -35,12 +20,13 @@ export const useInventory = (initialProducts: Product[] = []) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [brandsRes, partsRes, shelvesRes, seriesRes] =
+        const [brandsRes, partsRes, shelvesRes, seriesRes, productsRes] =
           await Promise.all([
             axios.get(`${baseUrl}/brand`),
             axios.get(`${baseUrl}/part`),
             axios.get(`${baseUrl}/shelf`),
             axios.get(`${baseUrl}/series`),
+            axios.get(`${baseUrl}/product`),
           ]);
 
         setBrands(brandsRes.data);
@@ -48,11 +34,7 @@ export const useInventory = (initialProducts: Product[] = []) => {
         setShelves(shelvesRes.data);
         setSeries(seriesRes.data);
 
-        // only fetch products if no initial data exists
-        if (!initialProducts.length) {
-          const productsRes = await axios.get(`${baseUrl}/product`);
-          setProducts(productsRes.data);
-        }
+        setProducts(productsRes.data.map(normalizeProduct));
       } catch (err) {
         console.error(err);
       }
