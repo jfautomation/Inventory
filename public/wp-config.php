@@ -73,6 +73,9 @@ $table_prefix = 'wp_';
 
 /* Add any custom values between this line and the "stop editing" line. */
 
+define('JWT_AUTH_SECRET_KEY', 'MAJmFt~Z,fK~z!jO6q%(zFqQZmgR7C+p9i,D[.j56?|OWSo+)kdrWr@RR~?-8J-@');
+define('JWT_AUTH_CORS_ENABLE', true);
+
 
 
 /**
