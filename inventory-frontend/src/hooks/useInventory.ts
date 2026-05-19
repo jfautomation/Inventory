@@ -1,47 +1,59 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { Term, Product } from "../types";
+import { Product, Term } from "../types";
+import { ProductService } from "../services/productService";
 import { normalizeProduct } from "../utils/normalizeProduct";
+import { api } from "../api/client";
 
-
-const baseUrl =
-  "http://jf-auto-inventory-clone-2.local/wp-json/wp/v2";
-
-// -----------------------
-// Hook
-// -----------------------
 export const useInventory = (initialProducts: Product[] = []) => {
   const [products, setProducts] = useState<Product[]>(initialProducts);
+
   const [brands, setBrands] = useState<Term[]>([]);
   const [parts, setParts] = useState<Term[]>([]);
   const [shelves, setShelves] = useState<Term[]>([]);
   const [series, setSeries] = useState<Term[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [brandsRes, partsRes, shelvesRes, seriesRes, productsRes] =
-          await Promise.all([
-            axios.get(`${baseUrl}/brand`),
-            axios.get(`${baseUrl}/part`),
-            axios.get(`${baseUrl}/shelf`),
-            axios.get(`${baseUrl}/series`),
-            axios.get(`${baseUrl}/product`),
-          ]);
+  const fetchData = async () => {
+    try {
+      const productsPromise = ProductService.getAll();
+      const brandsPromise = api.get("/wp/v2/brand");
+      const partsPromise = api.get("/wp/v2/part");
+      const shelvesPromise = api.get("/wp/v2/shelf");
+      const seriesPromise = api.get("/wp/v2/series");
 
-        setBrands(brandsRes.data);
-        setParts(partsRes.data);
-        setShelves(shelvesRes.data);
-        setSeries(seriesRes.data);
+      const [
+        productsRes,
+        brandsRes,
+        partsRes,
+        shelvesRes,
+        seriesRes,
+      ] = await Promise.all([
+        productsPromise,
+        brandsPromise,
+        partsPromise,
+        shelvesPromise,
+        seriesPromise,
+      ]);
 
-        setProducts(productsRes.data.map(normalizeProduct));
-      } catch (err) {
-        console.error(err);
-      }
-    };
+      console.log("PRODUCTS RAW:", productsRes);
+      console.log("BRANDS RAW:", brandsRes.data);
+      console.log("PARTS RAW:", partsRes.data);
+      console.log("SHELVES RAW:", shelvesRes.data);
+      console.log("SERIES RAW:", seriesRes.data);
 
-    fetchData();
-  }, []);
+      setProducts(productsRes.map(normalizeProduct));
+      setBrands(brandsRes.data);
+      setParts(partsRes.data);
+      setShelves(shelvesRes.data);
+      setSeries(seriesRes.data);
+
+    } catch (err) {
+      console.error("Inventory fetch failed:", err);
+    }
+  };
+
+  fetchData();
+}, []);
 
   return {
     products,

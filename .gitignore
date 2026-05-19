@@ -1,0 +1,52 @@
+# =====================
+# Dependencies
+# =====================
+node_modules/
+vendor/
+
+# =====================
+# Build output
+# =====================
+build/
+dist/
+
+# =====================
+# WordPress core config (IMPORTANT)
+# =====================
+public/wp-config.php
+
+# =====================
+# WordPress uploads (NEVER commit)
+# =====================
+public/wp-content/uploads/
+
+# =====================
+# WordPress cache & logs
+# =====================
+public/wp-content/cache/
+public/wp-content/debug.log
+*.log
+
+# =====================
+# Environment files
+# =====================
+.env
+.env.*
+!.env.example
+
+# =====================
+# OS junk files
+# =====================
+.DS_Store
+Thumbs.db
+
+# =====================
+# IDE files
+# =====================
+.vscode/
+.idea/
+
+# =====================
+# WordPress system noise
+# =====================
+public/wp-content/upgrade/
