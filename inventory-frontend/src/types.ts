@@ -6,31 +6,35 @@ export interface Term {
 
 export interface Product {
   id: number;
-  title: string;
 
-  brand: Term[];
   part: Term[];
-  shelf: Term[];
-  series: Term[];
+
+  brand?: Term[];
+  inventory_category?: Term[];
+  shelf?: Term[];
 
   serial_number?: string;
   work_order?: string;
-  test_status?: boolean;
   condition?: string;
+
+  test_status?: boolean;
+  test_date?: string;
+
   list_price?: string;
   notes?: string;
-  test_date?: string;
 }
 
-export type ProductPayload = {
-  title: string;
-  status: "publish";
-  brand: number[];
-  serial_number: string;
-  work_order: string;
-  test_status: number;
-  condition: string;
-  list_price: string;
-  notes: string;
-  test_date: string;
-};
+export interface ProductPayload {
+  status?: "publish" | "draft";
+  part: number[];
+
+  serial_number?: string;
+  work_order?: string;
+  condition?: string;
+  shelf?: number[];
+
+  test_status?: number;
+  test_date?: string;
+  list_price?: string;
+  notes?: string;
+}

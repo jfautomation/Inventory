@@ -9,17 +9,15 @@ import { ProductService } from "../services/productService";
 const wpData =
   typeof window !== "undefined" ? (window as any).wpData : null;
 
-const initialProducts: Product[] = (wpData?.products || []).map(
-  normalizeProduct
-);
+const initialProducts: Product[] = (wpData?.products || []).map(normalizeProduct);
 
 const Inventory: React.FC = () => {
-  const { products, brands, setProducts } =
+  const { products, brands, setProducts, shelves } =
     useInventory(initialProducts);
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // ✅ CLEAN JWT TEST FETCH (no Basic Auth)
+  // 🔍 Debug fetch (safe to remove later)
   useEffect(() => {
     const testFetch = async () => {
       try {
@@ -33,6 +31,9 @@ const Inventory: React.FC = () => {
     testFetch();
   }, []);
 
+  // ----------------------------
+  // DELETE
+  // ----------------------------
   const handleDelete = async (id: number) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this product?"
@@ -43,7 +44,6 @@ const Inventory: React.FC = () => {
     try {
       await ProductService.delete(id);
 
-      // update UI immediately (no refetch needed)
       setProducts((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
       console.error("DELETE FAILED:", err);
@@ -57,23 +57,22 @@ const Inventory: React.FC = () => {
 
       <ProductForm
         brands={brands}
+        shelves={shelves}
         editingProduct={editingProduct}
         clearEditing={() => setEditingProduct(null)}
         onCreated={(newProduct) => {
           const normalized = normalizeProduct(newProduct);
-
           setProducts((prev) => [normalized, ...prev]);
         }}
         onUpdated={(updatedProduct) => {
           const normalized = normalizeProduct(updatedProduct);
-
           setProducts((prev) =>
             prev.map((p) => (p.id === normalized.id ? normalized : p))
           );
         }}
       />
 
-      {/* PRODUCTS LIST */}
+      {/* ---------------- PRODUCTS LIST ---------------- */}
       {products.map((product) => (
         <div
           key={product.id}
@@ -83,10 +82,6 @@ const Inventory: React.FC = () => {
             marginBottom: 10,
           }}
         >
-          <div>
-            <strong>{product.title || "-"}</strong>
-          </div>
-
           <div>Serial: {product.serial_number || "-"}</div>
           <div>WO: {product.work_order || "-"}</div>
 
@@ -105,10 +100,6 @@ const Inventory: React.FC = () => {
 
           <button onClick={() => handleDelete(product.id)}>
             Delete
-          </button>
-
-          <button onClick={() => setEditingProduct(product)}>
-            Edit
           </button>
         </div>
       ))}

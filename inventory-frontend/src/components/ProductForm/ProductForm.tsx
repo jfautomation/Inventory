@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { ProductService } from "../../services/productService";
 import { Term, Product, ProductPayload } from "../../types";
 import { normalizeProduct } from "../../utils/normalizeProduct";
+import { TaxonomyService } from "../../services/taxonomyService";
 
 type Props = {
   brands: Term[];
+  shelves: Term[];
   onCreated?: (product: Product) => void;
   editingProduct: Product | null;
   onUpdated?: (product: Product) => void;
@@ -18,71 +20,132 @@ const ProductForm: React.FC<Props> = ({
   onUpdated,
   clearEditing,
 }) => {
-  const [title, setTitle] = useState("");
+
   const [serialNumber, setSerialNumber] = useState("");
   const [workOrder, setWorkOrder] = useState("");
   const [testStatus, setTestStatus] = useState(false);
+  const [selectedShelf, setSelectedShelf] = useState<Term | null>(null);
   const [condition, setCondition] = useState("");
   const [listPrice, setListPrice] = useState("");
   const [notes, setNotes] = useState("");
   const [testDate, setTestDate] = useState("");
+
   const [selectedBrand, setSelectedBrand] = useState<Term | null>(null);
+  const [parts, setParts] = useState<Term[]>([]);
+  const [selectedPart, setSelectedPart] = useState<Term | null>(null);
+
+  const [partDetails, setPartDetails] = useState<any | null>(null);
+
+  const [showPartModal, setShowPartModal] = useState(false);
+  const [newPartName, setNewPartName] = useState("");
 
   const [loading, setLoading] = useState(false);
 
   const isEditing = !!editingProduct;
 
-  // -----------------------
-  // PREFILL
-  // -----------------------
+  // --------------------------------------------------
+  // PREFILL (EDIT MODE SAFE)
+  // --------------------------------------------------
   useEffect(() => {
     if (!editingProduct) return;
 
-    setTitle(editingProduct.title || "");
     setSerialNumber(editingProduct.serial_number || "");
-    setSelectedBrand(editingProduct.brand?.[0] || null);
     setWorkOrder(editingProduct.work_order || "");
     setTestStatus(editingProduct.test_status || false);
+    setSelectedShelf(editingProduct.shelf?.[0] || null);
     setCondition(editingProduct.condition || "");
     setListPrice(editingProduct.list_price || "");
     setNotes(editingProduct.notes || "");
     setTestDate(editingProduct.test_date || "");
+
+    setSelectedBrand(editingProduct.brand?.[0] || null);
+    setSelectedPart(editingProduct.part?.[0] || null);
   }, [editingProduct]);
 
-  // -----------------------
+  // --------------------------------------------------
+  // LOAD PARTS WHEN BRAND CHANGES
+  // --------------------------------------------------
+  useEffect(() => {
+    if (!selectedBrand) {
+      setParts([]);
+      setSelectedPart(null);
+      return;
+    }
+
+    let active = true;
+
+    TaxonomyService.getPartsByBrand(selectedBrand.id)
+      .then((data) => {
+        if (active) setParts(data || []);
+      })
+      .catch((err) => console.error("Parts load failed:", err));
+
+    return () => {
+      active = false;
+    };
+  }, [selectedBrand]);
+
+  // --------------------------------------------------
+  // LOAD PART DETAILS
+  // --------------------------------------------------
+  useEffect(() => {
+    if (!selectedPart?.id) {
+      setPartDetails(null);
+      return;
+    }
+
+    let active = true;
+
+    TaxonomyService.getPart(selectedPart.id)
+      .then((data) => {
+        if (active) setPartDetails(data);
+      })
+      .catch((err) => console.error("Part details failed:", err));
+
+    return () => {
+      active = false;
+    };
+  }, [selectedPart]);
+
+  // --------------------------------------------------
   // RESET
-  // -----------------------
+  // --------------------------------------------------
   const resetForm = () => {
-    setTitle("");
     setSerialNumber("");
     setWorkOrder("");
     setTestStatus(false);
+    setSelectedShelf(null);
     setCondition("");
     setListPrice("");
     setNotes("");
     setTestDate("");
+
     setSelectedBrand(null);
+    setSelectedPart(null);
+    setParts([]);
+    setPartDetails(null);
   };
 
-  // -----------------------
+  // --------------------------------------------------
   // SUBMIT
-  // -----------------------
+  // --------------------------------------------------
   const handleSubmit = async () => {
     try {
       setLoading(true);
 
-      // ✅ strongly typed payload
       const payload: ProductPayload = {
-        title,
-        status: "publish",
-        brand: selectedBrand ? [selectedBrand.id] : [],
+        part: selectedPart ? [selectedPart.id] : [],
+
         serial_number: serialNumber,
         work_order: workOrder,
-        test_status: testStatus ? 1 : 0,
+        shelf: selectedShelf ? [selectedShelf.id] : [],
         condition,
+
+        test_status: testStatus ? 1 : 0,
+        test_date: testDate,
         list_price: listPrice,
         notes,
-        test_date: testDate,
+        status: "publish",
       };
 
       const res = isEditing
@@ -103,27 +166,62 @@ const ProductForm: React.FC<Props> = ({
     }
   };
 
+  // --------------------------------------------------
+  // CREATE PART (MINIMAL SAFE FLOW)
+  // --------------------------------------------------
+  const handleCreatePart = async () => {
+    if (!newPartName || !selectedBrand) return;
+
+    try {
+      const res = await TaxonomyService.createPart({
+        name: newPartName,
+        brand_id: selectedBrand.id,
+      });
+
+      const newPart: Term = {
+        id: res.id,
+        name: res.name,
+        slug: res.slug,
+      };
+
+      setParts((prev) => [...prev, newPart]);
+      setSelectedPart(newPart);
+      setShowPartModal(false);
+      setNewPartName("");
+    } catch (err) {
+      console.error("Create part failed:", err);
+    }
+  };
+
+  console.log("PART DETAILS:", partDetails);
+
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
   return (
     <div>
       <h2>{isEditing ? "Edit Product" : "Create Product"}</h2>
 
-      <input
-        placeholder="Product title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-
+      {/* SERIAL */}
       <input
         placeholder="Serial Number"
         value={serialNumber}
         onChange={(e) => setSerialNumber(e.target.value)}
       />
+      {/* WORK ORDER */}
+      <input
+        placeholder="Work Order"
+        value={workOrder}
+        onChange={(e) => setWorkOrder(e.target.value)}
+      />
 
+      {/* BRAND */}
       <select
         value={selectedBrand?.id ?? ""}
         onChange={(e) => {
           const brand =
             brands.find((b) => b.id === Number(e.target.value)) || null;
+
           setSelectedBrand(brand);
         }}
       >
@@ -135,13 +233,99 @@ const ProductForm: React.FC<Props> = ({
         ))}
       </select>
 
+      {/* PART */}
+      <select
+        value={selectedPart?.id ?? ""}
+        onChange={(e) => {
+          const part =
+            parts.find((p) => p.id === Number(e.target.value)) || null;
+
+          setSelectedPart(part);
+        }}
+        disabled={!selectedBrand}
+      >
+        <option value="">
+          {selectedBrand ? "Select Part" : "Select Brand First"}
+        </option>
+
+        {parts.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+
+      {/* CREATE PART BUTTON */}
+      {selectedBrand && parts.length === 0 && (
+        <button onClick={() => setShowPartModal(true)}>
+          + Create Part
+        </button>
+      )}
+
+      {/* PART DETAILS */}
+      {partDetails && (
+        <div style={{ border: "1px solid #ccc", padding: 10, marginTop: 10 }}>
+          <div><b>Name:</b> {partDetails.name}</div>
+          <div><b>Brand:</b> {partDetails.brand?.name || "-"}</div>
+          <div><b>Category:</b> {partDetails.category?.name || "-"}</div>
+
+
+
+        </div>
+      )}
+      {partDetails && (
+  <div style={{ border: "1px solid #ccc", padding: 10, marginTop: 10 }}>
+    <div><b>Name:</b> {partDetails.name}</div>
+    <div><b>Brand:</b> {partDetails.brand?.name || "-"}</div>
+    <div><b>Category:</b> {partDetails.category?.name || "-"}</div>
+  </div>
+)}
+
+      
+
+      {/* TESTED */}
+      <div style={{ marginTop: 10 }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={testStatus}
+            onChange={(e) => setTestStatus(e.target.checked)}
+          />
+          {" "}Tested
+        </label>
+      </div>
+
+      {/* SUBMIT */}
       <button onClick={handleSubmit} disabled={loading}>
-        {loading
-          ? "Saving..."
-          : isEditing
-          ? "Update Product"
-          : "Create Product"}
+        {loading ? "Saving..." : isEditing ? "Update Product" : "Create Product"}
       </button>
+
+      {/* MODAL */}
+      {showPartModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div style={{ background: "#fff", padding: 20, width: 300 }}>
+            <h3>Create Part</h3>
+
+            <input
+              placeholder="Part name"
+              value={newPartName}
+              onChange={(e) => setNewPartName(e.target.value)}
+            />
+
+            <button onClick={handleCreatePart}>Save</button>
+            <button onClick={() => setShowPartModal(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
