@@ -12,10 +12,10 @@ export interface Product {
   brand?: Term[];
   inventory_category?: Term[];
   shelf?: Term[];
+  condition?: Term[]; // ✅ FIXED (was string)
 
   serial_number?: string;
   work_order?: string;
-  condition?: string;
 
   test_status?: boolean;
   test_date?: string;
@@ -24,13 +24,18 @@ export interface Product {
   notes?: string;
 }
 
+
+
 export interface ProductPayload {
   status?: "publish" | "draft";
+
   part: number[];
 
   serial_number?: string;
   work_order?: string;
-  condition?: string;
+
+  // taxonomy fields must be IDs (NOT strings)
+  condition?: number[];
   shelf?: number[];
 
   test_status?: number;

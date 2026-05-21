@@ -23,16 +23,23 @@ add_filter('wp_insert_post_data', function ($data, $postarr) {
         $serial = sanitize_text_field($postarr['meta_input']['serial_number']);
     }
 
-    // Get part name (optional but better UX)
-    $part_title = '';
+    // Get part name (REST-safe)
+$part_title = '';
 
-    if (!empty($_REQUEST['part'][0])) {
-        $part_id = (int) $_REQUEST['part'][0];
-        $term = get_term($part_id, 'part');
-        if ($term && !is_wp_error($term)) {
-            $part_title = $term->name;
-        }
+$part_ids = $_REQUEST['part']
+    ?? $postarr['tax_input']['part']
+    ?? [];
+
+if (!empty($part_ids[0])) {
+
+    $part_id = (int) $part_ids[0];
+
+    $term = get_term($part_id, 'part');
+
+    if ($term && !is_wp_error($term)) {
+        $part_title = $term->name;
     }
+}
 
     // Build title safely
     if (empty($data['post_title'])) {
@@ -72,10 +79,6 @@ add_action('init', function () {
 
 }, 0);
 
-//////////////////////////////////////////////////////////
-// AUTO TITLE GENERATION (ADD THIS HERE)
-//////////////////////////////////////////////////////////
-
 
 
 //////////////////////////////////////////////////////////
@@ -89,7 +92,8 @@ add_action('init', function () {
         'brand',
         'part',
         'shelf',
-        'series'
+        'series', 
+        'condition'
     ];
 
     foreach ($taxonomies as $tax) {
@@ -98,7 +102,7 @@ add_action('init', function () {
             'label' => ucfirst(str_replace('_', ' ', $tax)),
             'public' => true,
             'show_in_rest' => true,
-            'hierarchical' => false,
+            'hierarchical' => true,
             'publicly_queryable' => true,
         ]);
     }
@@ -205,7 +209,6 @@ add_action('init', function () {
     $fields = [
         'serial_number',
         'work_order',
-        'condition',
         'list_price',
         'notes',
         'test_status',
@@ -237,7 +240,6 @@ function inventory_transform_product($post) {
     $fields = [
         'serial_number',
         'work_order',
-        'condition',
         'list_price',
         'notes',
         'test_status',
@@ -257,7 +259,8 @@ function inventory_transform_product($post) {
         'brand',
         'part',
         'shelf',
-        'series'
+        'series', 
+        'condition'
     ];
 
     foreach ($taxonomies as $tax) {
@@ -311,7 +314,6 @@ add_action('rest_after_insert_product', function ($post, $request) {
     $meta_fields = [
         'serial_number',
         'work_order',
-        'condition',
         'list_price',
         'notes',
         'test_status',
@@ -327,6 +329,24 @@ add_action('rest_after_insert_product', function ($post, $request) {
             update_post_meta($post->ID, $field, $value);
         }
     }
+
+    /*
+--------------------------------------------------
+5. CONDITION RELATION
+--------------------------------------------------
+*/
+$condition_ids = $request->get_param('condition');
+
+if (is_array($condition_ids)) {
+
+    $condition_ids = array_values(
+        array_filter(
+            array_map('intval', $condition_ids)
+        )
+    );
+
+    wp_set_post_terms($post->ID, $condition_ids, 'condition');
+}
 
     /*
     --------------------------------------------------

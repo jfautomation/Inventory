@@ -11,49 +11,55 @@ export const useInventory = (initialProducts: Product[] = []) => {
   const [parts, setParts] = useState<Term[]>([]);
   const [shelves, setShelves] = useState<Term[]>([]);
   const [series, setSeries] = useState<Term[]>([]);
+  const [conditions, setConditions] = useState<Term[]>([]);
 
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const productsPromise = ProductService.getAll();
-      const brandsPromise = api.get("/wp/v2/brand");
-      const partsPromise = api.get("/wp/v2/part");
-      const shelvesPromise = api.get("/wp/v2/shelf");
-      const seriesPromise = api.get("/wp/v2/series");
+    const fetchData = async () => {
+      try {
+        const productsPromise = ProductService.getAll();
+        const brandsPromise = api.get("/wp/v2/brand");
+        const partsPromise = api.get("/wp/v2/part");
+        const shelvesPromise = api.get("/wp/v2/shelf");
+        const seriesPromise = api.get("/wp/v2/series");
+        const conditionsPromise = api.get("/wp/v2/condition");
 
-      const [
-        productsRes,
-        brandsRes,
-        partsRes,
-        shelvesRes,
-        seriesRes,
-      ] = await Promise.all([
-        productsPromise,
-        brandsPromise,
-        partsPromise,
-        shelvesPromise,
-        seriesPromise,
-      ]);
+        const [
+          productsRes,
+          brandsRes,
+          partsRes,
+          shelvesRes,
+          seriesRes,
+          conditionsRes,
+        ] = await Promise.all([
+          productsPromise,
+          brandsPromise,
+          partsPromise,
+          shelvesPromise,
+          seriesPromise,
+          conditionsPromise,
+        ]);
 
-      console.log("PRODUCTS RAW:", productsRes);
-      console.log("BRANDS RAW:", brandsRes.data);
-      console.log("PARTS RAW:", partsRes.data);
-      console.log("SHELVES RAW:", shelvesRes.data);
-      console.log("SERIES RAW:", seriesRes.data);
+        console.log("PRODUCTS RAW:", productsRes);
+        console.log("BRANDS RAW:", brandsRes.data);
+        console.log("PARTS RAW:", partsRes.data);
+        console.log("SHELVES RAW:", shelvesRes.data);
+        console.log("SERIES RAW:", seriesRes.data);
+        console.log("CONDITIONS RAW:", conditionsRes.data);
 
-      setProducts(productsRes.map(normalizeProduct));
-      setBrands(brandsRes.data);
-      setParts(partsRes.data);
-      setShelves(shelvesRes.data);
-      setSeries(seriesRes.data);
+        setProducts(productsRes.map(normalizeProduct));
+        setBrands(brandsRes.data);
+        setParts(partsRes.data);
+        setShelves(shelvesRes.data);
+        setSeries(seriesRes.data);
+        setConditions(conditionsRes.data);
 
-    } catch (err) {
-      console.error("Inventory fetch failed:", err);
-    }
-  };
+      } catch (err) {
+        console.error("Inventory fetch failed:", err);
+      }
+    };
 
-  fetchData();
-}, []);
+    fetchData();
+  }, []);
 
   return {
     products,
@@ -61,6 +67,7 @@ export const useInventory = (initialProducts: Product[] = []) => {
     parts,
     shelves,
     series,
+    conditions, // ✅ IMPORTANT FIX
     setProducts,
   };
 };

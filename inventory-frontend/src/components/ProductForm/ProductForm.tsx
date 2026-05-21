@@ -8,6 +8,7 @@ type Props = {
   brands: Term[];
   shelves: Term[];
   onCreated?: (product: Product) => void;
+  conditions: Term[];
   editingProduct: Product | null;
   onUpdated?: (product: Product) => void;
   clearEditing?: () => void;
@@ -19,13 +20,14 @@ const ProductForm: React.FC<Props> = ({
   editingProduct,
   onUpdated,
   clearEditing,
+  conditions
 }) => {
 
   const [serialNumber, setSerialNumber] = useState("");
   const [workOrder, setWorkOrder] = useState("");
   const [testStatus, setTestStatus] = useState(false);
   const [selectedShelf, setSelectedShelf] = useState<Term | null>(null);
-  const [condition, setCondition] = useState("");
+  const [selectedCondition, setSelectedCondition] = useState<Term | null>(null);
   const [listPrice, setListPrice] = useState("");
   const [notes, setNotes] = useState("");
   const [testDate, setTestDate] = useState("");
@@ -53,7 +55,7 @@ const ProductForm: React.FC<Props> = ({
     setWorkOrder(editingProduct.work_order || "");
     setTestStatus(editingProduct.test_status || false);
     setSelectedShelf(editingProduct.shelf?.[0] || null);
-    setCondition(editingProduct.condition || "");
+    setSelectedCondition(editingProduct.condition?.[0] || null);
     setListPrice(editingProduct.list_price || "");
     setNotes(editingProduct.notes || "");
     setTestDate(editingProduct.test_date || "");
@@ -89,23 +91,23 @@ const ProductForm: React.FC<Props> = ({
   // LOAD PART DETAILS
   // --------------------------------------------------
   useEffect(() => {
-    if (!selectedPart?.id) {
-      setPartDetails(null);
-      return;
-    }
+  if (!selectedPart || typeof selectedPart.id !== "number") {
+    setPartDetails(null);
+    return;
+  }
 
-    let active = true;
+  let active = true;
 
-    TaxonomyService.getPart(selectedPart.id)
-      .then((data) => {
-        if (active) setPartDetails(data);
-      })
-      .catch((err) => console.error("Part details failed:", err));
+  TaxonomyService.getPart(selectedPart.id)
+    .then((data) => {
+      if (active) setPartDetails(data);
+    })
+    .catch((err) => console.error("Part details failed:", err));
 
-    return () => {
-      active = false;
-    };
-  }, [selectedPart]);
+  return () => {
+    active = false;
+  };
+}, [selectedPart]);
 
   // --------------------------------------------------
   // RESET
@@ -115,7 +117,7 @@ const ProductForm: React.FC<Props> = ({
     setWorkOrder("");
     setTestStatus(false);
     setSelectedShelf(null);
-    setCondition("");
+    setSelectedCondition(null);
     setListPrice("");
     setNotes("");
     setTestDate("");
@@ -139,7 +141,7 @@ const ProductForm: React.FC<Props> = ({
         serial_number: serialNumber,
         work_order: workOrder,
         shelf: selectedShelf ? [selectedShelf.id] : [],
-        condition,
+        condition: selectedCondition ? [selectedCondition.id] : [],
 
         test_status: testStatus ? 1 : 0,
         test_date: testDate,
@@ -215,6 +217,25 @@ const ProductForm: React.FC<Props> = ({
         onChange={(e) => setWorkOrder(e.target.value)}
       />
 
+      {/* CONDITION */}
+<select
+  value={selectedCondition?.id ?? ""}
+  onChange={(e) => {
+    const condition =
+      conditions.find((c) => c.id === Number(e.target.value)) || null;
+
+    setSelectedCondition(condition);
+  }}
+>
+  <option value="">Select Condition</option>
+
+  {conditions.map((c) => (
+    <option key={c.id} value={c.id}>
+      {c.name}
+    </option>
+  ))}
+</select>
+
       {/* BRAND */}
       <select
         value={selectedBrand?.id ?? ""}
@@ -262,26 +283,9 @@ const ProductForm: React.FC<Props> = ({
         </button>
       )}
 
-      {/* PART DETAILS */}
-      {partDetails && (
-        <div style={{ border: "1px solid #ccc", padding: 10, marginTop: 10 }}>
-          <div><b>Name:</b> {partDetails.name}</div>
-          <div><b>Brand:</b> {partDetails.brand?.name || "-"}</div>
-          <div><b>Category:</b> {partDetails.category?.name || "-"}</div>
 
 
 
-        </div>
-      )}
-      {partDetails && (
-  <div style={{ border: "1px solid #ccc", padding: 10, marginTop: 10 }}>
-    <div><b>Name:</b> {partDetails.name}</div>
-    <div><b>Brand:</b> {partDetails.brand?.name || "-"}</div>
-    <div><b>Category:</b> {partDetails.category?.name || "-"}</div>
-  </div>
-)}
-
-      
 
       {/* TESTED */}
       <div style={{ marginTop: 10 }}>

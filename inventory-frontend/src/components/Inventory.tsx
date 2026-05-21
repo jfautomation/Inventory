@@ -12,7 +12,7 @@ const wpData =
 const initialProducts: Product[] = (wpData?.products || []).map(normalizeProduct);
 
 const Inventory: React.FC = () => {
-  const { products, brands, setProducts, shelves } =
+  const { products, brands, setProducts, shelves, conditions } =
     useInventory(initialProducts);
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -59,6 +59,7 @@ const Inventory: React.FC = () => {
         brands={brands}
         shelves={shelves}
         editingProduct={editingProduct}
+        conditions={conditions}
         clearEditing={() => setEditingProduct(null)}
         onCreated={(newProduct) => {
           const normalized = normalizeProduct(newProduct);
@@ -91,6 +92,39 @@ const Inventory: React.FC = () => {
               ? product.brand.map((b) => b.name).join(", ")
               : "-"}
           </div>
+
+
+    {/* PART (THIS WAS MISSING) */}
+    <div>
+      Part:{" "}
+      {product.part?.length
+        ? product.part.map((p) => p.name).join(", ")
+        : "-"}
+    </div>
+
+    {/* CATEGORY (THIS WAS MISSING) */}
+    <div>
+      Category:{" "}
+      {product.inventory_category?.length
+        ? product.inventory_category.map((c) => c.name).join(", ")
+        : "-"}
+    </div>
+
+    {/* SHELF (OPTIONAL BUT YOU SAID YOU WANT IT LATER) */}
+    <div>
+      Shelf:{" "}
+      {product.shelf?.length
+        ? product.shelf.map((s) => s.name).join(", ")
+        : "-"}
+    </div>
+
+    {/* CONDITION */}
+<div>
+  Condition:{" "}
+  {product.condition?.length
+    ? product.condition.map((c) => c.name).join(", ")
+    : "-"}
+</div> 
 
           <div>Tested: {product.test_status ? "Yes" : "No"}</div>
 
