@@ -20,13 +20,16 @@ const ProductForm: React.FC<Props> = ({
   editingProduct,
   onUpdated,
   clearEditing,
-  conditions
+  conditions, 
+  shelves
 }) => {
 
   const [serialNumber, setSerialNumber] = useState("");
   const [workOrder, setWorkOrder] = useState("");
   const [testStatus, setTestStatus] = useState(false);
   const [selectedShelf, setSelectedShelf] = useState<Term | null>(null);
+  const [series, setSeries] = useState<any[]>([]);
+  const [selectedSeries, setSelectedSeries] = useState<any | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<Term | null>(null);
   const [listPrice, setListPrice] = useState("");
   const [notes, setNotes] = useState("");
@@ -109,6 +112,34 @@ const ProductForm: React.FC<Props> = ({
   };
 }, [selectedPart]);
 
+// --------------------------------------------------
+// LOAD SERIES WHEN BRAND CHANGES
+// --------------------------------------------------
+useEffect(() => {
+  const brandId = selectedBrand?.id;
+
+  // reset immediately when brand changes
+  setSeries([]);
+  setSelectedSeries(null);
+
+  if (!brandId) return;
+
+  let active = true;
+
+  TaxonomyService.getSeriesByBrand(brandId)
+    .then((data) => {
+      if (!active) return;
+      setSeries(data || []);
+    })
+    .catch((err) => {
+      console.error("Series load failed:", err);
+    });
+
+  return () => {
+    active = false;
+  };
+}, [selectedBrand?.id]);
+
   // --------------------------------------------------
   // RESET
   // --------------------------------------------------
@@ -136,18 +167,21 @@ const ProductForm: React.FC<Props> = ({
       setLoading(true);
 
       const payload: ProductPayload = {
-        part: selectedPart ? [selectedPart.id] : [],
+         part: selectedPart ? [selectedPart.id] : [],
 
-        serial_number: serialNumber,
-        work_order: workOrder,
-        shelf: selectedShelf ? [selectedShelf.id] : [],
-        condition: selectedCondition ? [selectedCondition.id] : [],
+  serial_number: serialNumber,
+  work_order: workOrder,
 
-        test_status: testStatus ? 1 : 0,
-        test_date: testDate,
-        list_price: listPrice,
-        notes,
-        status: "publish",
+  shelf: selectedShelf ? [selectedShelf.id] : [],
+  condition: selectedCondition ? [selectedCondition.id] : [],
+  series: selectedSeries ? [selectedSeries.id] : [],
+
+  test_status: !!testStatus, // ✅ boolean conversion
+  test_date: testDate,
+  list_price: listPrice,
+  notes,
+
+  status: "publish",
       };
 
       const res = isEditing
@@ -254,6 +288,46 @@ const ProductForm: React.FC<Props> = ({
         ))}
       </select>
 
+      <div>
+
+        <select
+  value={selectedSeries?.id || ""}
+  onChange={(e) => {
+    const id = Number(e.target.value);
+    const obj = series.find((s) => s.id === id) || null;
+    setSelectedSeries(obj);
+  }}
+  disabled={!selectedBrand}
+>
+  <option value="">Select Series</option>
+
+  {series.map((s) => (
+    <option key={s.id} value={s.id}>
+      {s.name}
+    </option>
+  ))}
+</select>
+  <label>Shelf</label>
+
+  <select
+    value={selectedShelf?.id || ""}
+    onChange={(e) => {
+      const shelf = shelves.find(
+        (s) => s.id === Number(e.target.value)
+      );
+      setSelectedShelf(shelf || null);
+    }}
+  >
+    <option value="">Select shelf</option>
+
+    {shelves.map((shelf) => (
+      <option key={shelf.id} value={shelf.id}>
+        {shelf.name}
+      </option>
+    ))}
+  </select>
+</div>
+
       {/* PART */}
       <select
         value={selectedPart?.id ?? ""}
@@ -298,6 +372,16 @@ const ProductForm: React.FC<Props> = ({
           {" "}Tested
         </label>
       </div>
+
+      <div style={{ marginTop: 10 }}>
+  <label>Test Date</label>
+
+  <input
+    type="date"
+    value={testDate}
+    onChange={(e) => setTestDate(e.target.value)}
+  />
+</div>
 
       {/* SUBMIT */}
       <button onClick={handleSubmit} disabled={loading}>

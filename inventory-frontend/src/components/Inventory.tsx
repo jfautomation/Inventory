@@ -126,7 +126,19 @@ const Inventory: React.FC = () => {
     : "-"}
 </div> 
 
+<div>
+  Series:{" "}
+  {product.series?.length
+    ? product.series.map((s) => s.name).join(", ")
+    : "-"}
+</div>
+
           <div>Tested: {product.test_status ? "Yes" : "No"}</div>
+          {product.test_status && product.test_date && (
+  <div>
+    Tested Date: {product.test_date}
+  </div>
+)}
 
           <button onClick={() => setEditingProduct(product)}>
             Edit

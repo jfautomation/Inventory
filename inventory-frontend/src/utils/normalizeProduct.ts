@@ -10,11 +10,18 @@ export const normalizeProduct = (p: any): Product => ({
   shelf: p.shelf || [],
   condition: p.condition || [],
 
+  // ✅ ADD THIS
+  series: p.series || [],
+
   // meta
   serial_number: p.serial_number || "",
   work_order: p.work_order || "",
 
-  test_status: Boolean(p.test_status),
+  test_status:
+    p.test_status === true ||
+    p.test_status === 1 ||
+    p.test_status === "1",
+
   test_date: p.test_date || "",
 
   list_price: p.list_price || "",

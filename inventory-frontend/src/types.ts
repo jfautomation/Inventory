@@ -9,10 +9,12 @@ export interface Product {
 
   part: Term[];
 
-  brand?: Term[];
-  inventory_category?: Term[];
-  shelf?: Term[];
-  condition?: Term[]; // ✅ FIXED (was string)
+  brand: Term[];
+  inventory_category: Term[];
+  shelf: Term[];
+  condition: Term[];
+
+  series: Term[]; // ✅ ADD THIS
 
   serial_number?: string;
   work_order?: string;
@@ -34,11 +36,11 @@ export interface ProductPayload {
   serial_number?: string;
   work_order?: string;
 
-  // taxonomy fields must be IDs (NOT strings)
   condition?: number[];
   shelf?: number[];
+  series?: number[]; // ✅ correct
 
-  test_status?: number;
+  test_status?: boolean; // ✅ consistent end-to-end
   test_date?: string;
   list_price?: string;
   notes?: string;
