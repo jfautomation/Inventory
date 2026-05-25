@@ -3,14 +3,12 @@ import { Product } from "../types";
 export const normalizeProduct = (p: any): Product => ({
   id: p.id,
 
-  // taxonomy relations (always arrays)
+  // taxonomy relations
   part: p.part || [],
   brand: p.brand || [],
   inventory_category: p.inventory_category || [],
   shelf: p.shelf || [],
   condition: p.condition || [],
-
-  // ✅ ADD THIS
   series: p.series || [],
 
   // meta
@@ -24,6 +22,29 @@ export const normalizeProduct = (p: any): Product => ({
 
   test_date: p.test_date || "",
 
-  list_price: p.list_price || "",
+  // 💰 PRICE (NUMERIC)
+  list_price:
+    p.list_price === "" ||
+    p.list_price === null ||
+    p.list_price === undefined
+      ? 0
+      : Number(p.list_price),
+
   notes: p.notes || "",
+
+  // 📦 INVENTORY STATUS (STRICT ENUM)
+  inventory_status:
+    p.inventory_status === "active" ||
+    p.inventory_status === "sold" ||
+    p.inventory_status === "archived"
+      ? p.inventory_status
+      : "active",
+
+  // 📊 QUANTITY (derived-safe)
+  quantity:
+    p.quantity === "" ||
+    p.quantity === null ||
+    p.quantity === undefined
+      ? 0
+      : Number(p.quantity),
 });

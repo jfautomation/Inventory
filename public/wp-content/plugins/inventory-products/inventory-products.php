@@ -252,7 +252,9 @@ add_action('init', function () {
         'list_price',
         'notes',
         'test_status',
-        'test_date'
+        'test_date', 
+        'inventory_status',      
+        'quantity'     
     ];
 
     foreach ($fields as $key) {
@@ -277,23 +279,48 @@ function inventory_transform_product($post) {
         'title' => get_the_title($post->ID) ?: "",
     ];
 
+    // =========================
+    // META FIELDS
+    // =========================
     $fields = [
         'serial_number',
         'work_order',
         'list_price',
         'notes',
-        'test_status',
-        'test_date'
+        'test_date',
+        'inventory_status'
     ];
 
     foreach ($fields as $field) {
         $value = get_post_meta($post->ID, $field, true);
 
-        $data[$field] = ($field === 'test_status')
-            ? (bool) $value
-            : ($value ?: "");
+        if ($field === 'inventory_status') {
+            $data[$field] = ($value !== null && $value !== '')
+                ? $value
+                : 'active';
+            continue;
+        }
+
+        $data[$field] = ($value !== null && $value !== '')
+            ? $value
+            : "";
     }
 
+    // =========================
+    // QUANTITY (DERIVED)
+    // =========================
+    $inventory_status = get_post_meta($post->ID, 'inventory_status', true) ?: 'active';
+    $data['quantity'] = ($inventory_status === 'active') ? 1 : 0;
+
+    // =========================
+    // TEST STATUS
+    // =========================
+    $test_status = get_post_meta($post->ID, 'test_status', true);
+    $data['test_status'] = (bool) $test_status;
+
+    // =========================
+    // TAXONOMIES
+    // =========================
     $taxonomies = [
         'inventory_category',
         'brand',
@@ -329,6 +356,10 @@ function inventory_transform_product($post) {
     return $data;
 }
 
+//////////////////////////////////////////////////////////
+// REST OUTPUT FILTER
+//////////////////////////////////////////////////////////
+
 add_filter('rest_prepare_product', function ($response, $post) {
 
     $response->data = array_merge(
@@ -346,16 +377,21 @@ add_filter('rest_prepare_product', function ($response, $post) {
 
 add_action('rest_after_insert_product', function ($post, $request) {
 
+    // =========================
+    // META FIELDS
+    // =========================
     $meta_fields = [
         'serial_number',
         'work_order',
         'list_price',
         'notes',
         'test_status',
-        'test_date'
+        'test_date',
+        'inventory_status'
     ];
 
     foreach ($meta_fields as $field) {
+
         $value = $request->get_param($field);
 
         if ($value !== null) {
@@ -363,78 +399,118 @@ add_action('rest_after_insert_product', function ($post, $request) {
         }
     }
 
-    $condition_ids = $request->get_param('condition');
+    // =========================
+    // INVENTORY RULES
+    // =========================
+    $inventory_status = get_post_meta(
+        $post->ID,
+        'inventory_status',
+        true
+    );
 
-    if (is_array($condition_ids)) {
-        $condition_ids = array_values(array_filter(array_map('intval', $condition_ids)));
-        wp_set_post_terms($post->ID, $condition_ids, 'condition');
+    if (!in_array($inventory_status, ['active', 'sold', 'archived'], true)) {
+
+        $inventory_status = 'active';
+
+        update_post_meta(
+            $post->ID,
+            'inventory_status',
+            'active'
+        );
     }
 
+    update_post_meta(
+        $post->ID,
+        'quantity',
+        ($inventory_status === 'active') ? 1 : 0
+    );
+
+    // =========================
+    // PART → BRAND + CATEGORY
+    // =========================
     $part_ids = $request->get_param('part');
 
     $brand_id = 0;
     $category_id = 0;
 
-    if (is_array($part_ids)) {
+    if (is_array($part_ids) && !empty($part_ids[0])) {
 
-        $part_ids = array_values(array_filter(array_map('intval', $part_ids)));
-        wp_set_post_terms($post->ID, $part_ids, 'part');
+        $part_id = (int) $part_ids[0];
 
-        if (!empty($part_ids[0])) {
+        // derive brand from part
+        $brand_id = (int) get_term_meta(
+            $part_id,
+            'brand_id',
+            true
+        );
 
-            $part_id = $part_ids[0];
+        // derive category from part
+        $category_id = (int) get_term_meta(
+            $part_id,
+            'category_id',
+            true
+        );
 
-            $brand_id = (int) get_term_meta($part_id, 'brand_id', true);
-            $category_id = (int) get_term_meta($part_id, 'category_id', true);
+        // assign brand taxonomy to product
+        if ($brand_id > 0) {
 
-            if ($brand_id) {
-                wp_set_post_terms($post->ID, [$brand_id], 'brand');
-            }
+            wp_set_post_terms(
+                $post->ID,
+                [$brand_id],
+                'brand',
+                false
+            );
+        }
 
-            if ($category_id) {
-                wp_set_post_terms($post->ID, [$category_id], 'inventory_category');
-            }
+        // assign category taxonomy to product
+        if ($category_id > 0) {
+
+            wp_set_post_terms(
+                $post->ID,
+                [$category_id],
+                'inventory_category',
+                false
+            );
         }
     }
 
-    $shelf_ids = $request->get_param('shelf');
-
-    if (is_array($shelf_ids)) {
-        $shelf_ids = array_values(array_filter(array_map('intval', $shelf_ids)));
-        wp_set_post_terms($post->ID, $shelf_ids, 'shelf');
-    }
-
     // =========================
-    // ✅ SERIES (VALIDATED)
+    // SERIES VALIDATION
     // =========================
     $series_ids = $request->get_param('series');
 
     if (is_array($series_ids)) {
 
         $series_ids = array_values(
-            array_filter(array_map('intval', $series_ids))
+            array_filter(
+                array_map('intval', $series_ids)
+            )
         );
 
-        // 🔒 enforce brand ownership if brand exists
-        if (!empty($brand_id) && !empty($series_ids)) {
+        $valid_series = [];
 
-            $valid_series = [];
+        foreach ($series_ids as $series_id) {
 
-            foreach ($series_ids as $series_id) {
+            $series_brand_id = (int) get_term_meta(
+                $series_id,
+                'brand_id',
+                true
+            );
 
-                $series_brand_id = (int) get_term_meta($series_id, 'brand_id', true);
-
-                if ($series_brand_id === $brand_id) {
-                    $valid_series[] = $series_id;
-                }
+            if (
+                $brand_id === 0 ||
+                $series_brand_id === $brand_id
+            ) {
+                $valid_series[] = $series_id;
             }
-
-            wp_set_post_terms($post->ID, $valid_series, 'series');
-
-        } else {
-            // fallback if no brand context
-            wp_set_post_terms($post->ID, $series_ids, 'series');
         }
+
+        wp_set_post_terms(
+            $post->ID,
+            $valid_series,
+            'series',
+            false
+        );
     }
 
 }, 10, 2);

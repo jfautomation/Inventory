@@ -51,6 +51,9 @@ const Inventory: React.FC = () => {
     }
   };
 
+
+  console.log("PRODUCT RAW:", products[0]);
+
   return (
     <div>
       <h1>Inventory testing!</h1>
@@ -139,6 +142,14 @@ const Inventory: React.FC = () => {
     Tested Date: {product.test_date}
   </div>
 )}
+
+<div>
+  Status: {product.inventory_status || "publish"}
+</div>
+
+<div>
+  Inventory: {product.quantity ?? 0}
+</div>
 
           <button onClick={() => setEditingProduct(product)}>
             Edit

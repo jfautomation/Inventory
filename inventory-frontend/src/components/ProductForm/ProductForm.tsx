@@ -24,6 +24,8 @@ const ProductForm: React.FC<Props> = ({
   shelves
 }) => {
 
+  const [inventoryStatus, setInventoryStatus] =
+  useState<"active" | "sold" | "archived">("active");
   const [serialNumber, setSerialNumber] = useState("");
   const [workOrder, setWorkOrder] = useState("");
   const [testStatus, setTestStatus] = useState(false);
@@ -31,7 +33,7 @@ const ProductForm: React.FC<Props> = ({
   const [series, setSeries] = useState<any[]>([]);
   const [selectedSeries, setSelectedSeries] = useState<any | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<Term | null>(null);
-  const [listPrice, setListPrice] = useState("");
+  const [listPrice, setListPrice] = useState<number>(0);
   const [notes, setNotes] = useState("");
   const [testDate, setTestDate] = useState("");
 
@@ -54,18 +56,29 @@ const ProductForm: React.FC<Props> = ({
   useEffect(() => {
     if (!editingProduct) return;
 
-    setSerialNumber(editingProduct.serial_number || "");
-    setWorkOrder(editingProduct.work_order || "");
-    setTestStatus(editingProduct.test_status || false);
-    setSelectedShelf(editingProduct.shelf?.[0] || null);
-    setSelectedCondition(editingProduct.condition?.[0] || null);
-    setListPrice(editingProduct.list_price || "");
-    setNotes(editingProduct.notes || "");
-    setTestDate(editingProduct.test_date || "");
+  setSerialNumber(editingProduct.serial_number || "");
+  setWorkOrder(editingProduct.work_order || "");
+  setTestStatus(editingProduct.test_status || false);
 
-    setSelectedBrand(editingProduct.brand?.[0] || null);
-    setSelectedPart(editingProduct.part?.[0] || null);
-  }, [editingProduct]);
+  setSelectedShelf(editingProduct.shelf?.[0] || null);
+  setSelectedCondition(editingProduct.condition?.[0] || null);
+
+  setListPrice(
+  editingProduct.list_price == null
+    ? 0
+    : Number(editingProduct.list_price)
+);
+
+  setNotes(editingProduct.notes || "");
+  setTestDate(editingProduct.test_date || "");
+
+  setSelectedBrand(editingProduct.brand?.[0] || null);
+  setSelectedPart(editingProduct.part?.[0] || null);
+
+  // ✅ ADD THESE
+  setInventoryStatus(editingProduct.inventory_status || "active");
+  setSelectedSeries(editingProduct.series?.[0] || null);
+}, [editingProduct]);
 
   // --------------------------------------------------
   // LOAD PARTS WHEN BRAND CHANGES
@@ -144,20 +157,27 @@ useEffect(() => {
   // RESET
   // --------------------------------------------------
   const resetForm = () => {
-    setSerialNumber("");
-    setWorkOrder("");
-    setTestStatus(false);
-    setSelectedShelf(null);
-    setSelectedCondition(null);
-    setListPrice("");
-    setNotes("");
-    setTestDate("");
+  setSerialNumber("");
+  setWorkOrder("");
+  setTestStatus(false);
+  setSelectedShelf(null);
+  setSelectedCondition(null);
 
-    setSelectedBrand(null);
-    setSelectedPart(null);
-    setParts([]);
-    setPartDetails(null);
-  };
+  setListPrice(0); // ✅ FIXED
+
+  setNotes("");
+  setTestDate("");
+
+  setInventoryStatus("active"); // ✅ ADD
+
+  setSelectedBrand(null);
+  setSelectedPart(null);
+  setSelectedSeries(null); // ✅ ADD
+
+  setParts([]);
+  setSeries([]);
+  setPartDetails(null);
+};
 
   // --------------------------------------------------
   // SUBMIT
@@ -167,6 +187,7 @@ useEffect(() => {
       setLoading(true);
 
       const payload: ProductPayload = {
+        inventory_status: inventoryStatus,
          part: selectedPart ? [selectedPart.id] : [],
 
   serial_number: serialNumber,
@@ -237,6 +258,30 @@ useEffect(() => {
   return (
     <div>
       <h2>{isEditing ? "Edit Product" : "Create Product"}</h2>
+    <select
+  value={inventoryStatus}
+  onChange={(e) =>
+    setInventoryStatus(
+      e.target.value as "active" | "sold" | "archived"
+    )
+  }
+>
+  <option value="active">Active</option>
+  <option value="sold">Sold</option>
+  <option value="archived">Archived</option>
+</select>
+
+<div style={{ marginTop: 10 }}>
+  <label>Price</label>
+
+  <input
+  type="number"
+  step="0.01"
+  placeholder="Enter price"
+  value={listPrice}
+  onChange={(e) => setListPrice(Number(e.target.value))}
+/>
+</div>
 
       {/* SERIAL */}
       <input

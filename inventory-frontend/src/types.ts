@@ -21,9 +21,13 @@ export interface Product {
 
   test_status?: boolean;
   test_date?: string;
+  inventory_status: "active" | "sold" | "archived";
+  quantity: number; // always 0 or 1 in your current system
 
-  list_price?: string;
+
+  list_price: number;
   notes?: string;
+
 }
 
 
@@ -35,6 +39,7 @@ export interface ProductPayload {
 
   serial_number?: string;
   work_order?: string;
+  inventory_status: "active" | "sold" | "archived";
 
   condition?: number[];
   shelf?: number[];
@@ -42,6 +47,6 @@ export interface ProductPayload {
 
   test_status?: boolean; // ✅ consistent end-to-end
   test_date?: string;
-  list_price?: string;
+  list_price?: number;
   notes?: string;
 }
