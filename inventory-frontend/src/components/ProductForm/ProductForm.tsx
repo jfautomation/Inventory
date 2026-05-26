@@ -47,6 +47,7 @@ const ProductForm: React.FC<Props> = ({
   const [newPartName, setNewPartName] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const [partSearch, setPartSearch] = useState("");
 
   const isEditing = !!editingProduct;
 
@@ -396,22 +397,42 @@ const ProductForm: React.FC<Props> = ({
       <select
         value={selectedPart?.id ?? ""}
         onChange={(e) => {
+          const value = e.target.value;
+
+          // =========================
+          // CREATE FLOW
+          // =========================
+          if (value === "create_new") {
+            setShowPartModal(true);
+            return;
+          }
+
+          // =========================
+          // NORMAL SELECTION
+          // =========================
           const part =
-            parts.find((p) => p.id === Number(e.target.value)) || null;
+            parts.find((p) => p.id === Number(value)) || null;
 
           setSelectedPart(part);
         }}
         disabled={!selectedBrand}
       >
+        {/* DEFAULT STATE */}
         <option value="">
           {selectedBrand ? "Select Part" : "Select Brand First"}
         </option>
 
+        {/* EXISTING PARTS */}
         {parts.map((p) => (
           <option key={p.id} value={p.id}>
             {p.name}
           </option>
         ))}
+
+        {/* CREATE OPTION */}
+        <option value="create_new">
+          Part not found? Create one
+        </option>
       </select>
 
       {/* CREATE PART BUTTON */}
