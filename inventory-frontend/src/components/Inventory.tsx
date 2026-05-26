@@ -97,59 +97,59 @@ const Inventory: React.FC = () => {
           </div>
 
 
-    {/* PART (THIS WAS MISSING) */}
-    <div>
-      Part:{" "}
-      {product.part?.length
-        ? product.part.map((p) => p.name).join(", ")
-        : "-"}
-    </div>
+          {/* PART (THIS WAS MISSING) */}
+          <div>
+            Part:{" "}
+            {product.part?.length
+              ? product.part.map((p) => p.name).join(", ")
+              : "-"}
+          </div>
 
-    {/* CATEGORY (THIS WAS MISSING) */}
-    <div>
-      Category:{" "}
-      {product.inventory_category?.length
-        ? product.inventory_category.map((c) => c.name).join(", ")
-        : "-"}
-    </div>
+          {/* CATEGORY (THIS WAS MISSING) */}
+          <div>
+            Category:{" "}
+            {product.inventory_category?.length
+              ? product.inventory_category.map((c) => c.name).join(", ")
+              : "-"}
+          </div>
 
-    {/* SHELF (OPTIONAL BUT YOU SAID YOU WANT IT LATER) */}
-    <div>
-      Shelf:{" "}
-      {product.shelf?.length
-        ? product.shelf.map((s) => s.name).join(", ")
-        : "-"}
-    </div>
+          {/* SHELF (OPTIONAL BUT YOU SAID YOU WANT IT LATER) */}
+          <div>
+            Shelf:{" "}
+            {product.shelf?.length
+              ? product.shelf.map((s) => s.name).join(", ")
+              : "-"}
+          </div>
 
-    {/* CONDITION */}
-<div>
-  Condition:{" "}
-  {product.condition?.length
-    ? product.condition.map((c) => c.name).join(", ")
-    : "-"}
-</div> 
+          {/* CONDITION */}
+          <div>
+            Condition:{" "}
+            {product.condition?.length
+              ? product.condition.map((c) => c.name).join(", ")
+              : "-"}
+          </div>
 
-<div>
-  Series:{" "}
-  {product.series?.length
-    ? product.series.map((s) => s.name).join(", ")
-    : "-"}
-</div>
+          <div>
+            Series:{" "}
+            {product.series?.length
+              ? product.series.map((s) => s.name).join(", ")
+              : "-"}
+          </div>
 
           <div>Tested: {product.test_status ? "Yes" : "No"}</div>
           {product.test_status && product.test_date && (
-  <div>
-    Tested Date: {product.test_date}
-  </div>
-)}
+            <div>
+              Tested Date: {product.test_date}
+            </div>
+          )}
 
-<div>
-  Status: {product.inventory_status || "publish"}
-</div>
+          <div>
+            Status: {product.inventory_status || "publish"}
+          </div>
 
-<div>
-  Inventory: {product.quantity ?? 0}
-</div>
+          <div>
+            Inventory: {product.quantity ?? 0}
+          </div>
 
           <button onClick={() => setEditingProduct(product)}>
             Edit

@@ -27,6 +27,7 @@ const ProductForm: React.FC<Props> = ({
   const [inventoryStatus, setInventoryStatus] =
     useState<"active" | "sold" | "archived">("active");
   const [serialNumber, setSerialNumber] = useState("");
+  const [partsLoading, setPartsLoading] = useState(false);
   const [workOrder, setWorkOrder] = useState("");
   const [testStatus, setTestStatus] = useState(false);
   const [selectedShelf, setSelectedShelf] = useState<Term | null>(null);
@@ -93,11 +94,21 @@ const ProductForm: React.FC<Props> = ({
 
     let active = true;
 
+    setPartsLoading(true);
+    setParts([]);
+    setSelectedPart(null);
+
     TaxonomyService.getPartsByBrand(selectedBrand.id)
       .then((data) => {
-        if (active) setParts(data || []);
+        if (!active) return;
+        setParts(data || []);
       })
-      .catch((err) => console.error("Parts load failed:", err));
+      .catch((err) => {
+        console.error("Parts load failed:", err);
+      })
+      .finally(() => {
+        if (active) setPartsLoading(false);
+      });
 
     return () => {
       active = false;
@@ -261,10 +272,16 @@ const ProductForm: React.FC<Props> = ({
         slug: res.slug,
       };
 
+      // update list
       setParts((prev) => [...prev, newPart]);
+
+      // auto-select newly created part
       setSelectedPart(newPart);
+
+      // cleanup modal state
       setShowPartModal(false);
       setNewPartName("");
+
     } catch (err) {
       console.error("Create part failed:", err);
     }
@@ -399,27 +416,25 @@ const ProductForm: React.FC<Props> = ({
         onChange={(e) => {
           const value = e.target.value;
 
-          // =========================
-          // CREATE FLOW
-          // =========================
           if (value === "create_new") {
             setShowPartModal(true);
             return;
           }
 
-          // =========================
-          // NORMAL SELECTION
-          // =========================
           const part =
             parts.find((p) => p.id === Number(value)) || null;
 
           setSelectedPart(part);
         }}
-        disabled={!selectedBrand}
+        disabled={!selectedBrand || partsLoading}
       >
         {/* DEFAULT STATE */}
         <option value="">
-          {selectedBrand ? "Select Part" : "Select Brand First"}
+          {!selectedBrand
+            ? "Select Brand First"
+            : partsLoading
+              ? "Loading parts..."
+              : "Select Part"}
         </option>
 
         {/* EXISTING PARTS */}
@@ -430,9 +445,11 @@ const ProductForm: React.FC<Props> = ({
         ))}
 
         {/* CREATE OPTION */}
-        <option value="create_new">
-          Part not found? Create one
-        </option>
+        {selectedBrand && !partsLoading && (
+          <option value="create_new">
+            + Part not found? Create one
+          </option>
+        )}
       </select>
 
       {/* CREATE PART BUTTON */}

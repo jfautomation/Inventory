@@ -49,7 +49,6 @@ add_filter('wp_insert_post_data', function ($data, $postarr) {
     }
 
     return $data;
-
 }, 10, 2);
 
 //////////////////////////////////////////////////////////
@@ -71,7 +70,6 @@ add_action('init', function () {
         'capability_type' => 'post',
         'map_meta_cap' => true,
     ]);
-
 }, 0);
 
 //////////////////////////////////////////////////////////
@@ -98,7 +96,6 @@ add_action('init', function () {
             'publicly_queryable' => true,
         ]);
     }
-
 }, 0);
 
 //////////////////////////////////////////////////////////
@@ -115,9 +112,9 @@ add_action('part_add_form_fields', function () {
     <select name="brand_id">
         <option value="">Select Brand</option>
         <?php foreach ($brands as $brand): ?>
-            <option value="<?php echo esc_attr($brand->term_id); ?>">
-                <?php echo esc_html($brand->name); ?>
-            </option>
+        <option value="<?php echo esc_attr($brand->term_id); ?>">
+            <?php echo esc_html($brand->name); ?>
+        </option>
         <?php endforeach; ?>
     </select>
 </div>
@@ -127,9 +124,9 @@ add_action('part_add_form_fields', function () {
     <select name="category_id">
         <option value="">Select Category</option>
         <?php foreach ($categories as $category): ?>
-            <option value="<?php echo esc_attr($category->term_id); ?>">
-                <?php echo esc_html($category->name); ?>
-            </option>
+        <option value="<?php echo esc_attr($category->term_id); ?>">
+            <?php echo esc_html($category->name); ?>
+        </option>
         <?php endforeach; ?>
     </select>
 </div>
@@ -149,10 +146,10 @@ add_action('part_edit_form_fields', function ($term) {
     <td>
         <select name="brand_id">
             <?php foreach ($brands as $brand): ?>
-                <option value="<?php echo esc_attr($brand->term_id); ?>"
-                    <?php selected($selected_brand, $brand->term_id); ?>>
-                    <?php echo esc_html($brand->name); ?>
-                </option>
+            <option value="<?php echo esc_attr($brand->term_id); ?>"
+                <?php selected($selected_brand, $brand->term_id); ?>>
+                <?php echo esc_html($brand->name); ?>
+            </option>
             <?php endforeach; ?>
         </select>
     </td>
@@ -163,10 +160,10 @@ add_action('part_edit_form_fields', function ($term) {
     <td>
         <select name="category_id">
             <?php foreach ($categories as $category): ?>
-                <option value="<?php echo esc_attr($category->term_id); ?>"
-                    <?php selected($selected_category, $category->term_id); ?>>
-                    <?php echo esc_html($category->name); ?>
-                </option>
+            <option value="<?php echo esc_attr($category->term_id); ?>"
+                <?php selected($selected_category, $category->term_id); ?>>
+                <?php echo esc_html($category->name); ?>
+            </option>
             <?php endforeach; ?>
         </select>
     </td>
@@ -177,7 +174,8 @@ add_action('part_edit_form_fields', function ($term) {
 add_action('created_part', 'inventory_save_part_meta');
 add_action('edited_part', 'inventory_save_part_meta');
 
-function inventory_save_part_meta($term_id) {
+function inventory_save_part_meta($term_id)
+{
 
     if (isset($_POST['brand_id'])) {
         update_term_meta($term_id, 'brand_id', (int) $_POST['brand_id']);
@@ -201,9 +199,9 @@ add_action('series_add_form_fields', function () {
     <select name="brand_id">
         <option value="">Select Brand</option>
         <?php foreach ($brands as $brand): ?>
-            <option value="<?php echo esc_attr($brand->term_id); ?>">
-                <?php echo esc_html($brand->name); ?>
-            </option>
+        <option value="<?php echo esc_attr($brand->term_id); ?>">
+            <?php echo esc_html($brand->name); ?>
+        </option>
         <?php endforeach; ?>
     </select>
 </div>
@@ -220,10 +218,10 @@ add_action('series_edit_form_fields', function ($term) {
     <td>
         <select name="brand_id">
             <?php foreach ($brands as $brand): ?>
-                <option value="<?php echo esc_attr($brand->term_id); ?>"
-                    <?php selected($selected_brand, $brand->term_id); ?>>
-                    <?php echo esc_html($brand->name); ?>
-                </option>
+            <option value="<?php echo esc_attr($brand->term_id); ?>"
+                <?php selected($selected_brand, $brand->term_id); ?>>
+                <?php echo esc_html($brand->name); ?>
+            </option>
             <?php endforeach; ?>
         </select>
     </td>
@@ -234,7 +232,8 @@ add_action('series_edit_form_fields', function ($term) {
 add_action('created_series', 'inventory_save_series_meta');
 add_action('edited_series', 'inventory_save_series_meta');
 
-function inventory_save_series_meta($term_id) {
+function inventory_save_series_meta($term_id)
+{
     if (isset($_POST['brand_id'])) {
         update_term_meta($term_id, 'brand_id', (int) $_POST['brand_id']);
     }
@@ -252,9 +251,9 @@ add_action('init', function () {
         'list_price',
         'notes',
         'test_status',
-        'test_date', 
-        'inventory_status',      
-        'quantity'     
+        'test_date',
+        'inventory_status',
+        'quantity'
     ];
 
     foreach ($fields as $key) {
@@ -265,14 +264,14 @@ add_action('init', function () {
             'auth_callback' => '__return_true',
         ]);
     }
-
 }, 0);
 
 //////////////////////////////////////////////////////////
 // REST TRANSFORMER
 //////////////////////////////////////////////////////////
 
-function inventory_transform_product($post) {
+function inventory_transform_product($post)
+{
 
     $data = [
         'id' => $post->ID,
@@ -368,7 +367,6 @@ add_filter('rest_prepare_product', function ($response, $post) {
     );
 
     return $response;
-
 }, 10, 3);
 
 //////////////////////////////////////////////////////////
@@ -383,7 +381,8 @@ add_filter('rest_prepare_product', function ($response, $post) {
 // UNIQUE META VALIDATION (HELPER)
 //////////////////////////////////////////////////////////
 
-function inventory_meta_exists($meta_key, $meta_value, $exclude_post_id = 0) {
+function inventory_meta_exists($meta_key, $meta_value, $exclude_post_id = 0)
+{
 
     if (!$meta_value) {
         return false;
@@ -447,7 +446,6 @@ add_filter('rest_pre_insert_product', function ($prepared_post, $request) {
     }
 
     return $prepared_post;
-
 }, 10, 2);
 
 add_action('rest_after_insert_product', function ($post, $request) {
@@ -544,7 +542,6 @@ add_action('rest_after_insert_product', function ($post, $request) {
             false
         );
     }
-
 }, 10, 2);
 //////////////////////////////////////////////////////////
 // PARTS ENDPOINT
@@ -592,9 +589,10 @@ add_action('rest_api_init', function () {
                 }
 
                 $result[] = [
-                    'id'   => $part->term_id,
+                    'id' => $part->term_id,
                     'name' => $part->name,
                     'slug' => $part->slug,
+                    'brand_id' => $part_brand_id, // 👈 add this
                 ];
             }
 
@@ -654,7 +652,6 @@ add_action('rest_api_init', function () {
             ];
         }
     ]);
-
 });
 
 //////////////////////////////////////////////////////////
@@ -707,5 +704,4 @@ add_action('rest_api_init', function () {
             return $result;
         }
     ]);
-
 });

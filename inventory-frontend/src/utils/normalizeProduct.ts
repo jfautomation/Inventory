@@ -25,8 +25,8 @@ export const normalizeProduct = (p: any): Product => ({
   // 💰 PRICE (NUMERIC)
   list_price:
     p.list_price === "" ||
-    p.list_price === null ||
-    p.list_price === undefined
+      p.list_price === null ||
+      p.list_price === undefined
       ? 0
       : Number(p.list_price),
 
@@ -35,16 +35,16 @@ export const normalizeProduct = (p: any): Product => ({
   // 📦 INVENTORY STATUS (STRICT ENUM)
   inventory_status:
     p.inventory_status === "active" ||
-    p.inventory_status === "sold" ||
-    p.inventory_status === "archived"
+      p.inventory_status === "sold" ||
+      p.inventory_status === "archived"
       ? p.inventory_status
       : "active",
 
   // 📊 QUANTITY (derived-safe)
   quantity:
     p.quantity === "" ||
-    p.quantity === null ||
-    p.quantity === undefined
+      p.quantity === null ||
+      p.quantity === undefined
       ? 0
       : Number(p.quantity),
 });
