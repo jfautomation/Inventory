@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ProductForm from "./ProductForm/ProductForm";
+import PartForm from "./PartForm/PartForm";
 import { useInventory } from "../hooks/useInventory";
 import { Product } from "../types";
 import { normalizeProduct } from "../utils/normalizeProduct";
@@ -57,6 +58,10 @@ const Inventory: React.FC = () => {
   return (
     <div>
       <h1>Inventory testing!</h1>
+      <hr />
+      <PartForm brands={brands} />
+      <hr />
+      <h2>Create Product</h2>
 
       <ProductForm
         brands={brands}

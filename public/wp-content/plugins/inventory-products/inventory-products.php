@@ -646,9 +646,11 @@ add_action('rest_api_init', function () {
             }
 
             return [
-                'id'   => $term_id,
-                'name' => $name,
-                'slug' => get_term($term_id)->slug,
+                'id'          => $term_id,
+                'name'        => $name,
+                'slug'        => get_term($term_id)->slug,
+                'brand_id'    => $brand_id ?: null,
+                'category_id' => $category_id ?: null,
             ];
         }
     ]);
