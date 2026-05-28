@@ -543,9 +543,7 @@ add_action('rest_after_insert_product', function ($post, $request) {
         );
     }
 }, 10, 2);
-//////////////////////////////////////////////////////////
-// PARTS ENDPOINT
-//////////////////////////////////////////////////////////
+
 
 //////////////////////////////////////////////////////////
 // PARTS ENDPOINT (GET + CREATE)
@@ -588,11 +586,32 @@ add_action('rest_api_init', function () {
                     continue;
                 }
 
+                // =========================
+                // CATEGORY HYDRATION (FIX)
+                // =========================
+                $category_id = (int) get_term_meta($part->term_id, 'category_id', true);
+                $category = $category_id
+                    ? get_term($category_id, 'inventory_category')
+                    : null;
+
+                if (is_wp_error($category)) {
+                    $category = null;
+                }
+
                 $result[] = [
-                    'id' => $part->term_id,
-                    'name' => $part->name,
-                    'slug' => $part->slug,
-                    'brand_id' => $part_brand_id, // 👈 add this
+                    'id'          => $part->term_id,
+                    'name'        => $part->name,
+                    'slug'        => $part->slug,
+
+                    'brand_id'    => $part_brand_id ?: null,
+                    'category_id' => $category_id ?: null,
+
+                    // 👇 UI READY OBJECT (THIS WAS MISSING BEFORE)
+                    'category'    => $category ? [
+                        'id'   => $category->term_id,
+                        'name' => $category->name,
+                        'slug' => $category->slug,
+                    ] : null,
                 ];
             }
 
@@ -615,15 +634,24 @@ add_action('rest_api_init', function () {
             $brand_id    = (int) $request->get_param('brand_id');
             $category_id = (int) $request->get_param('category_id');
 
+            // =========================
+            // VALIDATION
+            // =========================
             if (!$name) {
-                return new WP_Error(
-                    'missing_name',
-                    'Part name is required.',
-                    ['status' => 400]
-                );
+                return new WP_Error('missing_name', 'Part name is required.', ['status' => 400]);
             }
 
+            if (!$brand_id) {
+                return new WP_Error('missing_brand', 'Brand is required.', ['status' => 400]);
+            }
+
+            if (!$category_id) {
+                return new WP_Error('missing_category', 'Category is required.', ['status' => 400]);
+            }
+
+            // =========================
             // CREATE TERM
+            // =========================
             $term = wp_insert_term($name, 'part');
 
             if (is_wp_error($term)) {
@@ -636,21 +664,46 @@ add_action('rest_api_init', function () {
 
             $term_id = $term['term_id'];
 
+            // =========================
             // SAVE META
-            if ($brand_id) {
-                update_term_meta($term_id, 'brand_id', $brand_id);
-            }
+            // =========================
+            update_term_meta($term_id, 'brand_id', $brand_id);
+            update_term_meta($term_id, 'category_id', $category_id);
 
-            if ($category_id) {
-                update_term_meta($term_id, 'category_id', $category_id);
+            // =========================
+            // SAFE READBACK
+            // =========================
+            // =========================
+            // SAFE READBACK
+            // =========================
+            $term_obj = get_term($term_id, 'part');
+
+            $stored_brand_id = (int) get_term_meta($term_id, 'brand_id', true);
+            $stored_category_id = (int) get_term_meta($term_id, 'category_id', true);
+
+            $category = $stored_category_id
+                ? get_term($stored_category_id, 'inventory_category')
+                : null;
+
+            if (is_wp_error($category)) {
+                $category = null;
             }
 
             return [
                 'id'          => $term_id,
-                'name'        => $name,
-                'slug'        => get_term($term_id)->slug,
-                'brand_id'    => $brand_id ?: null,
-                'category_id' => $category_id ?: null,
+                'name'        => $term_obj ? $term_obj->name : $name,
+                'slug'        => $term_obj ? $term_obj->slug : '',
+
+                'brand_id'    => $stored_brand_id ?: null,
+
+                'category_id' => $stored_category_id ?: null,
+
+                // 👇 UI READY OBJECT
+                'category'    => $category ? [
+                    'id'   => $category->term_id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                ] : null,
             ];
         }
     ]);

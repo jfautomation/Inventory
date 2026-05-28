@@ -13,9 +13,14 @@ const wpData =
 const initialProducts: Product[] = (wpData?.products || []).map(normalizeProduct);
 
 const Inventory: React.FC = () => {
-  const { products, brands, setProducts, shelves, conditions } =
-    useInventory(initialProducts);
-
+  const {
+    products,
+    brands,
+    shelves,
+    conditions,
+    categories,
+    setProducts,
+  } = useInventory(initialProducts);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // 🔍 Debug fetch (safe to remove later)
@@ -59,15 +64,14 @@ const Inventory: React.FC = () => {
     <div>
       <h1>Inventory testing!</h1>
       <hr />
-      <PartForm brands={brands} />
+      <PartForm brands={brands} categories={categories} />
       <hr />
-      <h2>Create Product</h2>
-
       <ProductForm
         brands={brands}
         shelves={shelves}
         editingProduct={editingProduct}
         conditions={conditions}
+        categories={categories}
         clearEditing={() => setEditingProduct(null)}
         onCreated={(newProduct) => {
           const normalized = normalizeProduct(newProduct);

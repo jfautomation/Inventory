@@ -3,6 +3,7 @@ import { ProductService } from "../../services/productService";
 import { Term, Product, ProductPayload } from "../../types";
 import { normalizeProduct } from "../../utils/normalizeProduct";
 import { TaxonomyService } from "../../services/taxonomyService";
+import PartForm from "../PartForm/PartForm";
 
 type Props = {
   brands: Term[];
@@ -12,6 +13,7 @@ type Props = {
   editingProduct: Product | null;
   onUpdated?: (product: Product) => void;
   clearEditing?: () => void;
+  categories: Term[];
 };
 
 const ProductForm: React.FC<Props> = ({
@@ -21,7 +23,8 @@ const ProductForm: React.FC<Props> = ({
   onUpdated,
   clearEditing,
   conditions,
-  shelves
+  shelves,
+  categories
 }) => {
 
   const [inventoryStatus, setInventoryStatus] =
@@ -45,7 +48,7 @@ const ProductForm: React.FC<Props> = ({
   const [partDetails, setPartDetails] = useState<any | null>(null);
 
   const [showPartModal, setShowPartModal] = useState(false);
-  const [newPartName, setNewPartName] = useState("");
+  // const [newPartName, setNewPartName] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [partSearch, setPartSearch] = useState("");
@@ -254,40 +257,40 @@ const ProductForm: React.FC<Props> = ({
     }
   };
 
-  // --------------------------------------------------
-  // CREATE PART (MINIMAL SAFE FLOW)
-  // --------------------------------------------------
-  const handleCreatePart = async () => {
-    if (!newPartName || !selectedBrand) return;
+  // // --------------------------------------------------
+  // // CREATE PART (MINIMAL SAFE FLOW)
+  // // --------------------------------------------------
+  // const handleCreatePart = async () => {
+  //   if (!newPartName || !selectedBrand) return;
 
-    try {
-      const res = await TaxonomyService.createPart({
-        name: newPartName,
-        brand_id: selectedBrand.id,
-      });
+  //   try {
+  //     const res = await TaxonomyService.createPart({
+  //       name: newPartName,
+  //       brand_id: selectedBrand.id,
+  //     });
 
-      const newPart: Term = {
-        id: res.id,
-        name: res.name,
-        slug: res.slug,
-      };
+  //     const newPart: Term = {
+  //       id: res.id,
+  //       name: res.name,
+  //       slug: res.slug,
+  //     };
 
-      // update list
-      setParts((prev) => [...prev, newPart]);
+  //     // update list
+  //     setParts((prev) => [...prev, newPart]);
 
-      // auto-select newly created part
-      setSelectedPart(newPart);
+  //     // auto-select newly created part
+  //     setSelectedPart(newPart);
 
-      // cleanup modal state
-      setShowPartModal(false);
-      setNewPartName("");
+  //     // cleanup modal state
+  //     setShowPartModal(false);
+  //     setNewPartName("");
 
-    } catch (err) {
-      console.error("Create part failed:", err);
-    }
-  };
+  //   } catch (err) {
+  //     console.error("Create part failed:", err);
+  //   }
+  // };
 
-  console.log("PART DETAILS:", partDetails);
+  // console.log("PART DETAILS:", partDetails);
 
   // --------------------------------------------------
   // UI
@@ -502,7 +505,7 @@ const ProductForm: React.FC<Props> = ({
             justifyContent: "center",
           }}
         >
-          <div style={{ background: "#fff", padding: 20, width: 300 }}>
+          {/* <div style={{ background: "#fff", padding: 20, width: 300 }}>
             <h3>Create Part</h3>
 
             <input
@@ -513,7 +516,29 @@ const ProductForm: React.FC<Props> = ({
 
             <button onClick={handleCreatePart}>Save</button>
             <button onClick={() => setShowPartModal(false)}>Cancel</button>
-          </div>
+          </div> */}
+          <PartForm
+            brands={brands}
+            categories={categories}
+
+            initialBrand={selectedBrand}
+
+            onCreated={(newPart) => {
+
+              // ADD NEW PART TO LIST
+              setParts((prev) => [
+                ...prev,
+                newPart,
+              ]);
+
+              // AUTO SELECT
+              setSelectedPart(newPart);
+            }}
+
+            onClose={() => {
+              setShowPartModal(false);
+            }}
+          />
         </div>
       )}
     </div>
