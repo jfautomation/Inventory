@@ -2,8 +2,13 @@ import { Product } from "../types";
 
 export const normalizeProduct = (p: any): Product => ({
   id: p.id,
+   title:
+    p.title ||
+    `${p.brand?.[0]?.name || ""} ${p.part?.[0]?.name || ""} ${p.serial_number || ""}`.trim(),
 
-  // taxonomy relations
+  // =========================
+  // TAXONOMY RELATIONS
+  // =========================
   part: p.part || [],
   brand: p.brand || [],
   inventory_category: p.inventory_category || [],
@@ -11,7 +16,9 @@ export const normalizeProduct = (p: any): Product => ({
   condition: p.condition || [],
   series: p.series || [],
 
-  // meta
+  // =========================
+  // META FIELDS
+  // =========================
   serial_number: p.serial_number || "",
   work_order: p.work_order || "",
 
@@ -22,29 +29,46 @@ export const normalizeProduct = (p: any): Product => ({
 
   test_date: p.test_date || "",
 
-  // 💰 PRICE (NUMERIC)
+  // =========================
+  // PRICE
+  // =========================
   list_price:
     p.list_price === "" ||
-      p.list_price === null ||
-      p.list_price === undefined
+    p.list_price === null ||
+    p.list_price === undefined
       ? 0
       : Number(p.list_price),
 
+  // =========================
+  // TEXT FIELDS
+  // =========================
   notes: p.notes || "",
 
-  // 📦 INVENTORY STATUS (STRICT ENUM)
+  // 👇 ALIAS for spreadsheet / UI consistency
+  description: p.description || p.notes || "",
+
+  // =========================
+  // IMAGE
+  // =========================
+  image: p.image || "",
+
+  // =========================
+  // INVENTORY STATUS
+  // =========================
   inventory_status:
     p.inventory_status === "active" ||
-      p.inventory_status === "sold" ||
-      p.inventory_status === "archived"
+    p.inventory_status === "sold" ||
+    p.inventory_status === "archived"
       ? p.inventory_status
       : "active",
 
-  // 📊 QUANTITY (derived-safe)
+  // =========================
+  // DERIVED FIELDS
+  // =========================
   quantity:
     p.quantity === "" ||
-      p.quantity === null ||
-      p.quantity === undefined
+    p.quantity === null ||
+    p.quantity === undefined
       ? 0
       : Number(p.quantity),
 });

@@ -253,7 +253,8 @@ add_action('init', function () {
         'test_status',
         'test_date',
         'inventory_status',
-        'quantity'
+        'quantity',
+        'image_id'
     ];
 
     foreach ($fields as $key) {
@@ -287,7 +288,7 @@ function inventory_transform_product($post)
         'list_price',
         'notes',
         'test_date',
-        'inventory_status'
+        'inventory_status',
     ];
 
     foreach ($fields as $field) {
@@ -304,6 +305,20 @@ function inventory_transform_product($post)
             ? $value
             : "";
     }
+
+    $image_id = (int) get_post_meta($post->ID, 'image_id', true);
+
+    $data['image'] = $image_id
+        ? wp_get_attachment_url($image_id)
+        : "";
+
+    // ✅ ADD THIS HERE
+    $data['image_id'] = $image_id;
+
+    // =========================
+    // SPREADSHEET ALIAS
+    // =========================
+    $data['description'] = $data['notes'];
 
     // =========================
     // QUANTITY (DERIVED)
@@ -373,9 +388,6 @@ add_filter('rest_prepare_product', function ($response, $post) {
 // CREATE / UPDATE
 //////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////
-// UNIQUE META VALIDATION
-//////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////
 // UNIQUE META VALIDATION (HELPER)
@@ -450,6 +462,15 @@ add_filter('rest_pre_insert_product', function ($prepared_post, $request) {
 
 add_action('rest_after_insert_product', function ($post, $request) {
 
+    $title = trim((string) $request->get_param('title'));
+
+    if ($title !== '') {
+        wp_update_post([
+            'ID' => $post->ID,
+            'post_title' => sanitize_text_field($title),
+        ]);
+    }
+
     // =========================
     // META FIELDS
     // =========================
@@ -460,7 +481,8 @@ add_action('rest_after_insert_product', function ($post, $request) {
         'notes',
         'test_status',
         'test_date',
-        'inventory_status'
+        'inventory_status',
+        'image_id'
     ];
 
     foreach ($meta_fields as $field) {
