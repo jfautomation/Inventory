@@ -95,6 +95,10 @@ const Inventory: React.FC = () => {
             marginBottom: 10,
           }}
         >
+          
+          <div>
+            Title: {product.title || "-"}
+          </div>
           <div>Serial: {product.serial_number || "-"}</div>
           <div>WO: {product.work_order || "-"}</div>
 

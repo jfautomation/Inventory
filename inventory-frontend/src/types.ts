@@ -10,6 +10,8 @@ export type Product = {
   serial_number?: string;
   work_order?: string;
   list_price?: number;
+  image?: string;
+  image_id?: number;
   notes?: string;
   description?: string; // 👈 ADD THIS (frontend alias)
   test_date?: string;
@@ -18,7 +20,6 @@ export type Product = {
   test_status?: boolean;
   quantity?: number;
 
-  image?: string; // 👈 ADD THIS
 
   brand?: Term[];
   part?: Term[];
@@ -31,14 +32,17 @@ export type Product = {
 
 
 export type ProductPayload = {
+  title: string;
+
   serial_number?: string;
   work_order?: string;
   list_price?: number;
   notes?: string;
 
-  image?: string; // 👈 ADD THIS
+  image_id?: number;
 
   test_date?: string;
+
   inventory_status?: "active" | "sold" | "archived";
 
   test_status?: boolean;
@@ -48,6 +52,7 @@ export type ProductPayload = {
   shelf?: number[];
   series?: number[];
   condition?: number[];
+  inventory_category?: number[];
 
   status: "publish";
 };

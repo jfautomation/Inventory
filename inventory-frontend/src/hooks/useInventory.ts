@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Product, Term } from "../types";
 import { ProductService } from "../services/productService";
-import { normalizeProduct } from "../utils/normalizeProduct";
-import { api } from "../api/client";
 
 export const useInventory = (initialProducts: Product[] = []) => {
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -12,65 +10,39 @@ export const useInventory = (initialProducts: Product[] = []) => {
   const [shelves, setShelves] = useState<Term[]>([]);
   const [series, setSeries] = useState<Term[]>([]);
   const [conditions, setConditions] = useState<Term[]>([]);
-  const [categories, setCategories] = useState<Term[]>([]); // ✅ ADDED
+  const [categories, setCategories] = useState<Term[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const productsPromise = ProductService.getAll();
+        // =========================
+        // PRODUCTS (ONLY SOURCE)
+        // =========================
+        const productsRes = await ProductService.getAll();
+        setProducts(productsRes);
 
-        const brandsPromise = api.get("/wp/v2/brand");
-
-        // ❌ REMOVE raw WP endpoint
-        // const partsPromise = api.get("/wp/v2/part");
-
-        // ✅ KEEP ONLY IF YOU TRULY NEED GLOBAL PART LIST (you usually don’t)
-        const partsPromise = Promise.resolve({ data: [] });
-
-        const shelvesPromise = api.get("/wp/v2/shelf");
-        const seriesPromise = api.get("/wp/v2/series");
-        const conditionsPromise = api.get("/wp/v2/condition");
-
-        // ❌ replace raw WP taxonomy endpoint
-        // const categoriesPromise = api.get("/wp/v2/inventory_category");
-
-        // ✅ optional: keep if you use WP categories directly, otherwise replace later
-        const categoriesPromise = api.get("/wp/v2/inventory_category");
-
+        // =========================
+        // TAXONOMIES (WP REST OK)
+        // =========================
         const [
-          productsRes,
           brandsRes,
-          partsRes,
           shelvesRes,
           seriesRes,
           conditionsRes,
-          categoriesRes, // ✅ ADDED
+          categoriesRes,
         ] = await Promise.all([
-          productsPromise,
-          brandsPromise,
-          partsPromise,
-          shelvesPromise,
-          seriesPromise,
-          conditionsPromise,
-          categoriesPromise, // ✅ ADDED
+          fetch("/wp-json/wp/v2/brand").then((r) => r.json()),
+          fetch("/wp-json/wp/v2/shelf").then((r) => r.json()),
+          fetch("/wp-json/wp/v2/series").then((r) => r.json()),
+          fetch("/wp-json/wp/v2/condition").then((r) => r.json()),
+          fetch("/wp-json/wp/v2/inventory_category").then((r) => r.json()),
         ]);
 
-        console.log("PRODUCTS RAW:", productsRes);
-        console.log("BRANDS RAW:", brandsRes.data);
-        console.log("PARTS RAW:", partsRes.data);
-        console.log("SHELVES RAW:", shelvesRes.data);
-        console.log("SERIES RAW:", seriesRes.data);
-        console.log("CONDITIONS RAW:", conditionsRes.data);
-        console.log("CATEGORIES RAW:", categoriesRes.data); // ✅ ADDED
-
-        setProducts(productsRes.map(normalizeProduct));
-        setBrands(brandsRes.data);
-        setParts(partsRes.data);
-        setShelves(shelvesRes.data);
-        setSeries(seriesRes.data);
-        setConditions(conditionsRes.data);
-        setCategories(categoriesRes.data); // ✅ ADDED
-
+        setBrands(brandsRes || []);
+        setShelves(shelvesRes || []);
+        setSeries(seriesRes || []);
+        setConditions(conditionsRes || []);
+        setCategories(categoriesRes || []);
       } catch (err) {
         console.error("Inventory fetch failed:", err);
       }
@@ -86,11 +58,10 @@ export const useInventory = (initialProducts: Product[] = []) => {
     shelves,
     series,
     conditions,
-    categories, // ✅ ADDED
+    categories,
     setProducts,
   };
 };
-
 
 
 

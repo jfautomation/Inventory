@@ -30,6 +30,7 @@ const ProductForm: React.FC<Props> = ({
   const [inventoryStatus, setInventoryStatus] =
     useState<"active" | "sold" | "archived">("active");
   const [serialNumber, setSerialNumber] = useState("");
+  const [title, setTitle] = useState("");
   const [partsLoading, setPartsLoading] = useState(false);
   const [workOrder, setWorkOrder] = useState("");
   const [testStatus, setTestStatus] = useState(false);
@@ -61,6 +62,7 @@ const ProductForm: React.FC<Props> = ({
   useEffect(() => {
     if (!editingProduct) return;
 
+    setTitle(editingProduct.title || "");
     setSerialNumber(editingProduct.serial_number || "");
     setWorkOrder(editingProduct.work_order || "");
     setTestStatus(editingProduct.test_status || false);
@@ -172,6 +174,7 @@ const ProductForm: React.FC<Props> = ({
   // RESET
   // --------------------------------------------------
   const resetForm = () => {
+    setTitle("");
     setSerialNumber("");
     setWorkOrder("");
     setTestStatus(false);
@@ -202,6 +205,7 @@ const ProductForm: React.FC<Props> = ({
       setLoading(true);
 
       const payload: ProductPayload = {
+        title,
         inventory_status: inventoryStatus,
         part: selectedPart ? [selectedPart.id] : [],
 
@@ -310,6 +314,12 @@ const ProductForm: React.FC<Props> = ({
         <option value="sold">Sold</option>
         <option value="archived">Archived</option>
       </select>
+
+      <input
+        placeholder="Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
 
       <div style={{ marginTop: 10 }}>
         <label>Price</label>

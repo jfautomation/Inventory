@@ -312,7 +312,6 @@ function inventory_transform_product($post)
         ? wp_get_attachment_url($image_id)
         : "";
 
-    // ✅ ADD THIS HERE
     $data['image_id'] = $image_id;
 
     // =========================

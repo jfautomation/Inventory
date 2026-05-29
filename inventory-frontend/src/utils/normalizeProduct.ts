@@ -1,74 +1,63 @@
 import { Product } from "../types";
 
-export const normalizeProduct = (p: any): Product => ({
-  id: p.id,
-   title:
-    p.title ||
-    `${p.brand?.[0]?.name || ""} ${p.part?.[0]?.name || ""} ${p.serial_number || ""}`.trim(),
+export const normalizeProduct = (p: any): Product => {
+  return {
+    id: p.id,
 
-  // =========================
-  // TAXONOMY RELATIONS
-  // =========================
-  part: p.part || [],
-  brand: p.brand || [],
-  inventory_category: p.inventory_category || [],
-  shelf: p.shelf || [],
-  condition: p.condition || [],
-  series: p.series || [],
+    // =========================
+    // TITLE (ALWAYS STRING NOW)
+    // =========================
+    title: typeof p.title === "string"
+  ? p.title
+  : p.title?.rendered ?? "",
 
-  // =========================
-  // META FIELDS
-  // =========================
-  serial_number: p.serial_number || "",
-  work_order: p.work_order || "",
+    // =========================
+    // TAXONOMIES
+    // =========================
+    part: p.part || [],
+    brand: p.brand || [],
+    inventory_category: p.inventory_category || [],
+    shelf: p.shelf || [],
+    condition: p.condition || [],
+    series: p.series || [],
 
-  test_status:
-    p.test_status === true ||
-    p.test_status === 1 ||
-    p.test_status === "1",
+    // =========================
+    // META
+    // =========================
+    serial_number: p.serial_number || "",
+    work_order: p.work_order || "",
 
-  test_date: p.test_date || "",
+    test_status: !!p.test_status,
+    test_date: p.test_date || "",
 
-  // =========================
-  // PRICE
-  // =========================
-  list_price:
-    p.list_price === "" ||
-    p.list_price === null ||
-    p.list_price === undefined
-      ? 0
-      : Number(p.list_price),
+    // =========================
+    // PRICE
+    // =========================
+    list_price:
+      p.list_price === "" || p.list_price == null
+        ? 0
+        : Number(p.list_price),
 
-  // =========================
-  // TEXT FIELDS
-  // =========================
-  notes: p.notes || "",
+    // =========================
+    // TEXT
+    // =========================
+    notes: p.notes || "",
+    description: p.description || p.notes || "",
 
-  // 👇 ALIAS for spreadsheet / UI consistency
-  description: p.description || p.notes || "",
+    // =========================
+    // IMAGE
+    // =========================
+    image: p.image || "",
+    image_id: p.image_id || 0,
 
-  // =========================
-  // IMAGE
-  // =========================
-  image: p.image || "",
+    // =========================
+    // STATUS
+    // =========================
+    inventory_status: p.inventory_status || "active",
 
-  // =========================
-  // INVENTORY STATUS
-  // =========================
-  inventory_status:
-    p.inventory_status === "active" ||
-    p.inventory_status === "sold" ||
-    p.inventory_status === "archived"
-      ? p.inventory_status
-      : "active",
-
-  // =========================
-  // DERIVED FIELDS
-  // =========================
-  quantity:
-    p.quantity === "" ||
-    p.quantity === null ||
-    p.quantity === undefined
-      ? 0
-      : Number(p.quantity),
-});
+    // =========================
+    // DERIVED
+    // =========================
+    quantity: p.quantity ? Number(p.quantity) : 0,
+  };
+};
