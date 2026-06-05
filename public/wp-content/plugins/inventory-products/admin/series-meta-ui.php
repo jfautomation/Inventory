@@ -17,7 +17,7 @@ function inventory_series_add_fields()
         'taxonomy' => 'brand',
         'hide_empty' => false
     ]);
-    ?>
+?>
 <div class="form-field">
     <label>Brand</label>
     <select name="brand_id">
@@ -40,7 +40,7 @@ function inventory_series_edit_fields($term)
     ]);
 
     $selected_brand = get_term_meta($term->term_id, 'brand_id', true);
-    ?>
+?>
 <tr class="form-field">
     <th>Brand</th>
     <td>

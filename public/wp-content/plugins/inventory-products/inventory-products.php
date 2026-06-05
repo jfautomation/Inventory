@@ -42,3 +42,29 @@ require_once __DIR__ . '/api/product-endpoints.php';
 require_once __DIR__ . '/api/parts-endpoints.php';
 require_once __DIR__ . '/api/series-endpoints.php';
 require_once __DIR__ . '/api/part-summary-endpoint.php';
+
+//////////////////////////////////////////////////////////
+// API (MEDIA ENDPOINTS)
+//////////////////////////////////////////////////////////
+require_once __DIR__ . '/api/media-endpoints.php';
+
+//////////////////////////////////////////////////////////
+// DEBUG ENDPOINTS
+//////////////////////////////////////////////////////////
+require_once __DIR__ . '/api/debug-endpoints.php';
+
+
+//////////////////////////////////////////////////////////
+// FRONTEND NONCE (GLOBAL JS BRIDGE)
+//////////////////////////////////////////////////////////
+
+add_action('wp_head', function () {
+?>
+<script>
+window.wpApiSettings = {
+    root: "<?php echo esc_url_raw(rest_url()); ?>",
+    nonce: "<?php echo wp_create_nonce('wp_rest'); ?>"
+};
+</script>
+<?php
+});

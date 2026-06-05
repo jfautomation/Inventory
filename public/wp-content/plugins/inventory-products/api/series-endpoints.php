@@ -15,7 +15,6 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
         'callback' => 'inventory_get_series_by_brand',
     ]);
-
 });
 
 //////////////////////////////////////////////////////////

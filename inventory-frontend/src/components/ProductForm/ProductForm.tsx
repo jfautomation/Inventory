@@ -4,6 +4,7 @@ import { Term, Product, ProductPayload } from "../../types";
 import { normalizeProduct } from "../../utils/normalizeProduct";
 import { TaxonomyService } from "../../services/taxonomyService";
 import PartForm from "../PartForm/PartForm";
+import { uploadImage } from "../../services/mediaService"
 
 type Props = {
   brands: Term[];
@@ -39,6 +40,8 @@ const ProductForm: React.FC<Props> = ({
   const [selectedSeries, setSelectedSeries] = useState<any | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<Term | null>(null);
   const [listPrice, setListPrice] = useState<number>(0);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageId, setImageId] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [testDate, setTestDate] = useState("");
 
@@ -204,6 +207,11 @@ const ProductForm: React.FC<Props> = ({
     try {
       setLoading(true);
 
+       // 👇 THIS is where it goes
+    const uploadedImageId = imageFile
+      ? await uploadImage(imageFile)
+      : null;
+
       const payload: ProductPayload = {
         title,
         inventory_status: inventoryStatus,
@@ -220,6 +228,7 @@ const ProductForm: React.FC<Props> = ({
         test_date: testDate,
         list_price: listPrice,
         notes,
+        image_id: uploadedImageId ?? undefined,
 
         status: "publish",
       };
@@ -261,40 +270,6 @@ const ProductForm: React.FC<Props> = ({
     }
   };
 
-  // // --------------------------------------------------
-  // // CREATE PART (MINIMAL SAFE FLOW)
-  // // --------------------------------------------------
-  // const handleCreatePart = async () => {
-  //   if (!newPartName || !selectedBrand) return;
-
-  //   try {
-  //     const res = await TaxonomyService.createPart({
-  //       name: newPartName,
-  //       brand_id: selectedBrand.id,
-  //     });
-
-  //     const newPart: Term = {
-  //       id: res.id,
-  //       name: res.name,
-  //       slug: res.slug,
-  //     };
-
-  //     // update list
-  //     setParts((prev) => [...prev, newPart]);
-
-  //     // auto-select newly created part
-  //     setSelectedPart(newPart);
-
-  //     // cleanup modal state
-  //     setShowPartModal(false);
-  //     setNewPartName("");
-
-  //   } catch (err) {
-  //     console.error("Create part failed:", err);
-  //   }
-  // };
-
-  // console.log("PART DETAILS:", partDetails);
 
   // --------------------------------------------------
   // UI
@@ -471,6 +446,27 @@ const ProductForm: React.FC<Props> = ({
           + Create Part
         </button>
       )}
+
+      <input
+        type="file"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          console.log("SELECTED FILE:", file);
+          setImageFile(file || null);
+        }}
+      />
+
+      <div style={{ marginTop: 10 }}>
+        <label>Notes</label>
+
+        <textarea
+          placeholder="Internal notes..."
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={4}
+          style={{ width: "100%" }}
+        />
+      </div>
 
 
 

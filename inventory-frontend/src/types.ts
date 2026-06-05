@@ -56,3 +56,10 @@ export type ProductPayload = {
 
   status: "publish";
 };
+
+export type CreatePartPayload = {
+  name: string;
+  brand_id: number;
+  category_id?: number;
+  image_id?: number; // ✅ ADD THIS
+};

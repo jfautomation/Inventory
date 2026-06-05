@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Term } from "../../types";
 import { TaxonomyService } from "../../services/taxonomyService";
+import { uploadImage } from "../../services/mediaService";
 
 type PartResponse = {
     id: number;
@@ -34,6 +35,7 @@ const PartForm: React.FC<Props> = ({
     const [selectedCategory, setSelectedCategory] = useState<Term | null>(null);
     const [partName, setPartName] = useState("");
     const [loading, setLoading] = useState(false);
+    const [imageFile, setImageFile] = useState<File | null>(null);
 
     const handleSubmit = async () => {
         if (!selectedBrand || !selectedCategory || !partName.trim()) {
@@ -44,13 +46,21 @@ const PartForm: React.FC<Props> = ({
         try {
             setLoading(true);
 
+            // 1. upload image FIRST
+            const imageId = imageFile
+                ? await uploadImage(imageFile)
+                : undefined;
+
+            console.log("UPLOADED IMAGE ID:", imageId);
+
+            // 2. create part with image_id included
             const res: PartResponse = await TaxonomyService.createPart({
                 name: partName,
                 brand_id: selectedBrand.id,
                 category_id: selectedCategory.id,
+                image_id: imageId,   // 👈 ADD THIS
             });
 
-            // 🔥 NORMALIZE HERE (THIS IS THE FIX)
             const normalizedPart = {
                 id: res.id,
                 name: res.name,
@@ -68,6 +78,7 @@ const PartForm: React.FC<Props> = ({
 
             setPartName("");
             setSelectedCategory(null);
+            setImageFile(null);
 
             onClose?.();
         } catch (err) {
@@ -129,6 +140,19 @@ const PartForm: React.FC<Props> = ({
                         </option>
                     ))}
                 </select>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+                <label>Part Image</label>
+
+                <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setImageFile(file);
+                    }}
+                />
             </div>
 
             {/* NAME */}

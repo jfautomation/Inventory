@@ -133,7 +133,6 @@ add_action('save_post_product', function ($post_id, $post, $update) {
     foreach ($parts as $part) {
         inventory_mark_part_dirty($part->term_id);
     }
-
 }, 10, 3);
 
 add_action('before_delete_post', function ($post_id) {
@@ -149,7 +148,6 @@ add_action('before_delete_post', function ($post_id) {
     foreach ($parts as $part) {
         inventory_mark_part_dirty($part->term_id);
     }
-
 });
 
 add_action('set_object_terms', function ($object_id, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids) {
@@ -161,7 +159,6 @@ add_action('set_object_terms', function ($object_id, $terms, $tt_ids, $taxonomy,
     foreach ($all_part_ids as $part_id) {
         inventory_mark_part_dirty((int) $part_id);
     }
-
 }, 10, 6);
 
 //////////////////////////////////////////////////////////

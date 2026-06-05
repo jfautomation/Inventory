@@ -165,29 +165,6 @@ if ( ! function_exists( 'twentytwentyfive_format_binding' ) ) :
 	}
 endif;
 
-// function load_react_app() {
-
-//     wp_enqueue_script(
-//         'react-app',
-//         get_template_directory_uri() . '/build/static/js/main.ae6e4686.js',
-//         array(),
-//         null,
-//         true
-//     );
-
-// }
-// add_action('wp_enqueue_scripts', 'load_react_app');
-
-// function load_react_app() {
-//     wp_enqueue_script(
-//         'react-app',
-//         'http://localhost:3000/static/js/bundle.js', // CRA
-//         array(),
-//         null,
-//         true
-//     );
-// }
-// add_action('wp_enqueue_scripts', 'load_react_app');
 
 function load_react_app() {
 
@@ -225,4 +202,7 @@ function load_react_app() {
 }
 add_action('wp_enqueue_scripts', 'load_react_app');
 
-
+wp_localize_script('your-app-handle', 'wpApiSettings', [
+    'root' => esc_url_raw(rest_url()),
+    'nonce' => wp_create_nonce('wp_rest'),
+]);

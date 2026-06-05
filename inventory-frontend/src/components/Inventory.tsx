@@ -95,7 +95,7 @@ const Inventory: React.FC = () => {
             marginBottom: 10,
           }}
         >
-          
+
           <div>
             Title: {product.title || "-"}
           </div>

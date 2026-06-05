@@ -33,7 +33,6 @@ add_action('rest_api_init', function () {
             },
         ],
     ]);
-
 });
 
 //////////////////////////////////////////////////////////
@@ -62,17 +61,26 @@ function inventory_create_part($request)
         return $term;
     }
 
+    // BRAND LINK
     if (!empty($params['brand_id'])) {
         update_term_meta($term['term_id'], 'brand_id', (int) $params['brand_id']);
     }
 
+    // CATEGORY LINK
     if (!empty($params['category_id'])) {
         update_term_meta($term['term_id'], 'category_id', (int) $params['category_id']);
     }
 
+    // IMAGE (IMPORTANT)
+    if (!empty($params['image_id'])) {
+        update_term_meta($term['term_id'], 'image_id', (int) $params['image_id']);
+    }
+
     return [
-        'id'   => $term['term_id'],
-        'name' => $name
+        'id'        => $term['term_id'],
+        'name'      => $name,
+        'slug'      => get_term($term['term_id'])->slug,
+        'image_id'  => (int) get_term_meta($term['term_id'], 'image_id', true),
     ];
 }
 
@@ -88,6 +96,7 @@ function inventory_get_parts_by_brand($request)
         return rest_ensure_response([]);
     }
 
+    // IMPORTANT: DO NOT use meta_query here (not reliable for get_terms)
     $parts = get_terms([
         'taxonomy'   => 'part',
         'hide_empty' => false,
@@ -103,14 +112,16 @@ function inventory_get_parts_by_brand($request)
 
         $part_brand_id = (int) get_term_meta($part->term_id, 'brand_id', true);
 
+        // FILTER IN PHP (RELIABLE WAY)
         if ($part_brand_id !== $brand_id) {
             continue;
         }
 
         $result[] = [
-            'id'   => $part->term_id,
-            'name' => $part->name,
-            'slug' => $part->slug,
+            'id'        => $part->term_id,
+            'name'      => $part->name,
+            'slug'      => $part->slug,
+            'image_id'  => (int) get_term_meta($part->term_id, 'image_id', true),
         ];
     }
 

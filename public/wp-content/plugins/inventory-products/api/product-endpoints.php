@@ -114,7 +114,6 @@ add_filter('rest_prepare_product', function ($response, $post) {
     );
 
     return $response;
-
 }, 10, 3);
 
 //////////////////////////////////////////////////////////
@@ -149,7 +148,6 @@ add_filter('rest_pre_insert_product', function ($prepared_post, $request) {
     }
 
     return $prepared_post;
-
 }, 10, 2);
 
 //////////////////////////////////////////////////////////
@@ -258,5 +256,4 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
 
         wp_set_post_terms($post->ID, $valid, 'series', false);
     }
-
 }, 10, 3);

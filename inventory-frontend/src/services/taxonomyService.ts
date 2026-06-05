@@ -26,6 +26,7 @@ export const TaxonomyService = {
     name: string;
     brand_id: number;
     category_id?: number;
+    image_id?: number; 
   }) => {
 
     const res = await api.post(
