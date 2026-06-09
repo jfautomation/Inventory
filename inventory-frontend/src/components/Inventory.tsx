@@ -101,6 +101,21 @@ const Inventory: React.FC = () => {
           </div>
           <div>Serial: {product.serial_number || "-"}</div>
           <div>WO: {product.work_order || "-"}</div>
+          {product.image && (
+            <div style={{ marginBottom: 10 }}>
+              <img
+                src={product.image}
+                alt={product.title}
+                style={{
+                  width: 120,
+                  height: 120,
+                  objectFit: "cover",
+                  borderRadius: 6,
+                  border: "1px solid #ddd",
+                }}
+              />
+            </div>
+          )}
 
           <div>
             Brand:{" "}
@@ -140,6 +155,11 @@ const Inventory: React.FC = () => {
             {product.condition?.length
               ? product.condition.map((c) => c.name).join(", ")
               : "-"}
+          </div>
+
+          <div>
+            <strong>Notes:</strong>{" "}
+            {product.notes ? product.notes : "-"}
           </div>
 
           <div>

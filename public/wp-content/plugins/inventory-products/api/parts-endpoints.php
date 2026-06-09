@@ -61,26 +61,34 @@ function inventory_create_part($request)
         return $term;
     }
 
+    $term_id = $term['term_id'];
+
     // BRAND LINK
     if (!empty($params['brand_id'])) {
-        update_term_meta($term['term_id'], 'brand_id', (int) $params['brand_id']);
+        update_term_meta($term_id, 'brand_id', (int) $params['brand_id']);
     }
 
     // CATEGORY LINK
     if (!empty($params['category_id'])) {
-        update_term_meta($term['term_id'], 'category_id', (int) $params['category_id']);
+        update_term_meta($term_id, 'category_id', (int) $params['category_id']);
     }
 
-    // IMAGE (IMPORTANT)
+    // IMAGE LINK
     if (!empty($params['image_id'])) {
-        update_term_meta($term['term_id'], 'image_id', (int) $params['image_id']);
+        update_term_meta($term_id, 'image_id', (int) $params['image_id']);
     }
+
+    $created_term = get_term($term_id);
+    $image_id = (int) get_term_meta($term_id, 'image_id', true);
 
     return [
-        'id'        => $term['term_id'],
+        'id'        => $term_id,
         'name'      => $name,
-        'slug'      => get_term($term['term_id'])->slug,
-        'image_id'  => (int) get_term_meta($term['term_id'], 'image_id', true),
+        'slug'      => $created_term ? $created_term->slug : '',
+        'image_id'  => $image_id,
+        'image_url' => $image_id
+            ? wp_get_attachment_image_url($image_id, 'medium')
+            : null,
     ];
 }
 
@@ -96,7 +104,6 @@ function inventory_get_parts_by_brand($request)
         return rest_ensure_response([]);
     }
 
-    // IMPORTANT: DO NOT use meta_query here (not reliable for get_terms)
     $parts = get_terms([
         'taxonomy'   => 'part',
         'hide_empty' => false,
@@ -110,18 +117,26 @@ function inventory_get_parts_by_brand($request)
 
     foreach ($parts as $part) {
 
-        $part_brand_id = (int) get_term_meta($part->term_id, 'brand_id', true);
+        $part_id = $part->term_id;
 
-        // FILTER IN PHP (RELIABLE WAY)
+        $part_brand_id = (int) get_term_meta($part_id, 'brand_id', true);
+
         if ($part_brand_id !== $brand_id) {
             continue;
         }
 
+        $image_id = (int) get_term_meta($part_id, 'image_id', true);
+
         $result[] = [
-            'id'        => $part->term_id,
+            'id'        => $part_id,
             'name'      => $part->name,
             'slug'      => $part->slug,
-            'image_id'  => (int) get_term_meta($part->term_id, 'image_id', true),
+
+            // image contract (frontend-safe)
+            'image_id'  => $image_id,
+            'image_url' => $image_id
+                ? wp_get_attachment_image_url($image_id, 'medium')
+                : null,
         ];
     }
 
