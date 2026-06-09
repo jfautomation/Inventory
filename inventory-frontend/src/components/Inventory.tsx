@@ -1,232 +1,116 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import ProductForm from "./ProductForm/ProductForm";
-import PartForm from "./PartForm/PartForm";
-import { useInventory } from "../hooks/useInventory";
-import { Product } from "../types";
-import { normalizeProduct } from "../utils/normalizeProduct";
+import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
-import { ProductService } from "../services/productService";
-
-const wpData =
-  typeof window !== "undefined" ? (window as any).wpData : null;
-
-const initialProducts: Product[] = (wpData?.products || []).map(normalizeProduct);
+import { useNavigate } from "react-router-dom";
 
 const Inventory: React.FC = () => {
-  const {
-    products,
-    brands,
-    shelves,
-    conditions,
-    categories,
-    setProducts,
-  } = useInventory(initialProducts);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-
+  const [products, setProducts] = useState<any[]>([]);
+  const [parts, setParts] = useState<any[]>([]);
   const navigate = useNavigate();
 
-  // 🔍 Debug fetch (safe to remove later)
   useEffect(() => {
-    const testFetch = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get("/wp/v2/product");
-        console.log("PRODUCTS LOADED:", res.data);
+        const [productsRes, partsRes] = await Promise.all([
+          api.get("/wp/v2/product"),
+          api.get("/inventory/v1/parts"),
+        ]);
+
+        setProducts(productsRes.data || []);
+        setParts(partsRes.data || []);
       } catch (err) {
-        console.error("GET PRODUCTS FAILED:", err);
+        console.error("Dashboard fetch failed:", err);
       }
     };
 
-    testFetch();
+    fetchData();
   }, []);
 
-  // ----------------------------
-  // DELETE
-  // ----------------------------
-  const handleDelete = async (id: number) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this product?"
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await ProductService.delete(id);
-
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-    } catch (err) {
-      console.error("DELETE FAILED:", err);
-      alert("Delete failed");
-    }
-  };
-
-
-  console.log("PRODUCT RAW:", products[0]);
+  const recentProducts = products.slice(0, 5);
+  const recentParts = parts.slice(0, 5);
 
   return (
     <div>
-      <h1>Inventory testing!</h1>
-      <hr />
-      <PartForm brands={brands} categories={categories} />
-      <hr />
-      <ProductForm
-        brands={brands}
-        shelves={shelves}
-        editingProduct={editingProduct}
-        conditions={conditions}
-        categories={categories}
-        clearEditing={() => setEditingProduct(null)}
-        onCreated={(newProduct) => {
-          const normalized = normalizeProduct(newProduct);
-          setProducts((prev) => [normalized, ...prev]);
-        }}
-        onUpdated={(updatedProduct) => {
-          const normalized = normalizeProduct(updatedProduct);
-          setProducts((prev) =>
-            prev.map((p) => (p.id === normalized.id ? normalized : p))
-          );
-        }}
-      />
+      <h1>Dashboard</h1>
 
-      {/* ---------------- PRODUCTS LIST ---------------- */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-          gap: 16,
-        }}
-      >
-        {products.map((product) => (
-          <div
-            key={product.id}
-            onClick={() => navigate(`/product/${product.id}`)}
-            style={{
-              border: "1px solid #ccc",
-              padding: 10,
-              marginBottom: 10,
-              cursor: "pointer",
-              borderRadius: 6,
-            }}
-          >
-            {/* IMAGE */}
-            {product.image && (
-              <div style={{ marginBottom: 10 }}>
-                <img
-                  src={product.image}
-                  alt={product.title}
-                  style={{
-                    width: "100%",
-                    height: 160,
-                    objectFit: "cover",
-                    borderRadius: 6,
-                    border: "1px solid #ddd",
-                  }}
-                />
-              </div>
-            )}
+      {/* ACTIONS */}
+      <div style={{ marginBottom: 20 }}>
+        <button onClick={() => navigate("/products")}>
+          Add Product
+        </button>
 
-            {/* CORE */}
-            <div style={{ fontWeight: 600 }}>
-              Title: {product.title || "-"}
-            </div>
+        <button onClick={() => navigate("/parts")}>
+          Add Part
+        </button>
 
-            <div>Serial: {product.serial_number || "-"}</div>
-            <div>WO: {product.work_order || "-"}</div>
+        <button onClick={() => alert("Import coming soon")}>
+          Import
+        </button>
 
-            {/* BRAND */}
-            <div>
-              <strong>Brand:</strong>{" "}
-              {product.brand?.length
-                ? product.brand.map((b) => b.name).join(", ")
-                : "-"}
-            </div>
+        <button onClick={() => alert("Export coming soon")}>
+          Export
+        </button>
+      </div>
 
-            {/* PART */}
-            <div>
-              <strong>Part:</strong>{" "}
-              {product.part?.length
-                ? product.part.map((p) => p.name).join(", ")
-                : "-"}
-            </div>
+      {/* STATS */}
+      <div style={{ marginBottom: 20 }}>
+        <div>Total Products: {products.length}</div>
+        <div>Total Parts: {parts.length}</div>
+      </div>
 
-            {/* CATEGORY */}
-            <div>
-              <strong>Category:</strong>{" "}
-              {product.inventory_category?.length
-                ? product.inventory_category.map((c) => c.name).join(", ")
-                : "-"}
-            </div>
+      {/* RECENT PRODUCTS */}
+      <div style={{ marginBottom: 30 }}>
+        <h3>Recent Products</h3>
 
-            {/* SHELF */}
-            <div>
-              <strong>Shelf:</strong>{" "}
-              {product.shelf?.length
-                ? product.shelf.map((s) => s.name).join(", ")
-                : "-"}
-            </div>
+        <table border={1} cellPadding={6}>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Serial</th>
+              <th>Work Order</th>
+            </tr>
+          </thead>
 
-            {/* CONDITION */}
-            <div>
-              <strong>Condition:</strong>{" "}
-              {product.condition?.length
-                ? product.condition.map((c) => c.name).join(", ")
-                : "-"}
-            </div>
-
-            {/* NOTES */}
-            <div style={{ marginTop: 6 }}>
-              <strong>Notes:</strong>{" "}
-              {product.notes || "-"}
-            </div>
-
-            {/* SERIES */}
-            <div>
-              <strong>Series:</strong>{" "}
-              {product.series?.length
-                ? product.series.map((s) => s.name).join(", ")
-                : "-"}
-            </div>
-
-            {/* STATUS */}
-            <div style={{ marginTop: 6, fontSize: 13 }}>
-              <div>Tested: {product.test_status ? "Yes" : "No"}</div>
-
-              {product.test_status && product.test_date && (
-                <div>Tested Date: {product.test_date}</div>
-              )}
-
-              <div>Status: {product.inventory_status || "publish"}</div>
-              <div>Inventory: {product.quantity ?? 0}</div>
-            </div>
-
-            {/* ACTIONS */}
-            <div
-              style={{
-                marginTop: 10,
-                display: "flex",
-                gap: 8,
-              }}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingProduct(product);
-                }}
+          <tbody>
+            {recentProducts.map((p) => (
+              <tr
+                key={p.id}
+                onClick={() => navigate(`/product/${p.id}`)}
+                style={{ cursor: "pointer" }}
               >
-                Edit
-              </button>
+                <td>{p.title}</td>
+                <td>{p.serial_number || "-"}</td>
+                <td>{p.work_order || "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(product.id);
-                }}
+      {/* RECENT PARTS */}
+      <div>
+        <h3>Recent Parts</h3>
+
+        <table border={1} cellPadding={6}>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {recentParts.map((p) => (
+              <tr
+                key={p.id}
+                onClick={() => navigate(`/part/${p.id}`)}
+                style={{ cursor: "pointer" }}
               >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
+                <td>{p.name}</td>
+                <td>{p.category?.name || "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

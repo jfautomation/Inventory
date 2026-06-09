@@ -9,7 +9,6 @@
  * @since Twenty Twenty-Five 1.0
  */
 
-// Adds theme support for post formats.
 if ( ! function_exists( 'twentytwentyfive_post_format_setup' ) ) :
 	/**
 	 * Adds theme support for post formats.
@@ -24,7 +23,6 @@ if ( ! function_exists( 'twentytwentyfive_post_format_setup' ) ) :
 endif;
 add_action( 'after_setup_theme', 'twentytwentyfive_post_format_setup' );
 
-// Enqueues editor-style.css in the editors.
 if ( ! function_exists( 'twentytwentyfive_editor_style' ) ) :
 	/**
 	 * Enqueues editor-style.css in the editors.
@@ -39,7 +37,6 @@ if ( ! function_exists( 'twentytwentyfive_editor_style' ) ) :
 endif;
 add_action( 'after_setup_theme', 'twentytwentyfive_editor_style' );
 
-// Enqueues the theme stylesheet on the front.
 if ( ! function_exists( 'twentytwentyfive_enqueue_styles' ) ) :
 	/**
 	 * Enqueues the theme stylesheet on the front.
@@ -67,7 +64,6 @@ if ( ! function_exists( 'twentytwentyfive_enqueue_styles' ) ) :
 endif;
 add_action( 'wp_enqueue_scripts', 'twentytwentyfive_enqueue_styles' );
 
-// Registers custom block styles.
 if ( ! function_exists( 'twentytwentyfive_block_styles' ) ) :
 	/**
 	 * Registers custom block styles.
@@ -96,7 +92,6 @@ if ( ! function_exists( 'twentytwentyfive_block_styles' ) ) :
 endif;
 add_action( 'init', 'twentytwentyfive_block_styles' );
 
-// Registers pattern categories.
 if ( ! function_exists( 'twentytwentyfive_pattern_categories' ) ) :
 	/**
 	 * Registers pattern categories.
@@ -126,7 +121,6 @@ if ( ! function_exists( 'twentytwentyfive_pattern_categories' ) ) :
 endif;
 add_action( 'init', 'twentytwentyfive_pattern_categories' );
 
-// Registers block binding sources.
 if ( ! function_exists( 'twentytwentyfive_register_block_bindings' ) ) :
 	/**
 	 * Registers the post format block binding source.
@@ -147,7 +141,6 @@ if ( ! function_exists( 'twentytwentyfive_register_block_bindings' ) ) :
 endif;
 add_action( 'init', 'twentytwentyfive_register_block_bindings' );
 
-// Registers block binding callback function for the post format name.
 if ( ! function_exists( 'twentytwentyfive_format_binding' ) ) :
 	/**
 	 * Callback function for the post format name block binding source.
@@ -164,45 +157,3 @@ if ( ! function_exists( 'twentytwentyfive_format_binding' ) ) :
 		}
 	}
 endif;
-
-
-function load_react_app() {
-
-    $products = get_posts([
-        'post_type' => 'product',
-        'numberposts' => -1,
-    ]);
-
-    $formatted_products = array_map(function($p) {
-        return [
-            'id' => $p->ID,
-            'title' => [
-                'rendered' => $p->post_title
-            ],
-        ];
-    }, $products);
-
-    // IMPORTANT: use consistent handle first
-    wp_enqueue_script(
-        'react-app',
-        'http://localhost:3000/static/js/bundle.js',
-        array(),
-        null,
-        true
-    );
-
-    // Attach data AFTER enqueue (safe order)
-    wp_add_inline_script(
-        'react-app',
-        'window.wpData = ' . json_encode([
-            'products' => $formatted_products
-        ]) . ';',
-        'before'
-    );
-}
-add_action('wp_enqueue_scripts', 'load_react_app');
-
-wp_localize_script('your-app-handle', 'wpApiSettings', [
-    'root' => esc_url_raw(rest_url()),
-    'nonce' => wp_create_nonce('wp_rest'),
-]);

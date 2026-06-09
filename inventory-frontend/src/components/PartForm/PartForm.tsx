@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Term } from "../../types";
 import { TaxonomyService } from "../../services/taxonomyService";
 import { uploadImage } from "../../services/mediaService";
@@ -16,11 +16,24 @@ type PartResponse = {
     } | null;
 };
 
+type Part = {
+    id: number;
+    name: string;
+    category?: Term | null;
+};
+
 type Props = {
     brands: Term[];
     categories: Term[];
+
     initialBrand?: Term | null;
-    onCreated?: (part: Term & { category?: Term | null }) => void;
+
+    // 🔥 NEW (EDIT MODE)
+    editingPart?: Part | null;
+    clearEditing?: () => void;
+
+    onCreated?: (part: any) => void;
+    onUpdated?: (part: any) => void;
     onClose?: () => void;
 };
 
@@ -28,14 +41,34 @@ const PartForm: React.FC<Props> = ({
     brands,
     categories,
     initialBrand = null,
+    editingPart = null,
+    clearEditing,
     onCreated,
+    onUpdated,
     onClose,
 }) => {
+
     const [selectedBrand, setSelectedBrand] = useState<Term | null>(initialBrand);
     const [selectedCategory, setSelectedCategory] = useState<Term | null>(null);
     const [partName, setPartName] = useState("");
     const [loading, setLoading] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
+
+    // =========================
+    // 🔥 LOAD EDIT DATA
+    // =========================
+    useEffect(() => {
+        if (!editingPart) return;
+
+        setPartName(editingPart.name || "");
+
+        if (editingPart.category) {
+            const cat = categories.find(c => c.id === editingPart.category!.id);
+            setSelectedCategory(cat || null);
+        }
+    }, [editingPart, categories]);
+
+    const isEditMode = !!editingPart;
 
     const handleSubmit = async () => {
         if (!selectedBrand || !selectedCategory || !partName.trim()) {
@@ -46,44 +79,46 @@ const PartForm: React.FC<Props> = ({
         try {
             setLoading(true);
 
-            // 1. upload image FIRST
             const imageId = imageFile
                 ? await uploadImage(imageFile)
                 : undefined;
 
-            console.log("UPLOADED IMAGE ID:", imageId);
+            // =========================
+            // CREATE vs UPDATE
+            // =========================
+            if (isEditMode) {
+                const res = await TaxonomyService.updatePart(editingPart!.id, {
+                    name: partName,
+                    brand_id: selectedBrand.id,
+                    category_id: selectedCategory.id,
+                    image_id: imageId,
+                });
 
-            // 2. create part with image_id included
-            const res: PartResponse = await TaxonomyService.createPart({
-                name: partName,
-                brand_id: selectedBrand.id,
-                category_id: selectedCategory.id,
-                image_id: imageId,   // 👈 ADD THIS
-            });
+                onUpdated?.(res);
+                clearEditing?.();
+            } else {
+                const res: PartResponse = await TaxonomyService.createPart({
+                    name: partName,
+                    brand_id: selectedBrand.id,
+                    category_id: selectedCategory.id,
+                    image_id: imageId,
+                });
 
-            const normalizedPart = {
-                id: res.id,
-                name: res.name,
-                slug: res.slug,
-                category: res.category
-                    ? {
-                        id: res.category.id,
-                        name: res.category.name,
-                        slug: res.category.slug,
-                    }
-                    : null,
-            };
+                onCreated?.(res);
+            }
 
-            onCreated?.(normalizedPart);
-
+            // =========================
+            // RESET FORM
+            // =========================
             setPartName("");
             setSelectedCategory(null);
             setImageFile(null);
 
             onClose?.();
+
         } catch (err) {
-            console.error("Create part failed:", err);
-            alert("Failed to create part.");
+            console.error("Part save failed:", err);
+            alert("Failed to save part.");
         } finally {
             setLoading(false);
         }
@@ -94,7 +129,7 @@ const PartForm: React.FC<Props> = ({
 
     return (
         <div>
-            <h2>Create Part</h2>
+            <h2>{isEditMode ? "Edit Part" : "Create Part"}</h2>
 
             {/* BRAND */}
             <div style={{ marginBottom: 12 }}>
@@ -105,8 +140,7 @@ const PartForm: React.FC<Props> = ({
                     disabled={!!initialBrand}
                     onChange={(e) => {
                         const brand =
-                            brands.find((b) => b.id === Number(e.target.value)) || null;
-
+                            brands.find(b => b.id === Number(e.target.value)) || null;
                         setSelectedBrand(brand);
                     }}
                 >
@@ -125,11 +159,12 @@ const PartForm: React.FC<Props> = ({
             {/* CATEGORY */}
             <div style={{ marginBottom: 12 }}>
                 <label>Category</label>
+
                 <select
                     value={selectedCategory?.id ?? ""}
                     onChange={(e) => {
                         const cat =
-                            categories.find((c) => c.id === Number(e.target.value)) || null;
+                            categories.find(c => c.id === Number(e.target.value)) || null;
                         setSelectedCategory(cat);
                     }}
                 >
@@ -142,6 +177,7 @@ const PartForm: React.FC<Props> = ({
                 </select>
             </div>
 
+            {/* IMAGE */}
             <div style={{ marginBottom: 12 }}>
                 <label>Part Image</label>
 
@@ -149,8 +185,7 @@ const PartForm: React.FC<Props> = ({
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
-                        const file = e.target.files?.[0] || null;
-                        setImageFile(file);
+                        setImageFile(e.target.files?.[0] || null);
                     }}
                 />
             </div>
@@ -158,6 +193,7 @@ const PartForm: React.FC<Props> = ({
             {/* NAME */}
             <div style={{ marginBottom: 12 }}>
                 <label>Part Number / Name</label>
+
                 <input
                     value={partName}
                     onChange={(e) => setPartName(e.target.value)}
@@ -165,9 +201,23 @@ const PartForm: React.FC<Props> = ({
                 />
             </div>
 
+            {/* ACTIONS */}
             <button onClick={handleSubmit} disabled={loading || !isValid}>
-                {loading ? "Creating..." : "Create Part"}
+                {loading
+                    ? "Saving..."
+                    : isEditMode
+                        ? "Update Part"
+                        : "Create Part"}
             </button>
+
+            {isEditMode && (
+                <button
+                    onClick={() => clearEditing?.()}
+                    style={{ marginLeft: 10 }}
+                >
+                    Cancel
+                </button>
+            )}
         </div>
     );
 };

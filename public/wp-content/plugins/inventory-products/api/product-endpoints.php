@@ -122,27 +122,46 @@ add_filter('rest_prepare_product', function ($response, $post) {
 
 add_filter('rest_pre_insert_product', function ($prepared_post, $request) {
 
+    // ✅ Correct way to get the current post ID (works for update)
+    $post_id = $request->get_param('id');
+
+    if (!$post_id && isset($prepared_post->ID)) {
+        $post_id = $prepared_post->ID;
+    }
+
+    $post_id = (int) $post_id;
+
     $serial_number = trim((string) $request->get_param('serial_number'));
     $work_order    = trim((string) $request->get_param('work_order'));
 
-    if (
-        $serial_number &&
-        inventory_meta_exists('serial_number', $serial_number)
-    ) {
-        return new WP_Error(
-            'duplicate_serial_number',
-            'Serial number already exists.',
-            ['status' => 400]
-        );
-    }
-
+    /**
+     * =========================
+     * WORK ORDER UNIQUENESS
+     * =========================
+     */
     if (
         $work_order &&
-        inventory_meta_exists('work_order', $work_order)
+        inventory_meta_exists('work_order', $work_order, $post_id)
     ) {
         return new WP_Error(
             'duplicate_work_order',
             'Work order already exists.',
+            ['status' => 400]
+        );
+    }
+
+    /**
+     * =========================
+     * SERIAL NUMBER UNIQUENESS
+     * =========================
+     */
+    if (
+        $serial_number &&
+        inventory_meta_exists('serial_number', $serial_number, $post_id)
+    ) {
+        return new WP_Error(
+            'duplicate_serial_number',
+            'Serial number already exists.',
             ['status' => 400]
         );
     }

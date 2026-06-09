@@ -26,14 +26,29 @@ export const TaxonomyService = {
     name: string;
     brand_id: number;
     category_id?: number;
-    image_id?: number; 
+    image_id?: number;
   }) => {
+    const res = await api.post(`/inventory/v1/parts`, data);
+    return res.data;
+  },
 
-    const res = await api.post(
-      `/inventory/v1/parts`,
-      data
-    );
+  // 🔥 ADD THIS (EDIT PART)
+  updatePart: async (
+    id: number,
+    data: {
+      name: string;
+      brand_id: number;
+      category_id?: number;
+      image_id?: number;
+    }
+  ) => {
+    const res = await api.put(`/inventory/v1/parts/${id}`, data);
+    return res.data;
+  },
 
+  // 🔥 OPTIONAL BUT IMPORTANT (DELETE PART)
+  deletePart: async (id: number) => {
+    const res = await api.delete(`/inventory/v1/parts/${id}`);
     return res.data;
   },
 
@@ -42,12 +57,10 @@ export const TaxonomyService = {
   //////////////////////////////////////////////////
 
   getSeriesByBrand: async (brandId: number) => {
-
     const res = await api.get(`/inventory/v1/series`, {
       params: { brand_id: brandId },
     });
 
     return res.data;
   },
-
 };
