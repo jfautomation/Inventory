@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ProductForm from "./ProductForm/ProductForm";
 import PartForm from "./PartForm/PartForm";
 import { useInventory } from "../hooks/useInventory";
@@ -22,6 +23,8 @@ const Inventory: React.FC = () => {
     setProducts,
   } = useInventory(initialProducts);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  const navigate = useNavigate();
 
   // 🔍 Debug fetch (safe to remove later)
   useEffect(() => {
@@ -86,113 +89,145 @@ const Inventory: React.FC = () => {
       />
 
       {/* ---------------- PRODUCTS LIST ---------------- */}
-      {products.map((product) => (
-        <div
-          key={product.id}
-          style={{
-            border: "1px solid #ccc",
-            padding: 10,
-            marginBottom: 10,
-          }}
-        >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+          gap: 16,
+        }}
+      >
+        {products.map((product) => (
+          <div
+            key={product.id}
+            onClick={() => navigate(`/product/${product.id}`)}
+            style={{
+              border: "1px solid #ccc",
+              padding: 10,
+              marginBottom: 10,
+              cursor: "pointer",
+              borderRadius: 6,
+            }}
+          >
+            {/* IMAGE */}
+            {product.image && (
+              <div style={{ marginBottom: 10 }}>
+                <img
+                  src={product.image}
+                  alt={product.title}
+                  style={{
+                    width: "100%",
+                    height: 160,
+                    objectFit: "cover",
+                    borderRadius: 6,
+                    border: "1px solid #ddd",
+                  }}
+                />
+              </div>
+            )}
 
-          <div>
-            Title: {product.title || "-"}
-          </div>
-          <div>Serial: {product.serial_number || "-"}</div>
-          <div>WO: {product.work_order || "-"}</div>
-          {product.image && (
-            <div style={{ marginBottom: 10 }}>
-              <img
-                src={product.image}
-                alt={product.title}
-                style={{
-                  width: 120,
-                  height: 120,
-                  objectFit: "cover",
-                  borderRadius: 6,
-                  border: "1px solid #ddd",
-                }}
-              />
+            {/* CORE */}
+            <div style={{ fontWeight: 600 }}>
+              Title: {product.title || "-"}
             </div>
-          )}
 
-          <div>
-            Brand:{" "}
-            {product.brand?.length
-              ? product.brand.map((b) => b.name).join(", ")
-              : "-"}
-          </div>
+            <div>Serial: {product.serial_number || "-"}</div>
+            <div>WO: {product.work_order || "-"}</div>
 
-
-          {/* PART (THIS WAS MISSING) */}
-          <div>
-            Part:{" "}
-            {product.part?.length
-              ? product.part.map((p) => p.name).join(", ")
-              : "-"}
-          </div>
-
-          {/* CATEGORY (THIS WAS MISSING) */}
-          <div>
-            Category:{" "}
-            {product.inventory_category?.length
-              ? product.inventory_category.map((c) => c.name).join(", ")
-              : "-"}
-          </div>
-
-          {/* SHELF (OPTIONAL BUT YOU SAID YOU WANT IT LATER) */}
-          <div>
-            Shelf:{" "}
-            {product.shelf?.length
-              ? product.shelf.map((s) => s.name).join(", ")
-              : "-"}
-          </div>
-
-          {/* CONDITION */}
-          <div>
-            Condition:{" "}
-            {product.condition?.length
-              ? product.condition.map((c) => c.name).join(", ")
-              : "-"}
-          </div>
-
-          <div>
-            <strong>Notes:</strong>{" "}
-            {product.notes ? product.notes : "-"}
-          </div>
-
-          <div>
-            Series:{" "}
-            {product.series?.length
-              ? product.series.map((s) => s.name).join(", ")
-              : "-"}
-          </div>
-
-          <div>Tested: {product.test_status ? "Yes" : "No"}</div>
-          {product.test_status && product.test_date && (
+            {/* BRAND */}
             <div>
-              Tested Date: {product.test_date}
+              <strong>Brand:</strong>{" "}
+              {product.brand?.length
+                ? product.brand.map((b) => b.name).join(", ")
+                : "-"}
             </div>
-          )}
 
-          <div>
-            Status: {product.inventory_status || "publish"}
+            {/* PART */}
+            <div>
+              <strong>Part:</strong>{" "}
+              {product.part?.length
+                ? product.part.map((p) => p.name).join(", ")
+                : "-"}
+            </div>
+
+            {/* CATEGORY */}
+            <div>
+              <strong>Category:</strong>{" "}
+              {product.inventory_category?.length
+                ? product.inventory_category.map((c) => c.name).join(", ")
+                : "-"}
+            </div>
+
+            {/* SHELF */}
+            <div>
+              <strong>Shelf:</strong>{" "}
+              {product.shelf?.length
+                ? product.shelf.map((s) => s.name).join(", ")
+                : "-"}
+            </div>
+
+            {/* CONDITION */}
+            <div>
+              <strong>Condition:</strong>{" "}
+              {product.condition?.length
+                ? product.condition.map((c) => c.name).join(", ")
+                : "-"}
+            </div>
+
+            {/* NOTES */}
+            <div style={{ marginTop: 6 }}>
+              <strong>Notes:</strong>{" "}
+              {product.notes || "-"}
+            </div>
+
+            {/* SERIES */}
+            <div>
+              <strong>Series:</strong>{" "}
+              {product.series?.length
+                ? product.series.map((s) => s.name).join(", ")
+                : "-"}
+            </div>
+
+            {/* STATUS */}
+            <div style={{ marginTop: 6, fontSize: 13 }}>
+              <div>Tested: {product.test_status ? "Yes" : "No"}</div>
+
+              {product.test_status && product.test_date && (
+                <div>Tested Date: {product.test_date}</div>
+              )}
+
+              <div>Status: {product.inventory_status || "publish"}</div>
+              <div>Inventory: {product.quantity ?? 0}</div>
+            </div>
+
+            {/* ACTIONS */}
+            <div
+              style={{
+                marginTop: 10,
+                display: "flex",
+                gap: 8,
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingProduct(product);
+                }}
+              >
+                Edit
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(product.id);
+                }}
+              >
+                Delete
+              </button>
+            </div>
           </div>
-
-          <div>
-            Inventory: {product.quantity ?? 0}
-          </div>
-
-          <button onClick={() => setEditingProduct(product)}>
-            Edit
-          </button>
-
-          <button onClick={() => handleDelete(product.id)}>
-            Delete
-          </button>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };
