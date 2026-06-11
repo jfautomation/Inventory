@@ -1,24 +1,42 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
+import ProductForm from "../ProductForm/ProductForm";
 
 const ProductsPage = () => {
   const [products, setProducts] = useState<any[]>([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetch = async () => {
+  const fetchProducts = async () => {
+    try {
       const res = await api.get("/wp/v2/product");
-      setProducts(res.data);
-    };
+      setProducts(res.data || []);
+    } catch (err) {
+      console.error("Failed to load products:", err);
+    }
+  };
 
-    fetch();
+  useEffect(() => {
+    fetchProducts();
   }, []);
 
   return (
     <div>
       <h1>Products</h1>
 
+      {/* CREATE / EDIT PRODUCT FORM */}
+      <div style={{ marginBottom: 20 }}>
+        <ProductForm
+          brands={[]}
+          shelves={[]}
+          conditions={[]}
+          categories={[]}
+          editingProduct={null}
+          onCreated={() => fetchProducts()}
+        />
+      </div>
+
+      {/* PRODUCTS LIST */}
       <div style={{ display: "grid", gap: 10 }}>
         {products.map((p) => (
           <div
@@ -30,9 +48,17 @@ const ProductsPage = () => {
               cursor: "pointer",
             }}
           >
-            <div><strong>{p.title}</strong></div>
-            <div>Serial: {p.serial_number}</div>
-            <div>WO: {p.work_order}</div>
+            <div>
+              <strong>{p.title}</strong>
+            </div>
+
+            {p.serial_number && (
+              <div>Serial: {p.serial_number}</div>
+            )}
+
+            {p.work_order && (
+              <div>WO: {p.work_order}</div>
+            )}
           </div>
         ))}
       </div>

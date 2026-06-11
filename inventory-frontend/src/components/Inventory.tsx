@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { useNavigate } from "react-router-dom";
+import { useModal } from "../context/ModalContext";
 
 const Inventory: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
@@ -25,16 +26,21 @@ const Inventory: React.FC = () => {
     fetchData();
   }, []);
 
+  const { openProduct } = useModal();
+
   const recentProducts = products.slice(0, 5);
   const recentParts = parts.slice(0, 5);
 
   return (
     <div>
       <h1>Dashboard</h1>
+      <div className="bg-red-500 text-white p-4">
+        Tailwind working
+      </div>
 
       {/* ACTIONS */}
       <div style={{ marginBottom: 20 }}>
-        <button onClick={() => navigate("/products")}>
+        <button onClick={openProduct}>
           Add Product
         </button>
 
