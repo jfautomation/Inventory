@@ -3,9 +3,9 @@ import { Product, Term } from "../types";
 import { ProductService } from "../services/productService";
 
 export const useInventory = (initialProducts: Product[] = []) => {
+  console.log("🔥 useInventory RUNNING");
   const [products, setProducts] = useState<Product[]>(initialProducts);
-
-  const [brands, setBrands] = useState<Term[]>([]);
+const [brands, setBrands] = useState<Term[]>([]);
   const [parts, setParts] = useState<Term[]>([]);
   const [shelves, setShelves] = useState<Term[]>([]);
   const [series, setSeries] = useState<Term[]>([]);

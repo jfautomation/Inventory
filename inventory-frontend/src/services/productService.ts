@@ -6,12 +6,14 @@ export const ProductService = {
   getAll: async (): Promise<Product[]> => {
     const res = await api.get("/wp/v2/product");
 
-    return res.data.map(normalizeProduct); // 🔥 FIX HERE
+    console.log("RAW PRODUCTS:", res.data);
+
+    return res.data.map(normalizeProduct);
   },
 
   create: async (data: ProductPayload): Promise<Product> => {
     const res = await api.post("/wp/v2/product", data);
-    return normalizeProduct(res.data); // 🔥 keep consistent
+    return normalizeProduct(res.data);
   },
 
   update: async (id: number, data: ProductPayload): Promise<Product> => {

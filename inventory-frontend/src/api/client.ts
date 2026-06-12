@@ -6,6 +6,8 @@ if (process.env.NODE_ENV === "development") {
   console.log("API Base URL:", API_BASE);
 }
 
+console.log(process.env.REACT_APP_API_BASE);
+
 // =========================
 // TOKEN HELPERS
 // =========================

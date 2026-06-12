@@ -4,39 +4,108 @@ import { api } from "../../api/client";
 import ProductForm from "../ProductForm/ProductForm";
 
 const ProductsPage = () => {
-  const [products, setProducts] = useState<any[]>([]);
   const navigate = useNavigate();
 
+  const [products, setProducts] = useState<any[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  const [brands, setBrands] = useState<any[]>([]);
+  const [conditions, setConditions] = useState<any[]>([]);
+  const [shelves, setShelves] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [series, setSeries] = useState<any[]>([]);
+  const [loadingTaxonomies, setLoadingTaxonomies] = useState(false);
+
+  // =========================
+  // PRODUCTS
+  // =========================
   const fetchProducts = async () => {
     try {
+      setLoadingProducts(true);
+
       const res = await api.get("/wp/v2/product");
       setProducts(res.data || []);
     } catch (err) {
       console.error("Failed to load products:", err);
+    } finally {
+      setLoadingProducts(false);
     }
   };
 
+  // =========================
+  // TAXONOMIES
+  // =========================
+  const fetchTaxonomies = async () => {
+    try {
+      setLoadingTaxonomies(true);
+
+      const [
+        brandsRes,
+        conditionsRes,
+        shelvesRes,
+        categoriesRes,
+        seriesRes,
+      ] = await Promise.all([
+        api.get("/wp/v2/brand"),
+        api.get("/wp/v2/condition"),
+        api.get("/wp/v2/shelf"),
+        api.get("/wp/v2/inventory_category"),
+        api.get("/wp/v2/series"),
+      ]);
+
+      setBrands(brandsRes.data || []);
+      setConditions(conditionsRes.data || []);
+      setShelves(shelvesRes.data || []);
+      setCategories(categoriesRes.data || []);
+      setSeries(seriesRes.data || []);
+
+      console.log("Taxonomies loaded:", {
+        brands: brandsRes.data,
+        conditions: conditionsRes.data,
+        shelves: shelvesRes.data,
+        categories: categoriesRes.data,
+        series: seriesRes.data,
+      });
+    } catch (err) {
+      console.error("Failed to load taxonomies:", err);
+    } finally {
+      setLoadingTaxonomies(false);
+    }
+  };
+
+  // =========================
+  // INIT
+  // =========================
   useEffect(() => {
     fetchProducts();
+    fetchTaxonomies();
   }, []);
 
+  // =========================
+  // UI
+  // =========================
   return (
     <div>
       <h1>Products</h1>
 
-      {/* CREATE / EDIT PRODUCT FORM */}
+      {(loadingProducts || loadingTaxonomies) && (
+        <p>Loading...</p>
+      )}
+
+      {/* FORM */}
       <div style={{ marginBottom: 20 }}>
         <ProductForm
-          brands={[]}
-          shelves={[]}
-          conditions={[]}
-          categories={[]}
+          brands={brands}
+          shelves={shelves}
+          conditions={conditions}
+          categories={categories}
+          series={series}
           editingProduct={null}
           onCreated={() => fetchProducts()}
         />
       </div>
 
-      {/* PRODUCTS LIST */}
+      {/* LIST */}
       <div style={{ display: "grid", gap: 10 }}>
         {products.map((p) => (
           <div
