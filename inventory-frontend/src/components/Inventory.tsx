@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useModal } from "../context/ModalContext";
 import Login from "./Login/Login";
 import { getToken } from "../api/client";
+import { ProductService } from "../services/productService";
+import ProductCard from "./ProductCard/ProductCard";
 
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -11,7 +13,8 @@ const Inventory: React.FC = () => {
   const [parts, setParts] = useState<any[]>([]);
 
   const navigate = useNavigate();
-  const { openProduct } = useModal();
+  const { openProduct, openEditProduct } = useModal();
+  
 
   // =========================
   // AUTH CHECK
@@ -26,7 +29,7 @@ const Inventory: React.FC = () => {
   };
 
   // =========================
-  // DATA FETCH (ONLY WHEN LOGGED IN)
+  // DATA FETCH
   // =========================
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -49,7 +52,19 @@ const Inventory: React.FC = () => {
   }, [isLoggedIn]);
 
   // =========================
-  // LOGIN GATE (SAFE NOW)
+  // DELETE PRODUCT
+  // =========================
+  const handleDeleteProduct = async (id: number) => {
+    try {
+      await ProductService.delete(id);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
+
+  // =========================
+  // LOGIN GATE
   // =========================
   if (!isLoggedIn) {
     return <Login onSuccess={handleLoginSuccess} />;
@@ -80,40 +95,32 @@ const Inventory: React.FC = () => {
         <div>Total Parts: {parts.length}</div>
       </div>
 
-      {/* RECENT PRODUCTS */}
+      {/* =========================
+          RECENT PRODUCTS (EDIT + DELETE)
+      ========================= */}
       <div style={{ marginBottom: 30 }}>
-        <h3>Recent Products</h3>
+  <h3>Recent Products</h3>
 
-        <table border={1} cellPadding={6}>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Serial</th>
-              <th>Work Order</th>
-            </tr>
-          </thead>
+  <div style={{ display: "grid", gap: 10 }}>
+    {recentProducts.map((p) => (
+      <ProductCard
+        key={p.id}
+        product={p}
+        onView={(id) => navigate(`/product/${id}`)}
+        onEdit={(product) => openEditProduct(product)}
+        onDelete={(id) => handleDeleteProduct(id)}
+      />
+    ))}
+  </div>
+</div>
 
-          <tbody>
-            {recentProducts.map((p) => (
-              <tr
-                key={p.id}
-                onClick={() => navigate(`/product/${p.id}`)}
-                style={{ cursor: "pointer" }}
-              >
-                <td>{p.title}</td>
-                <td>{p.serial_number || "-"}</td>
-                <td>{p.work_order || "-"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* RECENT PARTS */}
+      {/* =========================
+          RECENT PARTS (UNCHANGED)
+      ========================= */}
       <div>
         <h3>Recent Parts</h3>
 
-        <table border={1} cellPadding={6}>
+        <table border={1} cellPadding={6} width="100%">
           <thead>
             <tr>
               <th>Name</th>

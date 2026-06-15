@@ -4,8 +4,7 @@ import { useModal } from "../../context/ModalContext";
 import { api } from "../../api/client";
 
 const GlobalModals = () => {
-  const { isProductOpen, closeProduct } = useModal();
-
+  const { isProductOpen, closeProduct, editingProduct } = useModal();
   const [brands, setBrands] = useState<any[]>([]);
   const [shelves, setShelves] = useState<any[]>([]);
   const [conditions, setConditions] = useState<any[]>([]);
@@ -17,13 +16,7 @@ const GlobalModals = () => {
 
     const loadTaxonomies = async () => {
       try {
-        const [
-          b,
-          s,
-          c,
-          cat,
-          ser,
-        ] = await Promise.all([
+        const [b, s, c, cat, ser] = await Promise.all([
           api.get("/wp/v2/brand"),
           api.get("/wp/v2/shelf"),
           api.get("/wp/v2/condition"),
@@ -65,8 +58,9 @@ const GlobalModals = () => {
           conditions={conditions}
           categories={categories}
           series={series}
-          editingProduct={null}
+          editingProduct={editingProduct}
           onCreated={closeProduct}
+          onUpdated={closeProduct}
         />
 
         <button onClick={closeProduct}>Close</button>
