@@ -62,3 +62,11 @@ add_action('init', function () {
     add_rewrite_rule('^products/?', 'index.php', 'top');
     add_rewrite_rule('^parts/?', 'index.php', 'top');
 });
+
+add_action('rest_api_init', function () {
+    error_log('🔥 REST API INIT FIRED');
+});
+
+add_action('init', function () {
+    error_log('🔥 WP INIT FIRED');
+});

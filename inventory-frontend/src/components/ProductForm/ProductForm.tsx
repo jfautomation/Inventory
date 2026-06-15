@@ -121,9 +121,14 @@ const ProductForm: React.FC<Props> = ({
   // =========================
   // SUBMIT
   // =========================
+
   const handleSubmit = async () => {
+    console.log("🚀 HANDLE SUBMIT STARTED");
+
     try {
       setLoading(true);
+
+      console.log("🚀 BUILDING PAYLOAD");
 
       const uploadedImageId = imageFile
         ? await uploadImage(imageFile)
@@ -148,21 +153,74 @@ const ProductForm: React.FC<Props> = ({
         status: "publish",
       };
 
+      console.log("🚀 ABOUT TO CALL PRODUCT SERVICE");
+
       const res = isEditing
         ? await ProductService.update(editingProduct!.id, payload)
         : await ProductService.create(payload);
+
+      console.log("🚀 PRODUCT SERVICE RETURNED", res);
 
       const normalized = normalizeProduct(res);
 
       isEditing ? onUpdated?.(normalized) : onCreated?.(normalized);
 
       clearEditing?.();
-    } catch (err) {
-      console.error("Submit error:", err);
+    } catch (err: any) {
+      console.error("Submit error FULL:", err);
+
+      if (err?.response) {
+        console.log("STATUS:", err.response.status);
+        console.log("DATA:", err.response.data);
+      }
+
+      alert(JSON.stringify(err?.response?.data || err?.message || err));
     } finally {
       setLoading(false);
     }
   };
+  // const handleSubmit = async () => {
+  //   try {
+  //     setLoading(true);
+
+  //     const uploadedImageId = imageFile
+  //       ? await uploadImage(imageFile)
+  //       : null;
+
+  //     const payload: ProductPayload = {
+  //       title,
+  //       inventory_status: inventoryStatus,
+  //       serial_number: serialNumber,
+  //       work_order: workOrder,
+  //       list_price: listPrice,
+  //       notes,
+  //       test_status: testStatus,
+  //       test_date: testDate,
+
+  //       part: selectedPart ? [selectedPart.id] : [],
+  //       shelf: selectedShelf ? [selectedShelf.id] : [],
+  //       condition: selectedCondition ? [selectedCondition.id] : [],
+  //       series: selectedSeries ? [selectedSeries.id] : [],
+
+  //       image_id: uploadedImageId ?? undefined,
+  //       status: "publish",
+  //     };
+
+  //     const res = isEditing
+  //       ? await ProductService.update(editingProduct!.id, payload)
+  //       : await ProductService.create(payload);
+
+  //     const normalized = normalizeProduct(res);
+
+  //     isEditing ? onUpdated?.(normalized) : onCreated?.(normalized);
+
+  //     clearEditing?.();
+  //   } catch (err) {
+  //     console.error("Submit error:", err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // =========================
   // UI

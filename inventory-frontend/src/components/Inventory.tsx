@@ -2,13 +2,35 @@ import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { useNavigate } from "react-router-dom";
 import { useModal } from "../context/ModalContext";
+import Login from "./Login/Login";
+import { getToken } from "../api/client";
 
 const Inventory: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [parts, setParts] = useState<any[]>([]);
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
+  const { openProduct } = useModal();
+
+  // =========================
+  // AUTH CHECK
+  // =========================
   useEffect(() => {
+    const token = getToken();
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
+
+  // =========================
+  // DATA FETCH (ONLY WHEN LOGGED IN)
+  // =========================
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
     const fetchData = async () => {
       try {
         const [productsRes, partsRes] = await Promise.all([
@@ -24,9 +46,14 @@ const Inventory: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [isLoggedIn]);
 
-  const { openProduct } = useModal();
+  // =========================
+  // LOGIN GATE (SAFE NOW)
+  // =========================
+  if (!isLoggedIn) {
+    return <Login onSuccess={handleLoginSuccess} />;
+  }
 
   const recentProducts = products.slice(0, 5);
   const recentParts = parts.slice(0, 5);
@@ -34,27 +61,17 @@ const Inventory: React.FC = () => {
   return (
     <div>
       <h1>Dashboard</h1>
+
       <div className="bg-red-500 text-white p-4">
         Tailwind working
       </div>
 
       {/* ACTIONS */}
       <div style={{ marginBottom: 20 }}>
-        <button onClick={openProduct}>
-          Add Product
-        </button>
-
-        <button onClick={() => navigate("/parts")}>
-          Add Part
-        </button>
-
-        <button onClick={() => alert("Import coming soon")}>
-          Import
-        </button>
-
-        <button onClick={() => alert("Export coming soon")}>
-          Export
-        </button>
+        <button onClick={openProduct}>Add Product</button>
+        <button onClick={() => navigate("/parts")}>Add Part</button>
+        <button onClick={() => alert("Import coming soon")}>Import</button>
+        <button onClick={() => alert("Export coming soon")}>Export</button>
       </div>
 
       {/* STATS */}
@@ -123,6 +140,5 @@ const Inventory: React.FC = () => {
 };
 
 export default Inventory;
-
 
 

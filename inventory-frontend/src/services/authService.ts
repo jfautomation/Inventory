@@ -1,6 +1,6 @@
 import { setToken } from "../api/client";
 
-const API_BASE = process.env.REACT_APP_API_BASE;
+const API_BASE = "http://jf-auto-inventory-clone-2.local/wp-json";
 
 export const login = async (username: string, password: string) => {
   const res = await fetch(`${API_BASE}/jwt-auth/v1/token`, {
@@ -24,5 +24,10 @@ export const login = async (username: string, password: string) => {
 
   setToken(data.token);
 
+  // 👇 ADD IT HERE
+  console.log("TOKEN SAVED:", localStorage.getItem("jwt_token"));
+
   return data;
+
+  
 };

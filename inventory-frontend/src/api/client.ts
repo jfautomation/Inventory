@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_BASE = process.env.REACT_APP_API_BASE;
+// const API_BASE = process.env.REACT_APP_API_BASE;
+const API_BASE = "http://jf-auto-inventory-clone-2.local/wp-json";
 
 if (process.env.NODE_ENV === "development") {
   console.log("API Base URL:", API_BASE);
@@ -34,7 +35,7 @@ export const api = axios.create({
     "Content-Type": "application/json",
     Accept: "application/json",
   },
-  withCredentials: false,
+  withCredentials: true, // 🔥 CHANGE THIS
 });
 
 // =========================
