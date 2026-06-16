@@ -29,6 +29,19 @@ export type Product = {
   inventory_category?: Term[];
 };
 
+export type Part = {
+  id: number;
+  name: string;
+
+  brand_id?: number;
+  category_id?: number;
+
+  image_id?: number;
+
+  category?: Term | null;
+  brand?: Term | null;
+};
+
 
 
 export type ProductPayload = {

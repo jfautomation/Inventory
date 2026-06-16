@@ -11,9 +11,9 @@ const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [parts, setParts] = useState<any[]>([]);
-
+  
   const navigate = useNavigate();
-  const { openProduct, openEditProduct } = useModal();
+  const { openProduct, openEditProduct, openPart } = useModal();
   
 
   // =========================
@@ -75,7 +75,7 @@ const Inventory: React.FC = () => {
 
   return (
     <div>
-      <h1>Dashboard</h1>
+      <h1>Dashboard Testing if refreshing</h1>
 
       <div className="bg-red-500 text-white p-4">
         Tailwind working
@@ -84,7 +84,7 @@ const Inventory: React.FC = () => {
       {/* ACTIONS */}
       <div style={{ marginBottom: 20 }}>
         <button onClick={openProduct}>Add Product</button>
-        <button onClick={() => navigate("/parts")}>Add Part</button>
+        <button onClick={openPart}>Add Part</button>
         <button onClick={() => alert("Import coming soon")}>Import</button>
         <button onClick={() => alert("Export coming soon")}>Export</button>
       </div>

@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { useNavigate } from "react-router-dom";
+import { useModal } from "../../context/ModalContext";
 
 const PartsPage = () => {
   const [parts, setParts] = useState<any[]>([]);
   const navigate = useNavigate();
 
+  const { openPart } = useModal();
+
   useEffect(() => {
     const fetchParts = async () => {
       const res = await api.get("/wp/v2/part");
-      setParts(res.data);
+      setParts(res.data || []);
     };
 
     fetchParts();
@@ -19,6 +22,14 @@ const PartsPage = () => {
     <div>
       <h1>Parts</h1>
 
+      {/* ADD BUTTON */}
+      <div style={{ marginBottom: 16 }}>
+        <button onClick={openPart}>
+          Add Part
+        </button>
+      </div>
+
+      {/* GRID */}
       <div
         style={{
           display: "grid",

@@ -3,7 +3,6 @@ import { ProductService } from "../../services/productService";
 import { Term, Product, ProductPayload } from "../../types";
 import { normalizeProduct } from "../../utils/normalizeProduct";
 import { uploadImage } from "../../services/mediaService";
-import PartForm from "../PartForm/PartForm";
 
 type Props = {
   brands: Term[];
@@ -14,8 +13,11 @@ type Props = {
 
   onCreated?: (product: Product) => void;
   onUpdated?: (product: Product) => void;
+
   editingProduct?: Product | null;
   clearEditing?: () => void;
+
+  onClose?: () => void; // modal close hook
 };
 
 const ProductForm: React.FC<Props> = ({
@@ -28,18 +30,13 @@ const ProductForm: React.FC<Props> = ({
   onUpdated,
   editingProduct,
   clearEditing,
+  onClose,
 }) => {
-
-  console.log("brands", brands);
-  console.log("conditions", conditions);
-  console.log("shelves", shelves);
-  console.log("categories", categories);
   // =========================
-  // PRODUCT STATE
+  // STATE
   // =========================
-  const [inventoryStatus, setInventoryStatus] = useState<
-    "active" | "sold" | "archived"
-  >("active");
+  const [inventoryStatus, setInventoryStatus] =
+    useState<"active" | "sold" | "archived">("active");
 
   const [title, setTitle] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
@@ -50,9 +47,7 @@ const ProductForm: React.FC<Props> = ({
   const [testStatus, setTestStatus] = useState(false);
   const [testDate, setTestDate] = useState("");
 
-  // =========================
-  // RELATIONS
-  // =========================
+  // relations
   const [selectedBrand, setSelectedBrand] = useState<Term | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<Term | null>(null);
   const [selectedShelf, setSelectedShelf] = useState<Term | null>(null);
@@ -61,17 +56,14 @@ const ProductForm: React.FC<Props> = ({
   const [parts, setParts] = useState<Term[]>([]);
   const [selectedPart, setSelectedPart] = useState<Term | null>(null);
 
-  // =========================
-  // UI STATE
-  // =========================
-  const [showPartModal, setShowPartModal] = useState(false);
+  // ui
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   const isEditing = !!editingProduct;
 
   // =========================
-  // PREFILL (EDIT MODE)
+  // PREFILL EDIT MODE
   // =========================
   useEffect(() => {
     if (!editingProduct) return;
@@ -93,7 +85,7 @@ const ProductForm: React.FC<Props> = ({
   }, [editingProduct]);
 
   // =========================
-  // LOAD PARTS (DEPENDENT ON BRAND)
+  // LOAD PARTS BY BRAND
   // =========================
   useEffect(() => {
     if (!selectedBrand) {
@@ -121,18 +113,13 @@ const ProductForm: React.FC<Props> = ({
   // =========================
   // SUBMIT
   // =========================
-
   const handleSubmit = async () => {
-    console.log("🚀 HANDLE SUBMIT STARTED");
-
     try {
       setLoading(true);
 
-      console.log("🚀 BUILDING PAYLOAD");
-
-      const uploadedImageId = imageFile
+      const imageId = imageFile
         ? await uploadImage(imageFile)
-        : null;
+        : undefined;
 
       const payload: ProductPayload = {
         title,
@@ -149,78 +136,27 @@ const ProductForm: React.FC<Props> = ({
         condition: selectedCondition ? [selectedCondition.id] : [],
         series: selectedSeries ? [selectedSeries.id] : [],
 
-        image_id: uploadedImageId ?? undefined,
+        image_id: imageId,
         status: "publish",
       };
-
-      console.log("🚀 ABOUT TO CALL PRODUCT SERVICE");
 
       const res = isEditing
         ? await ProductService.update(editingProduct!.id, payload)
         : await ProductService.create(payload);
-
-      console.log("🚀 PRODUCT SERVICE RETURNED", res);
 
       const normalized = normalizeProduct(res);
 
       isEditing ? onUpdated?.(normalized) : onCreated?.(normalized);
 
       clearEditing?.();
+      onClose?.(); // 🔥 modal close
     } catch (err: any) {
-      console.error("Submit error FULL:", err);
-
-      if (err?.response) {
-        console.log("STATUS:", err.response.status);
-        console.log("DATA:", err.response.data);
-      }
-
+      console.error("Submit error:", err);
       alert(JSON.stringify(err?.response?.data || err?.message || err));
     } finally {
       setLoading(false);
     }
   };
-  // const handleSubmit = async () => {
-  //   try {
-  //     setLoading(true);
-
-  //     const uploadedImageId = imageFile
-  //       ? await uploadImage(imageFile)
-  //       : null;
-
-  //     const payload: ProductPayload = {
-  //       title,
-  //       inventory_status: inventoryStatus,
-  //       serial_number: serialNumber,
-  //       work_order: workOrder,
-  //       list_price: listPrice,
-  //       notes,
-  //       test_status: testStatus,
-  //       test_date: testDate,
-
-  //       part: selectedPart ? [selectedPart.id] : [],
-  //       shelf: selectedShelf ? [selectedShelf.id] : [],
-  //       condition: selectedCondition ? [selectedCondition.id] : [],
-  //       series: selectedSeries ? [selectedSeries.id] : [],
-
-  //       image_id: uploadedImageId ?? undefined,
-  //       status: "publish",
-  //     };
-
-  //     const res = isEditing
-  //       ? await ProductService.update(editingProduct!.id, payload)
-  //       : await ProductService.create(payload);
-
-  //     const normalized = normalizeProduct(res);
-
-  //     isEditing ? onUpdated?.(normalized) : onCreated?.(normalized);
-
-  //     clearEditing?.();
-  //   } catch (err) {
-  //     console.error("Submit error:", err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   // =========================
   // UI
@@ -241,7 +177,7 @@ const ProductForm: React.FC<Props> = ({
         <option value="archived">Archived</option>
       </select>
 
-      {/* BASIC FIELDS */}
+      {/* FIELDS */}
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -366,22 +302,7 @@ const ProductForm: React.FC<Props> = ({
         }
       />
 
-      {/* PART MODAL */}
-      {showPartModal && (
-        <PartForm
-          brands={brands}
-          categories={categories}
-          initialBrand={selectedBrand}
-          onCreated={(part) => {
-            setParts((prev) => [...prev, part]);
-            setSelectedPart(part);
-            setShowPartModal(false);
-          }}
-          onClose={() => setShowPartModal(false)}
-        />
-      )}
-
-      {/* SUBMIT */}
+      {/* ACTIONS */}
       <button onClick={handleSubmit} disabled={loading}>
         {loading
           ? "Saving..."
