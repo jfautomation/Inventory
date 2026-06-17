@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ProductForm from "../ProductForm/ProductForm";
 import PartForm from "../PartForm/PartForm";
 import { useModal } from "../../context/ModalContext";
+import { useInventory } from "../../context/InventoryContext";
 import { api } from "../../api/client";
 
 const GlobalModals = () => {
@@ -14,6 +15,9 @@ const GlobalModals = () => {
     closePart,
     editingPart,
   } = useModal();
+
+  // ✅ GLOBAL REFRESH (NEW SYSTEM)
+  const { refreshInventory } = useInventory();
 
   // =========================
   // TAXONOMIES (shared)
@@ -44,12 +48,20 @@ const GlobalModals = () => {
     }
   };
 
-  // load only when needed
+  // =========================
+  // LOAD TAXONOMIES ONLY WHEN NEEDED
+  // =========================
   useEffect(() => {
-    if (isProductOpen || isPartOpen) {
-      loadTaxonomies();
-    }
+    if (!isProductOpen && !isPartOpen) return;
+    loadTaxonomies();
   }, [isProductOpen, isPartOpen]);
+
+  // =========================
+  // REFRESH AFTER SAVE
+  // =========================
+  const handleInventoryRefresh = async () => {
+    await refreshInventory();
+  };
 
   // =========================
   // UI
@@ -69,8 +81,14 @@ const GlobalModals = () => {
               categories={categories}
               series={series}
               editingProduct={editingProduct}
-              onCreated={closeProduct}
-              onUpdated={closeProduct}
+              onCreated={async () => {
+                await handleInventoryRefresh();
+                closeProduct();
+              }}
+              onUpdated={async () => {
+                await handleInventoryRefresh();
+                closeProduct();
+              }}
               onClose={closeProduct}
             />
 
@@ -89,8 +107,14 @@ const GlobalModals = () => {
               brands={brands}
               categories={categories}
               editingPart={editingPart}
-              onCreated={closePart}
-              onUpdated={closePart}
+              onCreated={async () => {
+                await handleInventoryRefresh();
+                closePart();
+              }}
+              onUpdated={async () => {
+                await handleInventoryRefresh();
+                closePart();
+              }}
               onClose={closePart}
               clearEditing={() => {}}
             />

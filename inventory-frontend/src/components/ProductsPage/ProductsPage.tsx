@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../api/client";
 import { useModal } from "../../context/ModalContext";
+import { useInventory } from "../../context/InventoryContext";
 import ProductCard from "../ProductCard/ProductCard";
 import { ProductService } from "../../services/productService";
 
@@ -10,24 +10,19 @@ const ProductsPage = () => {
 
   const { openProduct, openEditProduct } = useModal();
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
+  // ✅ GLOBAL STATE (single source of truth)
+  const {
+    products,
+    fetchProducts,
+    refreshInventory,
+  } = useInventory();
 
   // =========================
-  // PRODUCTS
+  // INIT LOAD
   // =========================
-  const fetchProducts = async () => {
-    try {
-      setLoadingProducts(true);
-
-      const res = await api.get("/wp/v2/product");
-      setProducts(res.data || []);
-    } catch (err) {
-      console.error("Failed to load products:", err);
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   // =========================
   // DELETE
@@ -36,20 +31,12 @@ const ProductsPage = () => {
     try {
       await ProductService.delete(id);
 
-      setProducts((prev) =>
-        prev.filter((p) => p.id !== id)
-      );
+      // ✅ refresh global state
+      await refreshInventory();
     } catch (err) {
       console.error("Delete failed:", err);
     }
   };
-
-  // =========================
-  // INIT
-  // =========================
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   // =========================
   // UI
@@ -63,8 +50,6 @@ const ProductsPage = () => {
           Add Product
         </button>
       </div>
-
-      {loadingProducts && <p>Loading...</p>}
 
       <div style={{ display: "grid", gap: 10 }}>
         {products.map((product) => (

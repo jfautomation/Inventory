@@ -1,22 +1,39 @@
-import { useEffect, useState } from "react";
-import { api } from "../../api/client";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useModal } from "../../context/ModalContext";
+import { useInventory } from "../../context/InventoryContext";
 
 const PartsPage = () => {
-  const [parts, setParts] = useState<any[]>([]);
   const navigate = useNavigate();
 
   const { openPart } = useModal();
 
-  useEffect(() => {
-    const fetchParts = async () => {
-      const res = await api.get("/wp/v2/part");
-      setParts(res.data || []);
-    };
+  const {
+    parts,
+    fetchParts,
+    refreshInventory,
+  } = useInventory();
 
+  // =========================
+  // INIT LOAD
+  // =========================
+  useEffect(() => {
     fetchParts();
-  }, []);
+  }, [fetchParts]);
+
+  // =========================
+  // DELETE (if you add later)
+  // =========================
+  const handleDeletePart = async (id: number) => {
+    try {
+      // TODO: replace with PartService when you have it
+      // await PartService.delete(id);
+
+      await refreshInventory();
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
 
   return (
     <div>
@@ -33,7 +50,8 @@ const PartsPage = () => {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fill, minmax(240px, 1fr))",
           gap: 12,
         }}
       >
@@ -55,10 +73,19 @@ const PartsPage = () => {
             </div>
 
             <button
-              onClick={() => navigate(`/part/${part.id}`)}
+              onClick={() =>
+                navigate(`/part/${part.id}`)
+              }
             >
               View / Edit
             </button>
+
+            {/* optional delete */}
+            {/* 
+            <button onClick={() => handleDeletePart(part.id)}>
+              Delete
+            </button>
+            */}
           </div>
         ))}
       </div>

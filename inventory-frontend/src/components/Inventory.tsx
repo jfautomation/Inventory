@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { api } from "../api/client";
 import { useNavigate } from "react-router-dom";
 import { useModal } from "../context/ModalContext";
+import { useInventory } from "../context/InventoryContext";
 import Login from "./Login/Login";
 import { getToken } from "../api/client";
 import { ProductService } from "../services/productService";
@@ -9,12 +9,16 @@ import ProductCard from "./ProductCard/ProductCard";
 
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [products, setProducts] = useState<any[]>([]);
-  const [parts, setParts] = useState<any[]>([]);
-  
+
   const navigate = useNavigate();
   const { openProduct, openEditProduct, openPart } = useModal();
-  
+
+  // ✅ GLOBAL STATE (this replaces local state)
+  const {
+    products,
+    parts,
+    refreshInventory,
+  } = useInventory();
 
   // =========================
   // AUTH CHECK
@@ -28,28 +32,15 @@ const Inventory: React.FC = () => {
     setIsLoggedIn(true);
   };
 
-  // =========================
-  // DATA FETCH
-  // =========================
-  useEffect(() => {
-    if (!isLoggedIn) return;
+ // =========================
+// INITIAL LOAD (GLOBAL)
+// =========================
+useEffect(() => {
+  if (!isLoggedIn) return;
 
-    const fetchData = async () => {
-      try {
-        const [productsRes, partsRes] = await Promise.all([
-          api.get("/wp/v2/product"),
-          api.get("/inventory/v1/parts"),
-        ]);
+  refreshInventory();
+}, [isLoggedIn, refreshInventory]);
 
-        setProducts(productsRes.data || []);
-        setParts(partsRes.data || []);
-      } catch (err) {
-        console.error("Dashboard fetch failed:", err);
-      }
-    };
-
-    fetchData();
-  }, [isLoggedIn]);
 
   // =========================
   // DELETE PRODUCT
@@ -57,7 +48,9 @@ const Inventory: React.FC = () => {
   const handleDeleteProduct = async (id: number) => {
     try {
       await ProductService.delete(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+
+      // 🔥 refresh global state
+      await refreshInventory();
     } catch (err) {
       console.error("Delete failed:", err);
     }
@@ -95,39 +88,28 @@ const Inventory: React.FC = () => {
         <div>Total Parts: {parts.length}</div>
       </div>
 
-      {/* =========================
-          RECENT PRODUCTS (EDIT + DELETE)
-      ========================= */}
+      {/* RECENT PRODUCTS */}
       <div style={{ marginBottom: 30 }}>
-  <h3>Recent Products</h3>
+        <h3>Recent Products</h3>
 
-  <div style={{ display: "grid", gap: 10 }}>
-    {recentProducts.map((p) => (
-      <ProductCard
-        key={p.id}
-        product={p}
-        onView={(id) => navigate(`/product/${id}`)}
-        onEdit={(product) => openEditProduct(product)}
-        onDelete={(id) => handleDeleteProduct(id)}
-      />
-    ))}
-  </div>
-</div>
+        <div style={{ display: "grid", gap: 10 }}>
+          {recentProducts.map((p) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              onView={(id) => navigate(`/product/${id}`)}
+              onEdit={(product) => openEditProduct(product)}
+              onDelete={(id) => handleDeleteProduct(id)}
+            />
+          ))}
+        </div>
+      </div>
 
-      {/* =========================
-          RECENT PARTS (UNCHANGED)
-      ========================= */}
+      {/* RECENT PARTS */}
       <div>
         <h3>Recent Parts</h3>
 
         <table border={1} cellPadding={6} width="100%">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Category</th>
-            </tr>
-          </thead>
-
           <tbody>
             {recentParts.map((p) => (
               <tr
@@ -147,5 +129,3 @@ const Inventory: React.FC = () => {
 };
 
 export default Inventory;
-
-

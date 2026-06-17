@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+} from "react";
 import { Product, Part } from "../types";
 
 type ModalContextType = {
-  // =========================
-  // PRODUCT MODAL
-  // =========================
   isProductOpen: boolean;
   editingProduct: Product | null;
 
@@ -12,31 +14,38 @@ type ModalContextType = {
   openEditProduct: (product: Product) => void;
   closeProduct: () => void;
 
-  // =========================
-  // PART MODAL (NEW)
-  // =========================
   isPartOpen: boolean;
   editingPart: Part | null;
 
   openPart: () => void;
   openEditPart: (part: Part) => void;
   closePart: () => void;
+
+  refetchInventory: (() => void) | null;
+  setRefetchInventory: (fn: () => void) => void;
 };
 
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
 
 export const ModalProvider = ({ children }: { children: React.ReactNode }) => {
   // =========================
-  // PRODUCT STATE
+  // MODAL STATE
   // =========================
   const [isProductOpen, setIsProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // =========================
-  // PART STATE
-  // =========================
   const [isPartOpen, setIsPartOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<Part | null>(null);
+
+  // =========================
+  // REFETCH (FIXED)
+  // =========================
+  const [refetchInventory, setRefetchInventoryState] =
+    useState<(() => void) | null>(null);
+
+  const setRefetchInventory = useCallback((fn: () => void) => {
+    setRefetchInventoryState(fn);
+  }, []);
 
   // =========================
   // PRODUCT ACTIONS
@@ -77,19 +86,20 @@ export const ModalProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <ModalContext.Provider
       value={{
-        // product
         isProductOpen,
         editingProduct,
         openProduct,
         openEditProduct,
         closeProduct,
 
-        // part
         isPartOpen,
         editingPart,
         openPart,
         openEditPart,
         closePart,
+
+        refetchInventory,
+        setRefetchInventory,
       }}
     >
       {children}
