@@ -15,6 +15,8 @@ type InventoryContextType = {
     refreshInventory: () => Promise<void>;
 };
 
+
+
 const InventoryContext = createContext<InventoryContextType | undefined>(
     undefined
 );

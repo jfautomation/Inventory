@@ -24,14 +24,14 @@ const ProductForm: React.FC<Props> = ({
   brands,
   conditions,
   shelves,
-  categories,
-  series,
   onCreated,
   onUpdated,
   editingProduct,
   clearEditing,
   onClose,
 }) => {
+
+  console.log("onUpdated exists?", !!onUpdated);
   // =========================
   // STATE
   // =========================
@@ -145,8 +145,9 @@ const ProductForm: React.FC<Props> = ({
         : await ProductService.create(payload);
 
       const normalized = normalizeProduct(res);
-
+      console.log("🚀 BEFORE onUpdated");
       isEditing ? onUpdated?.(normalized) : onCreated?.(normalized);
+      console.log("🚀 AFTER onUpdated");
 
       clearEditing?.();
       onClose?.(); // 🔥 modal close

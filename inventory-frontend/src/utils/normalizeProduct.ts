@@ -8,8 +8,8 @@ export const normalizeProduct = (p: any): Product => {
     // TITLE (ALWAYS STRING NOW)
     // =========================
     title: typeof p.title === "string"
-  ? p.title
-  : p.title?.rendered ?? "",
+      ? p.title
+      : p.title?.rendered ?? "",
 
     // =========================
     // TAXONOMIES

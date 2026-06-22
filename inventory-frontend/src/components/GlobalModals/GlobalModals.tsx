@@ -60,6 +60,7 @@ const GlobalModals = () => {
   // REFRESH AFTER SAVE
   // =========================
   const handleInventoryRefresh = async () => {
+    console.log("REFRESHING INVENTORY");
     await refreshInventory();
   };
 
@@ -116,7 +117,7 @@ const GlobalModals = () => {
                 closePart();
               }}
               onClose={closePart}
-              clearEditing={() => {}}
+              clearEditing={() => { }}
             />
 
             <button onClick={closePart}>Close</button>

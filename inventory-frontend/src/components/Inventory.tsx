@@ -32,14 +32,14 @@ const Inventory: React.FC = () => {
     setIsLoggedIn(true);
   };
 
- // =========================
-// INITIAL LOAD (GLOBAL)
-// =========================
-useEffect(() => {
-  if (!isLoggedIn) return;
+  // =========================
+  // INITIAL LOAD (GLOBAL)
+  // =========================
+  useEffect(() => {
+    if (!isLoggedIn) return;
 
-  refreshInventory();
-}, [isLoggedIn, refreshInventory]);
+    refreshInventory();
+  }, [isLoggedIn, refreshInventory]);
 
 
   // =========================
@@ -63,8 +63,13 @@ useEffect(() => {
     return <Login onSuccess={handleLoginSuccess} />;
   }
 
-  const recentProducts = products.slice(0, 5);
-  const recentParts = parts.slice(0, 5);
+  const recentProducts = [...products]
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 5);
+
+  const recentParts = [...parts]
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 5);
 
   return (
     <div>

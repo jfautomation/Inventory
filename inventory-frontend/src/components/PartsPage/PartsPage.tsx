@@ -79,13 +79,6 @@ const PartsPage = () => {
             >
               View / Edit
             </button>
-
-            {/* optional delete */}
-            {/* 
-            <button onClick={() => handleDeletePart(part.id)}>
-              Delete
-            </button>
-            */}
           </div>
         ))}
       </div>
