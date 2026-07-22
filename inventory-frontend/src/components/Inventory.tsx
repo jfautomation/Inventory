@@ -83,8 +83,8 @@ const Inventory: React.FC = () => {
     <div>
       <h1>Dashboard Testing if refreshing</h1>
 
-      <div className="bg-red-500 text-white p-4">
-        Tailwind working
+      <div className="bg-red-500 text-white p-10 text-3xl">
+        Tailwind is working
       </div>
 
       {/* ACTIONS */}
