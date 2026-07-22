@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import AppLayout from "./components/Layout/AppLayout/AppLayout";
 
 import Inventory from "./components/Inventory";
 import ProductDetail from "./components/ProductDetail/ProductDetail";
@@ -30,39 +31,46 @@ function App() {
     <InventoryProvider>
       <ModalProvider>
         <BrowserRouter>
-          <Routes>
+        <Routes>
 
-            <Route 
-              path="/login" 
-              element={<LoginWrapper />} 
-            />
+  {/* Login does NOT use layout */}
+  <Route 
+    path="/login" 
+    element={<LoginWrapper />} 
+  />
 
-            <Route 
-              path="/" 
-              element={<Inventory />} 
-            />
 
-            <Route 
-              path="/products" 
-              element={<ProductsPage />} 
-            />
+  {/* Everything inside here gets the layout */}
+  <Route element={<AppLayout />}>
 
-            <Route 
-              path="/product/:id" 
-              element={<ProductDetail />} 
-            />
+    <Route 
+      path="/" 
+      element={<Inventory />} 
+    />
 
-            <Route 
-              path="/parts" 
-              element={<PartsPage />} 
-            />
+    <Route 
+      path="/products" 
+      element={<ProductsPage />} 
+    />
 
-            <Route 
-              path="/part/:id" 
-              element={<PartDetail />} 
-            />
+    <Route 
+      path="/product/:id" 
+      element={<ProductDetail />} 
+    />
 
-          </Routes>
+    <Route 
+      path="/parts" 
+      element={<PartsPage />} 
+    />
+
+    <Route 
+      path="/part/:id" 
+      element={<PartDetail />} 
+    />
+
+  </Route>
+
+</Routes>
 
           <GlobalModals />
 
