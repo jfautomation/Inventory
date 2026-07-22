@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { exportProductsCSV } from "../utils/exportCSV";
 import { useNavigate } from "react-router-dom";
 import { useModal } from "../context/ModalContext";
 import { useInventory } from "../context/InventoryContext";
@@ -18,6 +19,7 @@ const Inventory: React.FC = () => {
     products,
     parts,
     refreshInventory,
+    isLoading,
   } = useInventory();
 
   // =========================
@@ -32,14 +34,7 @@ const Inventory: React.FC = () => {
     setIsLoggedIn(true);
   };
 
-  // =========================
-  // INITIAL LOAD (GLOBAL)
-  // =========================
-  useEffect(() => {
-    if (!isLoggedIn) return;
 
-    refreshInventory();
-  }, [isLoggedIn, refreshInventory]);
 
 
   // =========================
@@ -63,14 +58,27 @@ const Inventory: React.FC = () => {
     return <Login onSuccess={handleLoginSuccess} />;
   }
 
+
+  // =========================
+  // INVENTORY LOADING
+  // =========================
+  if (isLoading) {
+    return (
+      <div>
+        Loading inventory...
+      </div>
+    );
+  }
+
+
   const recentProducts = [...products]
     .sort((a, b) => b.id - a.id)
     .slice(0, 5);
 
+
   const recentParts = [...parts]
     .sort((a, b) => b.id - a.id)
     .slice(0, 5);
-
   return (
     <div>
       <h1>Dashboard Testing if refreshing</h1>
@@ -84,7 +92,9 @@ const Inventory: React.FC = () => {
         <button onClick={openProduct}>Add Product</button>
         <button onClick={openPart}>Add Part</button>
         <button onClick={() => alert("Import coming soon")}>Import</button>
-        <button onClick={() => alert("Export coming soon")}>Export</button>
+        <button onClick={() => exportProductsCSV(products)}>
+          Export
+        </button>
       </div>
 
       {/* STATS */}

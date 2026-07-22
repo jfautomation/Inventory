@@ -1,40 +1,124 @@
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
+import { useInventory } from "../../context/InventoryContext";
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const location = useLocation();
 
-  const [product, setProduct] = useState<any>(
-    location.state?.product || null
-  );
+  const {
+    products,
+  } = useInventory();
+
+
+  const [product, setProduct] = useState<any>(null);
+
 
   useEffect(() => {
-    if (product) return; // already have it → NO FETCH
 
+    if (!id) return;
+
+
+    // =========================
+    // CHECK GLOBAL CACHE FIRST
+    // =========================
+    const existingProduct = products.find(
+      (p) => p.id === Number(id)
+    );
+
+
+    if (existingProduct) {
+
+      console.log(
+        "Loaded product from context:",
+        existingProduct
+      );
+
+      setProduct(existingProduct);
+      return;
+    }
+
+
+    // =========================
+    // FALLBACK API FETCH
+    // =========================
     const fetchProduct = async () => {
-      const res = await api.get(`/wp/v2/product/${id}`);
-      setProduct(res.data);
+
+      try {
+
+        console.log(
+          "Fetching product from API..."
+        );
+
+        const res = await api.get(
+          `/wp/v2/product/${id}`
+        );
+
+        setProduct(res.data);
+
+      } catch (err) {
+
+        console.error(
+          "Failed loading product:",
+          err
+        );
+
+      }
+
     };
 
-    fetchProduct();
-  }, [id]);
 
-  if (!product) return <div>Loading...</div>;
+    fetchProduct();
+
+
+  }, [
+    id,
+    products,
+  ]);
+
+
+
+  if (!product) {
+    return <div>Loading product...</div>;
+  }
+
+
 
   return (
     <div>
-      <h1>{product.title}</h1>
-      <p>Serial: {product.serial_number}</p>
-      <p>Work Order: {product.work_order}</p>
-      <p>Notes: {product.notes}</p>
+
+      <h1>
+        {product.title}
+      </h1>
+
+
+      <p>
+        Serial: {product.serial_number}
+      </p>
+
+
+      <p>
+        Work Order: {product.work_order}
+      </p>
+
+
+      <p>
+        Notes: {product.notes}
+      </p>
+
 
       {product.image && (
-        <img src={product.image} style={{ maxWidth: 300 }} />
+        <img
+          src={product.image}
+          style={{
+            maxWidth:300
+          }}
+        />
       )}
+
     </div>
   );
 };
+
 
 export default ProductDetail;

@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import ProductForm from "../ProductForm/ProductForm";
 import PartForm from "../PartForm/PartForm";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
-import { api } from "../../api/client";
 
 const GlobalModals = () => {
   const {
@@ -16,121 +15,129 @@ const GlobalModals = () => {
     editingPart,
   } = useModal();
 
-  // ✅ GLOBAL REFRESH (NEW SYSTEM)
-  const { refreshInventory } = useInventory();
+  const {
+    brands,
+    shelves,
+    conditions,
+    categories,
+    series,
 
-  // =========================
-  // TAXONOMIES (shared)
-  // =========================
-  const [brands, setBrands] = useState<any[]>([]);
-  const [shelves, setShelves] = useState<any[]>([]);
-  const [conditions, setConditions] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [series, setSeries] = useState<any[]>([]);
+    refreshInventory,
+    refreshTaxonomies,
+  } = useInventory();
 
-  const loadTaxonomies = async () => {
-    try {
-      const [b, s, c, cat, ser] = await Promise.all([
-        api.get("/wp/v2/brand"),
-        api.get("/wp/v2/shelf"),
-        api.get("/wp/v2/condition"),
-        api.get("/wp/v2/inventory_category"),
-        api.get("/wp/v2/series"),
-      ]);
 
-      setBrands(b.data || []);
-      setShelves(s.data || []);
-      setConditions(c.data || []);
-      setCategories(cat.data || []);
-      setSeries(ser.data || []);
-    } catch (err) {
-      console.error("Modal taxonomy load failed:", err);
-    }
-  };
-
-  // =========================
-  // LOAD TAXONOMIES ONLY WHEN NEEDED
-  // =========================
+  // =====================================
+  // LOAD TAXONOMIES WHEN APP STARTS
+  // =====================================
   useEffect(() => {
-    if (!isProductOpen && !isPartOpen) return;
-    loadTaxonomies();
-  }, [isProductOpen, isPartOpen]);
+    refreshTaxonomies();
+  }, [refreshTaxonomies]);
 
-  // =========================
-  // REFRESH AFTER SAVE
-  // =========================
-  const handleInventoryRefresh = async () => {
-    console.log("REFRESHING INVENTORY");
-    await refreshInventory();
+
+  // =====================================
+  // AFTER CREATE / UPDATE
+  // =====================================
+  const handleRefresh = async () => {
+    console.log("Refreshing global inventory...");
+    
+    await Promise.all([
+      refreshInventory(),
+      refreshTaxonomies(),
+    ]);
   };
 
-  // =========================
-  // UI
-  // =========================
+
   return (
     <>
-      {/* =========================
+
+      {/* ===============================
           PRODUCT MODAL
-      ========================= */}
+      =============================== */}
       {isProductOpen && (
         <div style={overlayStyle}>
           <div style={modalStyle}>
+
             <ProductForm
               brands={brands}
               shelves={shelves}
               conditions={conditions}
               categories={categories}
               series={series}
+
               editingProduct={editingProduct}
+
               onCreated={async () => {
-                await handleInventoryRefresh();
+                await handleRefresh();
                 closeProduct();
               }}
+
               onUpdated={async () => {
-                await handleInventoryRefresh();
+                await handleRefresh();
                 closeProduct();
               }}
+
               onClose={closeProduct}
             />
 
-            <button onClick={closeProduct}>Close</button>
+            <button onClick={closeProduct}>
+              Close
+            </button>
+
           </div>
         </div>
       )}
 
-      {/* =========================
+
+
+      {/* ===============================
           PART MODAL
-      ========================= */}
+      =============================== */}
       {isPartOpen && (
         <div style={overlayStyle}>
           <div style={modalStyle}>
+
             <PartForm
               brands={brands}
               categories={categories}
+
               editingPart={editingPart}
+
               onCreated={async () => {
-                await handleInventoryRefresh();
+                await handleRefresh();
                 closePart();
               }}
+
               onUpdated={async () => {
-                await handleInventoryRefresh();
+                await handleRefresh();
                 closePart();
               }}
+
               onClose={closePart}
-              clearEditing={() => { }}
+
+              clearEditing={() => {}}
             />
 
-            <button onClick={closePart}>Close</button>
+            <button onClick={closePart}>
+              Close
+            </button>
+
           </div>
         </div>
       )}
+
     </>
   );
 };
 
 export default GlobalModals;
 
-// optional shared styles
+
+
+// ===============================
+// STYLES
+// ===============================
+
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
@@ -140,6 +147,7 @@ const overlayStyle: React.CSSProperties = {
   alignItems: "center",
   zIndex: 9999,
 };
+
 
 const modalStyle: React.CSSProperties = {
   background: "#fff",

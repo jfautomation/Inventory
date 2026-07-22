@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
@@ -10,16 +9,10 @@ const PartsPage = () => {
 
   const {
     parts,
-    fetchParts,
     refreshInventory,
   } = useInventory();
 
-  // =========================
-  // INIT LOAD
-  // =========================
-  useEffect(() => {
-    fetchParts();
-  }, [fetchParts]);
+
 
   // =========================
   // DELETE (if you add later)

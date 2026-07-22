@@ -8,9 +8,9 @@ const container = document.getElementById('jwt-auth-holder')
 if (container) {
   const root = ReactDOM.createRoot(container)
   root.render(
-    <React.StrictMode>
+    // <React.StrictMode>
       <App />
-    </React.StrictMode>
+    // </React.StrictMode>
   )
 } else {
   console.error('JWT Auth: Mount point #jwt-auth-holder not found')
