@@ -1,4 +1,10 @@
-export default function TopNavbar() {
+type TopNavbarProps = {
+  onMenuClick: () => void;
+};
+
+
+export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
+
   return (
     <header
       className="
@@ -21,15 +27,19 @@ export default function TopNavbar() {
             md:hidden
             text-2xl
           "
+          onClick={onMenuClick}
         >
           ☰
         </button>
 
 
-        <h1 className="
-          font-bold
-          text-lg
-        ">
+        {/* App title */}
+        <h1
+          className="
+            font-bold
+            text-lg
+          "
+        >
           JF Inventory
         </h1>
 
@@ -45,11 +55,9 @@ export default function TopNavbar() {
           gap-4
         "
       >
-
         <span>
           User
         </span>
-
       </div>
 
 

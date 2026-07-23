@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { exportProductsCSV } from "../utils/exportCSV";
+import PageContainer from "./UI/PageContainer";
+import PageHeader from "./UI/PageHeader";
 import { useNavigate } from "react-router-dom";
 import { useModal } from "../context/ModalContext";
 import { useInventory } from "../context/InventoryContext";
@@ -80,6 +82,8 @@ const Inventory: React.FC = () => {
     .sort((a, b) => b.id - a.id)
     .slice(0, 5);
   return (
+     <PageContainer>
+      <PageHeader title="Dashboard: Inventory"/>
     <div>
       <h1>Dashboard Testing if refreshing</h1>
 
@@ -140,6 +144,8 @@ const Inventory: React.FC = () => {
         </table>
       </div>
     </div>
+    </PageContainer>
+
   );
 };
 
