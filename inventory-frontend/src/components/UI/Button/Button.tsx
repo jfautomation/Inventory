@@ -24,7 +24,7 @@ export default function Button({
 
   const variantStyles = {
     primary: `
-      bg-blue-600
+      bg-primary
       text-white
       hover:bg-blue-700
     `,

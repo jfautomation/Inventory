@@ -15,13 +15,13 @@ export default function PageHeader({
         flex
         justify-between
         items-center
-        mb-6
+        p-4
       "
     >
 
       <h1
         className="
-          text-2xl
+          text-3xl
           font-bold
         "
       >

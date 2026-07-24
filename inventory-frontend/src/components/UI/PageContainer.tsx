@@ -30,7 +30,7 @@ export default function PageContainer({
           bg-white
           rounded-xl
           shadow-lg
-          p-6
+
           min-h-screen
         "
             >

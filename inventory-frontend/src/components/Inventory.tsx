@@ -10,6 +10,7 @@ import { getToken } from "../api/client";
 import { ProductService } from "../services/productService";
 import ProductCard from "./ProductCard/ProductCard";
 import Button from "../components/UI/Button/Button";
+import InventoryFilters from "./ProductsPage/Inventory/InventoryFilters";
 
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -96,15 +97,22 @@ const Inventory: React.FC = () => {
         </Button>
 
       </PageHeader>
-      <div>
+      <hr
+        className="
+    border-gray-200
+  "
+      />
+
+      <div className="p-4">
+        <InventoryFilters />
 
 
 
         {/* STATS */}
-        <div style={{ marginBottom: 20 }}>
+        {/* <div>
           <div>Total Products: {products.length}</div>
           <div>Total Parts: {parts.length}</div>
-        </div>
+        </div> */}
 
         {/* RECENT PRODUCTS */}
         <div style={{ marginBottom: 30 }}>
