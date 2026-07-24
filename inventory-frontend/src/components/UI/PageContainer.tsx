@@ -1,3 +1,5 @@
+import netImage from "../../assets/images/net.jpg"
+
 type PageContainerProps = {
     children: React.ReactNode;
 };
@@ -9,13 +11,15 @@ export default function PageContainer({
     return (
         <div
             className="
-      bg-gray-100
         relative
         min-h-screen
         bg-cover
         bg-center
         p-6
       "
+            style={{
+                backgroundImage: `url(${netImage})`,
+            }}
         >
 
             {/* Tech background goes here later */}

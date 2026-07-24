@@ -37,7 +37,6 @@ export default function AppLayout() {
         <main
           className="
             flex-1
-            p-4
           "
         >
 

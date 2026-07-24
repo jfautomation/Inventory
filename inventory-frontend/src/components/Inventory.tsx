@@ -9,6 +9,7 @@ import Login from "./Login/Login";
 import { getToken } from "../api/client";
 import { ProductService } from "../services/productService";
 import ProductCard from "./ProductCard/ProductCard";
+import Button from "../components/UI/Button/Button";
 
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -35,8 +36,6 @@ const Inventory: React.FC = () => {
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
   };
-
-
 
 
   // =========================
@@ -82,68 +81,68 @@ const Inventory: React.FC = () => {
     .sort((a, b) => b.id - a.id)
     .slice(0, 5);
   return (
-     <PageContainer>
-      <PageHeader title="Dashboard: Inventory"/>
-    <div>
-      <h1>Dashboard Testing if refreshing</h1>
+    <PageContainer>
+      <PageHeader title="Dashboard: Inventory">
 
-      <div className="bg-red-500 text-white p-10 text-3xl">
-        Tailwind is working
-      </div>
+        <Button onClick={openProduct}>
+          Add Product
+        </Button>
 
-      {/* ACTIONS */}
-      <div style={{ marginBottom: 20 }}>
-        <button onClick={openProduct}>Add Product</button>
-        <button onClick={openPart}>Add Part</button>
-        <button onClick={() => alert("Import coming soon")}>Import</button>
-        <button onClick={() => exportProductsCSV(products)}>
+        <Button
+          onClick={() => exportProductsCSV(products)}
+          variant="secondary"
+        >
           Export
-        </button>
-      </div>
+        </Button>
 
-      {/* STATS */}
-      <div style={{ marginBottom: 20 }}>
-        <div>Total Products: {products.length}</div>
-        <div>Total Parts: {parts.length}</div>
-      </div>
+      </PageHeader>
+      <div>
 
-      {/* RECENT PRODUCTS */}
-      <div style={{ marginBottom: 30 }}>
-        <h3>Recent Products</h3>
 
-        <div style={{ display: "grid", gap: 10 }}>
-          {recentProducts.map((p) => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              onView={(id) => navigate(`/product/${id}`)}
-              onEdit={(product) => openEditProduct(product)}
-              onDelete={(id) => handleDeleteProduct(id)}
-            />
-          ))}
+
+        {/* STATS */}
+        <div style={{ marginBottom: 20 }}>
+          <div>Total Products: {products.length}</div>
+          <div>Total Parts: {parts.length}</div>
+        </div>
+
+        {/* RECENT PRODUCTS */}
+        <div style={{ marginBottom: 30 }}>
+          <h3>Recent Products</h3>
+
+          <div style={{ display: "grid", gap: 10 }}>
+            {recentProducts.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                onView={(id) => navigate(`/product/${id}`)}
+                onEdit={(product) => openEditProduct(product)}
+                onDelete={(id) => handleDeleteProduct(id)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* RECENT PARTS */}
+        <div>
+          <h3>Recent Parts</h3>
+
+          <table border={1} cellPadding={6} width="100%">
+            <tbody>
+              {recentParts.map((p) => (
+                <tr
+                  key={p.id}
+                  onClick={() => navigate(`/part/${p.id}`)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <td>{p.name}</td>
+                  <td>{p.category?.name || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-
-      {/* RECENT PARTS */}
-      <div>
-        <h3>Recent Parts</h3>
-
-        <table border={1} cellPadding={6} width="100%">
-          <tbody>
-            {recentParts.map((p) => (
-              <tr
-                key={p.id}
-                onClick={() => navigate(`/part/${p.id}`)}
-                style={{ cursor: "pointer" }}
-              >
-                <td>{p.name}</td>
-                <td>{p.category?.name || "-"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
     </PageContainer>
 
   );
