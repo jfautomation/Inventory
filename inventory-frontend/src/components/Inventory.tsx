@@ -11,6 +11,7 @@ import { ProductService } from "../services/productService";
 import ProductCard from "./ProductCard/ProductCard";
 import Button from "../components/UI/Button/Button";
 import InventoryFilters from "./ProductsPage/Inventory/InventoryFilters";
+import InventoryTable from "./ProductsPage/Inventory/InventoryTable";
 
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -115,20 +116,23 @@ const Inventory: React.FC = () => {
         </div> */}
 
         {/* RECENT PRODUCTS */}
-        <div style={{ marginBottom: 30 }}>
-          <h3>Recent Products</h3>
+        <div className="mt-6">
 
-          <div style={{ display: "grid", gap: 10 }}>
-            {recentProducts.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                onView={(id) => navigate(`/product/${id}`)}
-                onEdit={(product) => openEditProduct(product)}
-                onDelete={(id) => handleDeleteProduct(id)}
-              />
-            ))}
-          </div>
+          <h3
+            className="
+      text-lg
+      font-semibold
+      mb-4
+    "
+          >
+            Products Inventory
+          </h3>
+
+
+          <InventoryTable
+            products={products}
+          />
+
         </div>
 
         {/* RECENT PARTS */}
