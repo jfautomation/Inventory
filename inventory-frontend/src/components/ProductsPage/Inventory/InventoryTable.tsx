@@ -16,68 +16,62 @@ export default function InventoryTable({
 
     const columns = [
 
-        {
-            key: "title",
-            label: "Product",
-            render: (product: any) =>
-                product.title?.rendered ?? "-"
-        },
+  {
+    key: "part",
+    label: "Part",
+    render: (item: any) =>
+      item.part?.[0]?.name ?? "-",
+  },
 
 
-        {
-            key: "brand",
-            label: "Brand",
-            render: (product: any) =>
-                product.brand?.[0]?.name ?? "-"
-        },
+  {
+    key: "brand",
+    label: "Brand",
+    render: (item: any) =>
+      item.brand?.[0]?.name ?? "-",
+  },
 
 
-        {
-            key: "inventory_category",
-            label: "Category",
-            render: (product: any) =>
-                product.inventory_category?.[0]?.name ?? "-"
-        },
+  {
+    key: "condition",
+    label: "Condition",
+    render: (item: any) =>
+      item.condition?.[0]?.name ?? "-",
+  },
 
 
-        {
-            key: "condition",
-            label: "Condition",
-            render: (product: any) =>
-                product.condition?.[0]?.name ?? "-"
-        },
+  {
+    key: "inventory_status",
+    label: "Status",
+    render: (item: any) =>
+      item.inventory_status ?? "-",
+  },
 
 
-        {
-            key: "inventory_status",
-            label: "Status",
-            render: (product: any) =>
-                product.inventory_status ?? "-"
-        },
+  {
+    key: "quantity",
+    label: "Quantity",
+    render: (item: any) =>
+      item.quantity ?? 0,
+  },
 
 
-        {
-            key: "quantity",
-            label: "Qty",
-        },
+  {
+    key: "list_price",
+    label: "List Price",
+    render: (item: any) =>
+      `$${item.list_price ?? 0}`,
+  },
 
 
-        {
-            key: "list_price",
-            label: "List Price",
-            render: (product: any) =>
-                `$${product.list_price ?? 0}`,
-        },
+  {
+    key: "test_status",
+    label: "Test Status",
+    render: (item: any) =>
+      item.test_status ? "Passed" : "Failed",
+  },
 
-
-        {
-            key: "test_status",
-            label: "Test Status",
-            render: (product: any) =>
-                product.test_status ? "Passed" : "Failed",
-        },
-
-    ];
+];
 
 
     return (

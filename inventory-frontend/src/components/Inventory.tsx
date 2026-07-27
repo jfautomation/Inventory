@@ -2,13 +2,11 @@ import React, { useEffect, useState } from "react";
 import { exportProductsCSV } from "../utils/exportCSV";
 import PageContainer from "./UI/PageContainer";
 import PageHeader from "./UI/PageHeader";
-import { useNavigate } from "react-router-dom";
 import { useModal } from "../context/ModalContext";
 import { useInventory } from "../context/InventoryContext";
 import Login from "./Login/Login";
 import { getToken } from "../api/client";
 import { ProductService } from "../services/productService";
-import ProductCard from "./ProductCard/ProductCard";
 import Button from "../components/UI/Button/Button";
 import InventoryFilters from "./ProductsPage/Inventory/InventoryFilters";
 import InventoryTable from "./ProductsPage/Inventory/InventoryTable";
@@ -16,13 +14,11 @@ import InventoryTable from "./ProductsPage/Inventory/InventoryTable";
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const navigate = useNavigate();
-  const { openProduct, openEditProduct, openPart } = useModal();
+  const { openProduct } = useModal();
 
   // ✅ GLOBAL STATE (this replaces local state)
   const {
     products,
-    parts,
     refreshInventory,
     isLoading,
   } = useInventory();
@@ -79,9 +75,7 @@ const Inventory: React.FC = () => {
     .slice(0, 5);
 
 
-  const recentParts = [...parts]
-    .sort((a, b) => b.id - a.id)
-    .slice(0, 5);
+
   return (
     <PageContainer>
       <PageHeader title="Dashboard: Inventory">
@@ -116,6 +110,7 @@ const Inventory: React.FC = () => {
         </div> */}
 
         {/* RECENT PRODUCTS */}
+        {/* RECENT PRODUCTS */}
         <div className="mt-6">
 
           <h3
@@ -125,18 +120,18 @@ const Inventory: React.FC = () => {
       mb-4
     "
           >
-            Products Inventory
+            Recently Added Products
           </h3>
 
 
           <InventoryTable
-            products={products}
+            products={recentProducts}
           />
 
         </div>
 
         {/* RECENT PARTS */}
-        <div>
+        {/* <div>
           <h3>Recent Parts</h3>
 
           <table border={1} cellPadding={6} width="100%">
@@ -153,7 +148,7 @@ const Inventory: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>
+        </div> */}
       </div>
     </PageContainer>
 
