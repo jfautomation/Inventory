@@ -1,15 +1,22 @@
 const navigation = [
   {
-    name: "Inventory",
+    name: "Dashboard",
     path: "/",
   },
+
   {
     name: "Products",
     path: "/products",
   },
+
   {
     name: "Parts",
     path: "/parts",
+  },
+
+  {
+    name: "Add Product",
+    action: "openProduct",
   },
 ];
 

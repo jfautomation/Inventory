@@ -1,7 +1,10 @@
 import { NavLink } from "react-router-dom";
 import navigation from "../navigation";
+import { useModal } from "../../../context/ModalContext"
 
 export default function Sidebar() {
+
+  const { openProduct } = useModal();
 
   return (
     <aside
@@ -18,25 +21,49 @@ export default function Sidebar() {
       <nav className="p-4 space-y-2">
 
         {navigation.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `
+
+          item.path ? (
+
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `
         block
         rounded
         px-3
         py-2
         transition-colors
         ${isActive
-                ? "bg-gray-200 font-semibold"
-                : "hover:bg-gray-100"
-              }
+                  ? "bg-gray-200 font-semibold"
+                  : "hover:bg-gray-100"
+                }
         `
-            }
-          >
-            {item.name}
-          </NavLink>
+              }
+            >
+              {item.name}
+            </NavLink>
+
+          ) : (
+
+            <button
+              onClick={openProduct}
+              key={item.name}
+              className="
+        block
+        w-full
+        text-left
+        rounded
+        px-3
+        py-2
+        hover:bg-gray-100
+      "
+            >
+              {item.name}
+            </button>
+
+          )
+
         ))}
 
       </nav>
