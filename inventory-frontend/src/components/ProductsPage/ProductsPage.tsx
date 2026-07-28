@@ -61,8 +61,6 @@ const ProductsPage = () => {
 
       </PageHeader>
 
-      <hr className="border-gray-200" />
-
       <div className="p-4">
 
         <InventoryFilters entityName="Products" />

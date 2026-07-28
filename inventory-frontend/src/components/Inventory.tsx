@@ -97,11 +97,7 @@ const Inventory: React.FC = () => {
         </Button>
 
       </PageHeader>
-      <hr
-        className="
-    border-gray-200
-  "
-      />
+
 
       <div className="p-4">
         <InventoryFilters entityName="Products" />
