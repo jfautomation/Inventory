@@ -99,10 +99,7 @@ function inventory_create_part($request)
 function inventory_get_parts_by_brand($request)
 {
     $brand_id = (int) $request->get_param('brand_id');
-
-    if (!$brand_id) {
-        return rest_ensure_response([]);
-    }
+    error_log("REQUEST BRAND FILTER: " . $brand_id);
 
     $parts = get_terms([
         'taxonomy'   => 'part',
@@ -119,12 +116,21 @@ function inventory_get_parts_by_brand($request)
 
         $part_id = $part->term_id;
 
+        error_log(
+            "PART {$part_id} BRAND: " .
+                get_term_meta($part_id, 'brand_id', true)
+        );
+
+        error_log(
+            "PART {$part_id} CATEGORY: " .
+                get_term_meta($part_id, 'category_id', true)
+        );
+
         $part_brand_id = (int) get_term_meta($part_id, 'brand_id', true);
 
-        if ($part_brand_id !== $brand_id) {
+        if ($brand_id && $part_brand_id !== $brand_id) {
             continue;
         }
-
         $image_id = (int) get_term_meta($part_id, 'image_id', true);
 
         $result[] = [
@@ -132,7 +138,11 @@ function inventory_get_parts_by_brand($request)
             'name'      => $part->name,
             'slug'      => $part->slug,
 
-            // image contract (frontend-safe)
+            // TEMP DEBUG
+            'brand_id'    => get_term_meta($part_id, 'brand_id', true),
+            'category_id' => get_term_meta($part_id, 'category_id', true),
+
+            // image contract
             'image_id'  => $image_id,
             'image_url' => $image_id
                 ? wp_get_attachment_image_url($image_id, 'medium')

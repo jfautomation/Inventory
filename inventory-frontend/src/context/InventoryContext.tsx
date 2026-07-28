@@ -124,23 +124,50 @@ export const InventoryProvider = ({
 
             console.log("fetchParts CALLED");
 
-            const res = await api.get("/wp/v2/part");
+            const url =
+                "/inventory/v1/parts";
+
+            console.log(
+                "ABOUT TO FETCH PARTS:",
+                api.defaults.baseURL + url
+            );
+
+
+            const res = await api.get(
+                url,
+                {
+                    timeout: 10000,
+                }
+            );
+
+
+            console.log(
+                "PART RESPONSE DATA:",
+                res.data
+            );
+
 
             console.timeEnd("FETCH PARTS");
 
+
             console.log(
                 "PARTS COUNT:",
-                res.data.length
+                res.data?.length
             );
 
-            setParts(res.data || []);
 
-        } catch (err) {
+            setParts(
+                res.data || []
+            );
+
+
+        } catch (err: any) {
 
             console.error(
                 "fetchParts failed:",
-                err
+                err.response?.data || err.message || err
             );
+
 
         }
 
@@ -294,10 +321,9 @@ export const InventoryProvider = ({
 
     const refreshInventory = useCallback(async () => {
 
-        await Promise.all([
-            fetchProducts(),
-            fetchParts(),
-        ]);
+        await fetchProducts();
+
+        await fetchParts();
 
     }, [
         fetchProducts,

@@ -1,6 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
+import PageContainer from "../UI/PageContainer";
+import PageHeader from "../UI/PageHeader";
+import Button from "../UI/Button/Button";
+import InventoryFilters from "../ProductsPage/Inventory/InventoryFilters";
+import DataTable from "../UI/DataTable/DataTable";
+import { partColumns } from "./partColumns";
 
 const PartsPage = () => {
   const navigate = useNavigate();
@@ -9,6 +15,8 @@ const PartsPage = () => {
 
   const {
     parts,
+    brands,
+    categories,
     refreshInventory,
   } = useInventory();
 
@@ -29,53 +37,53 @@ const PartsPage = () => {
   };
 
   return (
-    <div>
-      <h1>Parts</h1>
+    <PageContainer>
 
-      {/* ADD BUTTON */}
-      <div style={{ marginBottom: 16 }}>
-        <button onClick={openPart}>
+      <PageHeader title="Parts Inventory">
+
+        <Button onClick={openPart}>
           Add Part
-        </button>
+        </Button>
+
+        <Button
+          variant="secondary"
+        >
+          Export
+        </Button>
+
+      </PageHeader>
+
+
+      <hr className="border-gray-200" />
+
+
+      <div className="p-4">
+
+        <InventoryFilters entityName="Parts" />
+
+        <div className="mt-6">
+
+          <h3 className="
+          text-lg
+          font-semibold
+          mb-4
+        ">
+            Parts Inventory
+          </h3>
+
+          <DataTable
+            columns={partColumns(brands, categories)}
+            data={parts}
+            getRowKey={(part) => part.id}
+            onRowClick={(part) =>
+              navigate(`/part/${part.id}`)
+            }
+          />
+        </div>
+
       </div>
 
-      {/* GRID */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fill, minmax(240px, 1fr))",
-          gap: 12,
-        }}
-      >
-        {parts.map((part) => (
-          <div
-            key={part.id}
-            style={{
-              border: "1px solid #ddd",
-              padding: 12,
-              borderRadius: 6,
-            }}
-          >
-            <div style={{ fontWeight: 600 }}>
-              {part.name}
-            </div>
-
-            <div style={{ fontSize: 12, opacity: 0.7 }}>
-              ID: {part.id}
-            </div>
-
-            <button
-              onClick={() =>
-                navigate(`/part/${part.id}`)
-              }
-            >
-              View / Edit
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 

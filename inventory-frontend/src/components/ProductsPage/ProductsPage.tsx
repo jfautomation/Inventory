@@ -2,8 +2,13 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
-import ProductCard from "../ProductCard/ProductCard";
 import { ProductService } from "../../services/productService";
+import PageContainer from "../UI/PageContainer";
+import PageHeader from "../UI/PageHeader";
+import Button from "../UI/Button/Button";
+import InventoryFilters from "./Inventory/InventoryFilters";
+import DataTable from "../UI/DataTable/DataTable";
+import { productColumns } from "./productColumns"
 
 const ProductsPage = () => {
   const navigate = useNavigate();
@@ -38,37 +43,45 @@ const ProductsPage = () => {
     }
   };
 
+  const recentProducts = [...products]
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 5);
+
   // =========================
   // UI
   // =========================
   return (
-    <div>
-      <h1>Products</h1>
+    <PageContainer>
 
-      <div style={{ marginBottom: 20 }}>
-        <button onClick={openProduct}>
+      <PageHeader title="Products Inventory">
+
+        <Button onClick={openProduct}>
           Add Product
-        </button>
-      </div>
+        </Button>
 
-      <div style={{ display: "grid", gap: 10 }}>
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onView={(id) =>
-              navigate(`/product/${id}`)
-            }
-            onEdit={(product) =>
-              openEditProduct(product)
-            }
-            onDelete={(id) =>
-              handleDeleteProduct(id)
+      </PageHeader>
+
+      <hr className="border-gray-200" />
+
+      <div className="p-4">
+
+        <InventoryFilters entityName="Products" />
+
+        <div className="mt-6">
+
+          <DataTable
+            columns={productColumns}
+            data={recentProducts}
+            getRowKey={(product) => product.id}
+            onRowClick={(product) =>
+              navigate(`/product/${product.id}`)
             }
           />
-        ))}
+        </div>
+
       </div>
-    </div>
+
+    </PageContainer>
   );
 };
 

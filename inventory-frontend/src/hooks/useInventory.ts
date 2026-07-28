@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Product, Term } from "../types";
 import { ProductService } from "../services/productService";
+import { PartService } from "../services/partService";
 
 export const useInventory = (initialProducts: Product[] = []) => {
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -19,6 +20,15 @@ export const useInventory = (initialProducts: Product[] = []) => {
         // =========================
         const productsRes = await ProductService.getAll();
         setProducts(productsRes);
+
+        // =========================
+        // PARTS
+        // =========================
+        const partsRes = await PartService.getAll();
+
+        console.log("PARTS:", partsRes);
+
+        setParts(partsRes);
 
         // =========================
         // TAXONOMIES (WP REST OK)

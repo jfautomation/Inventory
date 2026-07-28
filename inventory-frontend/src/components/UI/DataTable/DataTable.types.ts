@@ -12,14 +12,13 @@ export type Column<T> = {
   sortable?: boolean;
 };
 
-
 export type DataTableProps<T> = {
   columns: Column<T>[];
   data: T[];
 
-  // Optional row click
   onRowClick?: (row: T) => void;
 
-  // Future-ready
   loading?: boolean;
+
+  getRowKey?: (row: T) => string | number;
 };

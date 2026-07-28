@@ -6,6 +6,8 @@ Version: 4.0.0
 Author: Tatyana
 */
 
+error_log("🔥 INVENTORY PLUGIN TEST LOG");
+
 if (!defined('ABSPATH')) exit;
 
 //////////////////////////////////////////////////////////

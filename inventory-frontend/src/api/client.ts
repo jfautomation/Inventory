@@ -41,15 +41,39 @@ export const api = axios.create({
 // =========================
 // REQUEST INTERCEPTOR
 // =========================
-
 api.interceptors.request.use((config) => {
+
+  const isPublicPartEndpoint =
+    config.url?.includes("/inventory/v1/parts");
+
+  console.log(
+    "REQUEST:",
+    config.url,
+    "PUBLIC PART:",
+    isPublicPartEndpoint,
+    "AUTH HEADER:",
+    config.headers?.Authorization
+  );
+
+
   const token = getToken();
 
-  if (token && config.headers) {
+  if (
+    token &&
+    config.headers &&
+    !isPublicPartEndpoint
+  ) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+
+  if (isPublicPartEndpoint && config.headers) {
+    delete config.headers.Authorization;
+  }
+
+
   return config;
+
 });
 
 // =========================

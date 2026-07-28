@@ -6,6 +6,7 @@ export default function DataTable<T>({
   data,
   onRowClick,
   loading = false,
+  getRowKey,
 }: DataTableProps<T>) {
 
 
@@ -43,6 +44,8 @@ export default function DataTable<T>({
           "
         >
 
+
+
           <tr>
 
             {columns.map((column) => (
@@ -72,7 +75,11 @@ export default function DataTable<T>({
           {data.map((row, index) => (
 
             <tr
-              key={index}
+              key={
+                getRowKey
+                  ? getRowKey(row)
+                  : index
+              }
               onClick={() => onRowClick?.(row)}
               className="
                 border-b

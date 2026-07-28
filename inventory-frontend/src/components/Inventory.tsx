@@ -9,12 +9,16 @@ import { getToken } from "../api/client";
 import { ProductService } from "../services/productService";
 import Button from "../components/UI/Button/Button";
 import InventoryFilters from "./ProductsPage/Inventory/InventoryFilters";
-import InventoryTable from "./ProductsPage/Inventory/InventoryTable";
+import DataTable from "./UI/DataTable/DataTable";
+import { useNavigate } from "react-router-dom";
+import { productColumns } from "../components/ProductsPage/productColumns"
+
 
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const { openProduct } = useModal();
+  const navigate = useNavigate();
 
   // ✅ GLOBAL STATE (this replaces local state)
   const {
@@ -76,6 +80,7 @@ const Inventory: React.FC = () => {
 
 
 
+
   return (
     <PageContainer>
       <PageHeader title="Dashboard: Inventory">
@@ -99,18 +104,8 @@ const Inventory: React.FC = () => {
       />
 
       <div className="p-4">
-        <InventoryFilters />
+        <InventoryFilters entityName="Products" />
 
-
-
-        {/* STATS */}
-        {/* <div>
-          <div>Total Products: {products.length}</div>
-          <div>Total Parts: {parts.length}</div>
-        </div> */}
-
-        {/* RECENT PRODUCTS */}
-        {/* RECENT PRODUCTS */}
         <div className="mt-6">
 
           <h3
@@ -123,32 +118,16 @@ const Inventory: React.FC = () => {
             Recently Added Products
           </h3>
 
-
-          <InventoryTable
-            products={recentProducts}
+          <DataTable
+            columns={productColumns}
+            data={recentProducts}
+            getRowKey={(product) => product.id}
+            onRowClick={(product) =>
+              navigate(`/product/${product.id}`)
+            }
           />
-
         </div>
 
-        {/* RECENT PARTS */}
-        {/* <div>
-          <h3>Recent Parts</h3>
-
-          <table border={1} cellPadding={6} width="100%">
-            <tbody>
-              {recentParts.map((p) => (
-                <tr
-                  key={p.id}
-                  onClick={() => navigate(`/part/${p.id}`)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <td>{p.name}</td>
-                  <td>{p.category?.name || "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div> */}
       </div>
     </PageContainer>
 

@@ -3,7 +3,16 @@ import { Search } from "lucide-react";
 
 <Search size={18} />
 
-export default function InventoryFilters() {
+type InventoryFiltersProps = {
+    entityName: string;
+};
+
+
+export default function InventoryFilters({
+    entityName,
+}: InventoryFiltersProps) {
+
+
     return (
         <div
             className="
