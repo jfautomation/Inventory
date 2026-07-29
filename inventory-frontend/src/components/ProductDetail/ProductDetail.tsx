@@ -8,6 +8,7 @@ import Button from "../UI/Button/Button";
 import DetailImageCard from "../UI/Detail/DetailImageCard"
 import DetailCard from "../UI/Detail/DetailCard";
 import StatCard from "../UI/Detail/StatCard";
+import DetailActions from "../UI/Detail/DetailActions";
 
 
 const ProductDetail = () => {
@@ -143,7 +144,7 @@ const ProductDetail = () => {
 
         <StatCard
           label="Status"
-          value={String(product.inventory_status).toUpperCase()}
+          value={product.inventory_status}
           type="status"
         />
 
@@ -163,6 +164,16 @@ const ProductDetail = () => {
           type="stock"
         />
 
+      </div>
+      <div className="mt-3">
+        <DetailActions
+          onAdd={() => {
+            console.log("Add new product");
+          }}
+          onEdit={() => {
+            console.log("Edit product", product.id);
+          }}
+        />
       </div>
 
 
