@@ -4,13 +4,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-error_log('🔥 parts-endpoints.php LOADED');
-
-add_action('init', function () {
-    error_log('GET EXISTS: ' . (function_exists('inventory_get_parts_by_brand') ? 'YES' : 'NO'));
-    error_log('POST EXISTS: ' . (function_exists('inventory_create_part') ? 'YES' : 'NO'));
-});
-
 //////////////////////////////////////////////////////////
 // ROUTES
 //////////////////////////////////////////////////////////
@@ -73,6 +66,11 @@ function inventory_create_part($request)
         update_term_meta($term_id, 'category_id', (int) $params['category_id']);
     }
 
+    // SERIES LINK
+    if (!empty($params['series_id'])) {
+        update_term_meta($term_id, 'series_id', (int) $params['series_id']);
+    }
+
     // IMAGE LINK
     if (!empty($params['image_id'])) {
         update_term_meta($term_id, 'image_id', (int) $params['image_id']);
@@ -81,12 +79,38 @@ function inventory_create_part($request)
     $created_term = get_term($term_id);
     $image_id = (int) get_term_meta($term_id, 'image_id', true);
 
+    // BASE PRICE
+    if (isset($params['base_price'])) {
+        update_term_meta(
+            $term_id,
+            'base_price',
+            sanitize_text_field($params['base_price'])
+        );
+    }
+
+    // DESCRIPTION
+    if (isset($params['description'])) {
+        update_term_meta(
+            $term_id,
+            'description',
+            sanitize_textarea_field($params['description'])
+        );
+    }
+
     return [
-        'id'        => $term_id,
-        'name'      => $name,
-        'slug'      => $created_term ? $created_term->slug : '',
-        'image_id'  => $image_id,
-        'image_url' => $image_id
+        'id'          => $term_id,
+        'name'        => $name,
+        'slug'        => $created_term ? $created_term->slug : '',
+
+        'brand_id'    => get_term_meta($term_id, 'brand_id', true),
+        'category_id' => get_term_meta($term_id, 'category_id', true),
+        'series_id'   => get_term_meta($term_id, 'series_id', true),
+
+        'base_price'  => get_term_meta($term_id, 'base_price', true),
+        'description' => get_term_meta($term_id, 'description', true),
+
+        'image_id'    => $image_id,
+        'image_url'   => $image_id
             ? wp_get_attachment_image_url($image_id, 'medium')
             : null,
     ];
@@ -134,17 +158,19 @@ function inventory_get_parts_by_brand($request)
         $image_id = (int) get_term_meta($part_id, 'image_id', true);
 
         $result[] = [
-            'id'        => $part_id,
-            'name'      => $part->name,
-            'slug'      => $part->slug,
+            'id'          => $part_id,
+            'name'        => $part->name,
+            'slug'        => $part->slug,
 
-            // TEMP DEBUG
-            'brand_id'    => get_term_meta($part_id, 'brand_id', true),
+            'brand_id' => get_term_meta($part_id, 'brand_id', true),
             'category_id' => get_term_meta($part_id, 'category_id', true),
+            'series_id'   => get_term_meta($part_id, 'series_id', true),
 
-            // image contract
-            'image_id'  => $image_id,
-            'image_url' => $image_id
+            'price_new' => (float) get_term_meta($part_id, 'base_price', true),
+            'description' => get_term_meta($part_id, 'description', true),
+
+            'image_id'    => $image_id,
+            'image_url'   => $image_id
                 ? wp_get_attachment_image_url($image_id, 'medium')
                 : null,
         ];

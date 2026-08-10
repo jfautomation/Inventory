@@ -1,7 +1,10 @@
+import type { ReactNode } from "react";
+
 type DetailRowProps = {
   label: string;
-  value: string | number | null | undefined;
+  value: ReactNode;
 };
+
 
 export default function DetailRow({
   label,

@@ -40,7 +40,7 @@ const GlobalModals = () => {
   // =====================================
   const handleRefresh = async () => {
     console.log("Refreshing global inventory...");
-    
+
     await Promise.all([
       refreshInventory(),
       refreshTaxonomies(),
@@ -100,6 +100,7 @@ const GlobalModals = () => {
             <PartForm
               brands={brands}
               categories={categories}
+              series={series}
 
               editingPart={editingPart}
 
@@ -115,7 +116,7 @@ const GlobalModals = () => {
 
               onClose={closePart}
 
-              clearEditing={() => {}}
+              clearEditing={() => { }}
             />
 
             <button onClick={closePart}>

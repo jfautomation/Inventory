@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Product, Term } from "../types";
+import { Product, Term, Part } from "../types";
 import { ProductService } from "../services/productService";
 import { PartService } from "../services/partService";
 
 export const useInventory = (initialProducts: Product[] = []) => {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [brands, setBrands] = useState<Term[]>([]);
-  const [parts, setParts] = useState<Term[]>([]);
+  const [parts, setParts] = useState<Part[]>([]);
   const [shelves, setShelves] = useState<Term[]>([]);
   const [series, setSeries] = useState<Term[]>([]);
   const [conditions, setConditions] = useState<Term[]>([]);

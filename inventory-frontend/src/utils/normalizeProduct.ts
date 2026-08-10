@@ -19,7 +19,7 @@ export const normalizeProduct = (p: any): Product => {
     inventory_category: p.inventory_category || [],
     shelf: p.shelf || [],
     condition: p.condition || [],
-    series: p.series || [],
+    // series: p.series || [],
 
     // =========================
     // META

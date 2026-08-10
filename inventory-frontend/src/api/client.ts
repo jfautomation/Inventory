@@ -4,10 +4,7 @@ import axios from "axios";
 const API_BASE = "http://jf-auto-inventory-clone-2.local/wp-json";
 
 if (process.env.NODE_ENV === "development") {
-  console.log("API Base URL:", API_BASE);
 }
-
-console.log(process.env.REACT_APP_API_BASE);
 
 // =========================
 // TOKEN HELPERS
@@ -46,14 +43,6 @@ api.interceptors.request.use((config) => {
   const isPublicPartEndpoint =
     config.url?.includes("/inventory/v1/parts");
 
-  console.log(
-    "REQUEST:",
-    config.url,
-    "PUBLIC PART:",
-    isPublicPartEndpoint,
-    "AUTH HEADER:",
-    config.headers?.Authorization
-  );
 
 
   const token = getToken();

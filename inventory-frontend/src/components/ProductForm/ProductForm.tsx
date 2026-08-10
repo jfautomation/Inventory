@@ -9,11 +9,9 @@ type Props = {
   conditions: Term[];
   shelves: Term[];
   categories: Term[];
-  series: any[];
-
+  series: Term[];
   onCreated?: (product: Product) => void;
   onUpdated?: (product: Product) => void;
-
   editingProduct?: Product | null;
   clearEditing?: () => void;
 
@@ -31,7 +29,6 @@ const ProductForm: React.FC<Props> = ({
   onClose,
 }) => {
 
-  console.log("onUpdated exists?", !!onUpdated);
   // =========================
   // STATE
   // =========================
@@ -51,8 +48,6 @@ const ProductForm: React.FC<Props> = ({
   const [selectedBrand, setSelectedBrand] = useState<Term | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<Term | null>(null);
   const [selectedShelf, setSelectedShelf] = useState<Term | null>(null);
-  const [selectedSeries, setSelectedSeries] = useState<any | null>(null);
-
   const [parts, setParts] = useState<Term[]>([]);
   const [selectedPart, setSelectedPart] = useState<Term | null>(null);
 
@@ -76,11 +71,9 @@ const ProductForm: React.FC<Props> = ({
     setNotes(editingProduct.notes || "");
     setTestStatus(editingProduct.test_status || false);
     setTestDate(editingProduct.test_date || "");
-
     setSelectedBrand(editingProduct.brand?.[0] || null);
     setSelectedCondition(editingProduct.condition?.[0] || null);
     setSelectedShelf(editingProduct.shelf?.[0] || null);
-    setSelectedSeries(editingProduct.series?.[0] || null);
     setSelectedPart(editingProduct.part?.[0] || null);
   }, [editingProduct]);
 
@@ -130,12 +123,9 @@ const ProductForm: React.FC<Props> = ({
         notes,
         test_status: testStatus,
         test_date: testDate,
-
         part: selectedPart ? [selectedPart.id] : [],
         shelf: selectedShelf ? [selectedShelf.id] : [],
         condition: selectedCondition ? [selectedCondition.id] : [],
-        series: selectedSeries ? [selectedSeries.id] : [],
-
         image_id: imageId,
         status: "publish",
       };
@@ -145,9 +135,8 @@ const ProductForm: React.FC<Props> = ({
         : await ProductService.create(payload);
 
       const normalized = normalizeProduct(res);
-      console.log("🚀 BEFORE onUpdated");
       isEditing ? onUpdated?.(normalized) : onCreated?.(normalized);
-      console.log("🚀 AFTER onUpdated");
+
 
       clearEditing?.();
       onClose?.(); // 🔥 modal close

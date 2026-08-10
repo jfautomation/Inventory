@@ -24,7 +24,6 @@ export type Product = {
   brand?: Term[];
   part?: Term[];
   shelf?: Term[];
-  series?: Term[];
   condition?: Term[];
   inventory_category?: Term[];
 };
@@ -33,13 +32,15 @@ export type Part = {
   id: number;
   name: string;
 
-  brand_id?: number;
-  category_id?: number;
+  brand?: Term | null;
+  category?: Term | null;
+  series?: Term[];
+
+  price_new?: number;
+  description?: string;
 
   image_id?: number;
-
-  category?: Term | null;
-  brand?: Term | null;
+  image_url?: string | null;
 };
 
 
@@ -72,7 +73,16 @@ export type ProductPayload = {
 
 export type CreatePartPayload = {
   name: string;
+
   brand_id: number;
+
   category_id?: number;
-  image_id?: number; // ✅ ADD THIS
+
+  series?: number[];
+
+  base_price?: number;
+
+  description?: string;
+
+  image_id?: number;
 };

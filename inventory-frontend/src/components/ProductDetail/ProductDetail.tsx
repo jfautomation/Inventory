@@ -37,11 +37,6 @@ const ProductDetail = () => {
 
     if (existingProduct) {
 
-      console.log(
-        "Loaded product from context:",
-        existingProduct
-      );
-
       setProduct(existingProduct);
       return;
     }
@@ -54,9 +49,6 @@ const ProductDetail = () => {
 
       try {
 
-        console.log(
-          "Fetching product from API..."
-        );
 
         const res = await api.get(
           `/wp/v2/product/${id}`
@@ -66,10 +58,7 @@ const ProductDetail = () => {
 
       } catch (err) {
 
-        console.error(
-          "Failed loading product:",
-          err
-        );
+       
 
       }
 
@@ -90,7 +79,7 @@ const ProductDetail = () => {
     return <div>Loading product...</div>;
   }
 
-  console.log(product);
+  
 
   return (
     <PageContainer>

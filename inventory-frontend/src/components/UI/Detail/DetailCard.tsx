@@ -1,4 +1,8 @@
 import DetailRow from "./DetailRow";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
+
 
 type DetailCardProps = {
   product: any;
@@ -7,6 +11,8 @@ type DetailCardProps = {
 export default function DetailCard({
   product,
 }: DetailCardProps) {
+
+  const navigate = useNavigate();
 
   return (
     <div
@@ -53,10 +59,29 @@ export default function DetailCard({
       />
 
 
-      <DetailRow
+      {/* <DetailRow
         label="Part"
         value={product.part?.[0]?.name}
-      />
+      /> */}
+     <DetailRow
+  label="Part"
+  value={
+    product.part?.[0] ? (
+      <Link
+        to={`/parts/${product.part[0].id}`}
+        className="
+          text-blue-600
+          hover:underline
+          font-medium
+        "
+      >
+        {product.part[0].name}
+      </Link>
+    ) : (
+      "-"
+    )
+  }
+/>
 
 
       <DetailRow

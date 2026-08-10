@@ -51,14 +51,28 @@ function inventory_transform_product($post)
     ];
 
     foreach ($fields as $field) {
-        $value = get_post_meta($post->ID, $field, true);
 
-        if ($field === 'inventory_status') {
-            $data[$field] = $value ?: 'active';
-        } else {
-            $data[$field] = $value ?: "";
-        }
+    $value = get_post_meta($post->ID, $field, true);
+
+
+    if ($field === 'inventory_status') {
+
+        $data[$field] = $value ?: 'active';
+
+
+    } elseif ($field === 'list_price') {
+
+        $data[$field] = $value !== ""
+            ? (float) $value
+            : null;
+
+
+    } else {
+
+        $data[$field] = $value ?: "";
+
     }
+}
 
     $image_id = (int) get_post_meta($post->ID, 'image_id', true);
 
@@ -77,7 +91,6 @@ function inventory_transform_product($post)
         'brand',
         'part',
         'shelf',
-        'series',
         'condition'
     ];
 
@@ -251,28 +264,4 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
         }
     }
 
-    /**
-     * =========================
-     * SERIES VALIDATION (DOMAIN RULE)
-     * =========================
-     */
-    $series_ids = $request->get_param('series');
-
-    if (is_array($series_ids)) {
-
-        $series_ids = array_values(
-            array_filter(array_map('intval', $series_ids))
-        );
-
-        $valid = [];
-
-        foreach ($series_ids as $series_id) {
-
-            if (inventory_is_series_allowed_for_brand($series_id, $brand_id)) {
-                $valid[] = $series_id;
-            }
-        }
-
-        wp_set_post_terms($post->ID, $valid, 'series', false);
-    }
 }, 10, 3);

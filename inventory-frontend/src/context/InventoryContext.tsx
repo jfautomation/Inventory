@@ -7,21 +7,28 @@ import React, {
 } from "react";
 import { api } from "../api/client";
 
+
+import type {
+  Product,
+  Part,
+  Term,
+} from "../types";
+
 type InventoryContextType = {
 
     // Loading
     isLoading: boolean;
 
     // Inventory
-    products: any[];
-    parts: any[];
+    products: Product[];
+    parts: Part[];
 
     // Taxonomies
-    brands: any[];
-    shelves: any[];
-    conditions: any[];
-    categories: any[];
-    series: any[];
+    brands: Term[];
+    shelves: Term[];
+    conditions: Term[];
+    categories: Term[];
+    series: Term[];
 
     // Inventory fetches
     fetchProducts: () => Promise<void>;
@@ -57,8 +64,8 @@ export const InventoryProvider = ({
     // INVENTORY STATE
     // =========================
 
-    const [products, setProducts] = useState<any[]>([]);
-    const [parts, setParts] = useState<any[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [parts, setParts] = useState<Part[]>([]);
 
     const [isLoading, setIsLoading] = useState(true);
 
@@ -84,18 +91,13 @@ export const InventoryProvider = ({
 
         try {
 
-            console.time("FETCH PRODUCTS");
 
-            console.log("fetchProducts CALLED");
 
             const res = await api.get("/wp/v2/product");
 
-            console.timeEnd("FETCH PRODUCTS");
 
-            console.log(
-                "PRODUCT COUNT:",
-                res.data.length
-            );
+
+
 
             setProducts(res.data || []);
 
@@ -122,15 +124,11 @@ export const InventoryProvider = ({
 
             console.time("FETCH PARTS");
 
-            console.log("fetchParts CALLED");
+
 
             const url =
                 "/inventory/v1/parts";
 
-            console.log(
-                "ABOUT TO FETCH PARTS:",
-                api.defaults.baseURL + url
-            );
 
 
             const res = await api.get(
@@ -141,19 +139,9 @@ export const InventoryProvider = ({
             );
 
 
-            console.log(
-                "PART RESPONSE DATA:",
-                res.data
-            );
 
 
             console.timeEnd("FETCH PARTS");
-
-
-            console.log(
-                "PARTS COUNT:",
-                res.data?.length
-            );
 
 
             setParts(
@@ -385,13 +373,11 @@ export const InventoryProvider = ({
 
         const loadInventory = async () => {
 
-            console.log(
-                "Loading inventory context..."
-            );
+
 
             setIsLoading(true);
 
-            await refreshInventory();
+            await refreshEverything();
 
             setIsLoading(false);
 
@@ -402,7 +388,7 @@ export const InventoryProvider = ({
 
 
     }, [
-        refreshInventory,
+        refreshEverything,
     ]);
 
 

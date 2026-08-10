@@ -3,6 +3,7 @@ import { Term } from "../../types";
 import { TaxonomyService } from "../../services/taxonomyService";
 import { uploadImage } from "../../services/mediaService";
 
+
 type PartResponse = {
     id: number;
     name: string;
@@ -37,6 +38,8 @@ type Props = {
     onClose?: () => void;
 };
 
+
+
 const PartForm: React.FC<Props> = ({
     brands,
     categories,
@@ -51,8 +54,13 @@ const PartForm: React.FC<Props> = ({
     const [selectedBrand, setSelectedBrand] = useState<Term | null>(initialBrand);
     const [selectedCategory, setSelectedCategory] = useState<Term | null>(null);
     const [partName, setPartName] = useState("");
+    const [selectedSeries, setSelectedSeries] = useState<Term | null>(null);
+    const [priceNew, setPriceNew] = useState("");
+    const [description, setDescription] = useState("");
     const [loading, setLoading] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
+    const [availableSeries, setAvailableSeries] = useState<Term[]>([]);
+
 
     // =========================
     // 🔥 LOAD EDIT DATA
@@ -123,6 +131,34 @@ const PartForm: React.FC<Props> = ({
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+    console.log("=== SERIES DEBUG ===");
+    console.log("selectedBrand:", selectedBrand);
+    console.log("selectedBrand ID:", selectedBrand?.id);
+
+    if (!selectedBrand) {
+        console.log("No brand selected");
+        setAvailableSeries([]);
+        setSelectedSeries(null);
+        return;
+    }
+
+    setAvailableSeries([]);
+    setSelectedSeries(null);
+
+    TaxonomyService.getSeriesByBrand(selectedBrand.id)
+        .then((data) => {
+            console.log("=== SERIES DATA RECEIVED BY FORM ===");
+            console.log("data:", data);
+
+            setAvailableSeries(data || []);
+        })
+        .catch((err) => {
+            console.error("Failed loading series:", err);
+            setAvailableSeries([]);
+        });
+}, [selectedBrand]);
 
     const isValid =
         selectedBrand && selectedCategory && partName.trim().length > 0;
@@ -198,6 +234,67 @@ const PartForm: React.FC<Props> = ({
                     value={partName}
                     onChange={(e) => setPartName(e.target.value)}
                     placeholder="Enter part number"
+                />
+            </div>
+
+            {/* SERIES */}
+            <div style={{ marginBottom: 12 }}>
+                <label>Series</label>
+
+                {!selectedBrand ? (
+                    <select disabled>
+                        <option>Select a brand first</option>
+                    </select>
+                ) : availableSeries.length === 0 ? (
+                    <select disabled>
+                        <option>No series available</option>
+                    </select>
+                ) : (
+                    <select
+                        value={selectedSeries?.id ?? ""}
+                        onChange={(e) => {
+                            const series =
+                                availableSeries.find(
+                                    (s) => s.id === Number(e.target.value)
+                                ) || null;
+
+                            setSelectedSeries(series);
+                        }}
+                    >
+                        <option value="">Select Series</option>
+
+                        {availableSeries.map((s) => (
+                            <option key={s.id} value={s.id}>
+                                {s.name}
+                            </option>
+                        ))}
+                    </select>
+                )}
+            </div>
+
+
+            {/* BASE PRICE */}
+            <div style={{ marginBottom: 12 }}>
+                <label>Base Price</label>
+
+                <input
+                    type="number"
+                    value={priceNew}
+                    onChange={(e) => setPriceNew(e.target.value)}
+                    placeholder="Enter base price"
+                />
+            </div>
+
+
+            {/* DESCRIPTION */}
+            <div style={{ marginBottom: 12 }}>
+                <label>Description</label>
+
+                <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Enter part description"
+                    rows={4}
                 />
             </div>
 

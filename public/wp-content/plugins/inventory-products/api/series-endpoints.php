@@ -40,6 +40,8 @@ function inventory_get_series_by_brand($request)
 
     $result = [];
 
+    error_log('REQUESTED BRAND ID: ' . $brand_id);
+
     foreach ($series_terms as $series) {
 
         // ✅ DOMAIN RULE USED HERE (single source of truth)
