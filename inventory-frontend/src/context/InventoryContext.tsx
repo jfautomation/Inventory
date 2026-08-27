@@ -20,38 +20,30 @@ import type {
 // ============================================================
 
 type InventoryContextType = {
-
-    // Loading
     isLoading: boolean;
 
-    // Inventory
     products: Product[];
     parts: Part[];
 
-    // Taxonomies
     brands: Term[];
     shelves: Term[];
     conditions: Term[];
     categories: Term[];
     series: Term[];
 
-    // Bootstrap
+    // Initial load
     fetchBootstrap: () => Promise<void>;
 
-    // Individual fetches
+    // Individual inventory refreshes
     fetchProducts: () => Promise<void>;
     fetchParts: () => Promise<void>;
 
+    // Taxonomies
     fetchBrands: () => Promise<void>;
     fetchShelves: () => Promise<void>;
     fetchConditions: () => Promise<void>;
     fetchCategories: () => Promise<void>;
     fetchSeries: () => Promise<void>;
-
-    // Refresh
-    refreshInventory: () => Promise<void>;
-    refreshTaxonomies: () => Promise<void>;
-    refreshEverything: () => Promise<void>;
 };
 
 
@@ -90,10 +82,6 @@ export const InventoryProvider = ({
     children: React.ReactNode;
 }) => {
 
-    // ========================================================
-    // STATE
-    // ========================================================
-
     const [products, setProducts] = useState<Product[]>([]);
     const [parts, setParts] = useState<Part[]>([]);
 
@@ -107,26 +95,12 @@ export const InventoryProvider = ({
 
 
     // ========================================================
-    // BOOTSTRAP
-    //
-    // ONE REQUEST loads:
-    //
-    // products
-    // parts
-    // brands
-    // shelves
-    // conditions
-    // categories
-    // series
+    // INITIAL BOOTSTRAP
+    // ONE REQUEST FOR EVERYTHING
     // ========================================================
 
     const fetchBootstrap = useCallback(async () => {
-
-        const start = performance.now();
-
         try {
-
-            console.log("========================================");
             console.log("BOOTSTRAP: START");
 
             const response = await api.get<BootstrapResponse>(
@@ -138,10 +112,6 @@ export const InventoryProvider = ({
 
             const data = response.data;
 
-            // =================================================
-            // UPDATE ALL STATE
-            // =================================================
-
             setProducts(data?.products ?? []);
             setParts(data?.parts ?? []);
 
@@ -151,61 +121,11 @@ export const InventoryProvider = ({
             setCategories(data?.categories ?? []);
             setSeries(data?.series ?? []);
 
-
-            const elapsed = performance.now() - start;
-
             console.log("BOOTSTRAP: COMPLETE");
-            console.log(
-                "TIME:",
-                elapsed.toFixed(2),
-                "ms"
-            );
-
-            console.log(
-                "PRODUCTS:",
-                data?.products?.length ?? 0
-            );
-
-            console.log(
-                "PARTS:",
-                data?.parts?.length ?? 0
-            );
-
-            console.log(
-                "BRANDS:",
-                data?.brands?.length ?? 0
-            );
-
-            console.log(
-                "SHELVES:",
-                data?.shelves?.length ?? 0
-            );
-
-            console.log(
-                "CONDITIONS:",
-                data?.conditions?.length ?? 0
-            );
-
-            console.log(
-                "CATEGORIES:",
-                data?.categories?.length ?? 0
-            );
-
-            console.log(
-                "SERIES:",
-                data?.series?.length ?? 0
-            );
-
-            console.log(
-                "RESPONSE SIZE:",
-                JSON.stringify(data).length,
-                "bytes"
-            );
-
-            console.log("========================================");
+            console.log("PRODUCTS:", data?.products?.length ?? 0);
+            console.log("PARTS:", data?.parts?.length ?? 0);
 
         } catch (err: any) {
-
             console.error(
                 "BOOTSTRAP FAILED:",
                 err?.response?.data ||
@@ -214,39 +134,23 @@ export const InventoryProvider = ({
             );
 
             throw err;
-
         }
-
     }, []);
 
 
     // ========================================================
-    // PRODUCTS
-    //
-    // Keep this available for situations where you only
-    // specifically need products.
+    // PRODUCTS ONLY
     // ========================================================
 
     const fetchProducts = useCallback(async () => {
-
-        const start = performance.now();
-
         try {
-
             const response = await api.get<Product[]>(
                 "/wp/v2/product"
             );
 
             setProducts(response.data ?? []);
 
-            console.log(
-                "FETCH PRODUCTS:",
-                (performance.now() - start).toFixed(2),
-                "ms"
-            );
-
         } catch (err: any) {
-
             console.error(
                 "fetchProducts failed:",
                 err?.response?.data ||
@@ -255,22 +159,16 @@ export const InventoryProvider = ({
             );
 
             throw err;
-
         }
-
     }, []);
 
 
     // ========================================================
-    // PARTS
+    // PARTS ONLY
     // ========================================================
 
     const fetchParts = useCallback(async () => {
-
-        const start = performance.now();
-
         try {
-
             const response = await api.get<Part[]>(
                 "/inventory/v1/parts",
                 {
@@ -280,14 +178,7 @@ export const InventoryProvider = ({
 
             setParts(response.data ?? []);
 
-            console.log(
-                "FETCH PARTS:",
-                (performance.now() - start).toFixed(2),
-                "ms"
-            );
-
         } catch (err: any) {
-
             console.error(
                 "fetchParts failed:",
                 err?.response?.data ||
@@ -296,221 +187,60 @@ export const InventoryProvider = ({
             );
 
             throw err;
-
         }
-
     }, []);
 
 
     // ========================================================
-    // BRANDS
+    // TAXONOMIES
+    // These are loaded by bootstrap initially.
+    // Individual functions remain available when specifically
+    // needed by the application.
     // ========================================================
 
     const fetchBrands = useCallback(async () => {
+        const response = await api.get<Term[]>(
+            "/wp/v2/brand?per_page=100"
+        );
 
-        try {
-
-            const response = await api.get<Term[]>(
-                "/wp/v2/brand?per_page=100"
-            );
-
-            setBrands(response.data ?? []);
-
-        } catch (err: any) {
-
-            console.error(
-                "fetchBrands failed:",
-                err?.response?.data ||
-                err?.message ||
-                err
-            );
-
-            throw err;
-
-        }
-
+        setBrands(response.data ?? []);
     }, []);
 
-
-    // ========================================================
-    // SHELVES
-    // ========================================================
 
     const fetchShelves = useCallback(async () => {
+        const response = await api.get<Term[]>(
+            "/wp/v2/shelf?per_page=100"
+        );
 
-        try {
-
-            const response = await api.get<Term[]>(
-                "/wp/v2/shelf?per_page=100"
-            );
-
-            setShelves(response.data ?? []);
-
-        } catch (err: any) {
-
-            console.error(
-                "fetchShelves failed:",
-                err?.response?.data ||
-                err?.message ||
-                err
-            );
-
-            throw err;
-
-        }
-
+        setShelves(response.data ?? []);
     }, []);
 
-
-    // ========================================================
-    // CONDITIONS
-    // ========================================================
 
     const fetchConditions = useCallback(async () => {
+        const response = await api.get<Term[]>(
+            "/wp/v2/condition?per_page=100"
+        );
 
-        try {
-
-            const response = await api.get<Term[]>(
-                "/wp/v2/condition?per_page=100"
-            );
-
-            setConditions(response.data ?? []);
-
-        } catch (err: any) {
-
-            console.error(
-                "fetchConditions failed:",
-                err?.response?.data ||
-                err?.message ||
-                err
-            );
-
-            throw err;
-
-        }
-
+        setConditions(response.data ?? []);
     }, []);
 
-
-    // ========================================================
-    // CATEGORIES
-    // ========================================================
 
     const fetchCategories = useCallback(async () => {
+        const response = await api.get<Term[]>(
+            "/wp/v2/inventory_category?per_page=100"
+        );
 
-        try {
-
-            const response = await api.get<Term[]>(
-                "/wp/v2/inventory_category?per_page=100"
-            );
-
-            setCategories(response.data ?? []);
-
-        } catch (err: any) {
-
-            console.error(
-                "fetchCategories failed:",
-                err?.response?.data ||
-                err?.message ||
-                err
-            );
-
-            throw err;
-
-        }
-
+        setCategories(response.data ?? []);
     }, []);
 
-
-    // ========================================================
-    // SERIES
-    // ========================================================
 
     const fetchSeries = useCallback(async () => {
+        const response = await api.get<Term[]>(
+            "/wp/v2/series?per_page=100"
+        );
 
-        try {
-
-            const response = await api.get<Term[]>(
-                "/wp/v2/series?per_page=100"
-            );
-
-            setSeries(response.data ?? []);
-
-        } catch (err: any) {
-
-            console.error(
-                "fetchSeries failed:",
-                err?.response?.data ||
-                err?.message ||
-                err
-            );
-
-            throw err;
-
-        }
-
+        setSeries(response.data ?? []);
     }, []);
-
-
-    // ========================================================
-    // REFRESH INVENTORY
-    //
-    // ONLY products + parts
-    // ========================================================
-
-    const refreshInventory = useCallback(async () => {
-
-        await Promise.all([
-            fetchProducts(),
-            fetchParts(),
-        ]);
-
-    }, [
-        fetchProducts,
-        fetchParts,
-    ]);
-
-
-    // ========================================================
-    // REFRESH TAXONOMIES
-    //
-    // ONLY taxonomy data
-    // ========================================================
-
-    const refreshTaxonomies = useCallback(async () => {
-
-        await Promise.all([
-            fetchBrands(),
-            fetchShelves(),
-            fetchConditions(),
-            fetchCategories(),
-            fetchSeries(),
-        ]);
-
-    }, [
-        fetchBrands,
-        fetchShelves,
-        fetchConditions,
-        fetchCategories,
-        fetchSeries,
-    ]);
-
-
-    // ========================================================
-    // REFRESH EVERYTHING
-    //
-    // IMPORTANT:
-    //
-    // One bootstrap request.
-    // ========================================================
-
-    const refreshEverything = useCallback(async () => {
-
-        await fetchBootstrap();
-
-    }, [
-        fetchBootstrap,
-    ]);
 
 
     // ========================================================
@@ -518,57 +248,31 @@ export const InventoryProvider = ({
     // ========================================================
 
     useEffect(() => {
-
         let mounted = true;
 
-        const loadInventory = async () => {
-
-            const start = performance.now();
-
-            console.log("========================================");
-            console.log("INVENTORY INITIAL LOAD: START");
-
+        const load = async () => {
             setIsLoading(true);
 
             try {
-
                 await fetchBootstrap();
-
             } catch (err) {
-
                 console.error(
                     "INITIAL INVENTORY LOAD FAILED:",
                     err
                 );
-
             } finally {
-
-                if (!mounted) {
-                    return;
+                if (mounted) {
+                    setIsLoading(false);
                 }
-
-                setIsLoading(false);
-
-                console.log(
-                    "INVENTORY INITIAL LOAD:",
-                    (performance.now() - start).toFixed(2),
-                    "ms"
-                );
-
-                console.log("========================================");
             }
-
         };
 
-        loadInventory();
+        load();
 
         return () => {
             mounted = false;
         };
-
-    }, [
-        fetchBootstrap,
-    ]);
+    }, [fetchBootstrap]);
 
 
     // ========================================================
@@ -578,25 +282,19 @@ export const InventoryProvider = ({
     return (
         <InventoryContext.Provider
             value={{
-
-                // Loading
                 isLoading,
 
-                // Inventory
                 products,
                 parts,
 
-                // Taxonomies
                 brands,
                 shelves,
                 conditions,
                 categories,
                 series,
 
-                // Bootstrap
                 fetchBootstrap,
 
-                // Individual fetches
                 fetchProducts,
                 fetchParts,
 
@@ -605,12 +303,6 @@ export const InventoryProvider = ({
                 fetchConditions,
                 fetchCategories,
                 fetchSeries,
-
-                // Refresh
-                refreshInventory,
-                refreshTaxonomies,
-                refreshEverything,
-
             }}
         >
             {children}
@@ -624,15 +316,12 @@ export const InventoryProvider = ({
 // ============================================================
 
 export const useInventory = () => {
-
     const ctx = useContext(InventoryContext);
 
     if (!ctx) {
-
         throw new Error(
             "useInventory must be used inside InventoryProvider"
         );
-
     }
 
     return ctx;

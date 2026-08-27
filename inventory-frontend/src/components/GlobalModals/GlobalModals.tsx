@@ -20,35 +20,26 @@ const GlobalModals = () => {
     conditions,
     categories,
     series,
-    refreshInventory,
-    refreshTaxonomies,
+    fetchProducts,
+    fetchParts,
   } = useInventory();
 
   // =====================================
-  // PRODUCT REFRESH
+  // AFTER PRODUCT CREATE / UPDATE
   // =====================================
 
   const handleProductRefresh = async () => {
-    console.log("Refreshing product inventory...");
-
-    await Promise.all([
-      refreshInventory(),
-      refreshTaxonomies(),
-    ]);
+    console.log("Refreshing products only...");
+    await fetchProducts();
   };
 
   // =====================================
-  // PART REFRESH
+  // AFTER PART CREATE / UPDATE
   // =====================================
 
   const handlePartRefresh = async () => {
-    console.log("Refreshing parts...");
-
-    // A part was created/updated.
-    // Refresh inventory so the parts list is current.
-    //
-    // Do NOT refresh all taxonomies here.
-    await refreshInventory();
+    console.log("Refreshing parts only...");
+    await fetchParts();
   };
 
   return (
@@ -146,4 +137,3 @@ const modalStyle: React.CSSProperties = {
   width: 700,
   borderRadius: 8,
 };
-
