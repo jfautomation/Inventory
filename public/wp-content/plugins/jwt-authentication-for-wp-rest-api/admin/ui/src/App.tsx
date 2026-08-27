@@ -1,9 +1,9 @@
-import React from 'react'
-import Dashboard from '@/components/Dashboard'
-import '@/styles/globals.css'
+// import React from 'react'
+// import Dashboard from './components/Dashboard'
 
-const App: React.FC = () => {
-  return <Dashboard />
-}
 
-export default App
+// const App: React.FC = () => {
+//   return <Dashboard />
+// }
+
+// export default App

@@ -1,25 +1,21 @@
 import axios from "axios";
 
-// const API_BASE = process.env.REACT_APP_API_BASE;
-const API_BASE = "http://jf-auto-inventory-clone-2.local/wp-json";
-
-if (process.env.NODE_ENV === "development") {
-}
+const API_BASE = "http://jf-auto-inventory-clone-2.test/wp-json";
 
 // =========================
 // TOKEN HELPERS
 // =========================
 
 export const getToken = () => {
-  return localStorage.getItem("jwt_token");
+    return localStorage.getItem("jwt_token");
 };
 
 export const setToken = (token: string) => {
-  localStorage.setItem("jwt_token", token);
+    localStorage.setItem("jwt_token", token);
 };
 
 export const clearToken = () => {
-  localStorage.removeItem("jwt_token");
+    localStorage.removeItem("jwt_token");
 };
 
 // =========================
@@ -27,43 +23,37 @@ export const clearToken = () => {
 // =========================
 
 export const api = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
-  withCredentials: true, // 🔥 CHANGE THIS
+    baseURL: API_BASE,
+
+    headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+    },
+
+    // Do not send cookies unless an endpoint actually needs them.
+    withCredentials: false,
 });
 
 // =========================
 // REQUEST INTERCEPTOR
 // =========================
-api.interceptors.request.use((config) => {
 
-  const isPublicPartEndpoint =
-    config.url?.includes("/inventory/v1/parts");
+api.interceptors.request.use(
+    (config) => {
 
+        const token = getToken();
 
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
 
-  const token = getToken();
+        return config;
+    },
 
-  if (
-    token &&
-    config.headers &&
-    !isPublicPartEndpoint
-  ) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-
-  if (isPublicPartEndpoint && config.headers) {
-    delete config.headers.Authorization;
-  }
-
-
-  return config;
-
-});
+    (error) => {
+        return Promise.reject(error);
+    }
+);
 
 // =========================
 // RESPONSE INTERCEPTOR
@@ -72,27 +62,30 @@ api.interceptors.request.use((config) => {
 let isRedirecting = false;
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const status = error?.response?.status;
-    const code = error?.response?.data?.code;
 
-    const isAuthError =
-      status === 401 ||
-      status === 403 ||
-      code === "jwt_auth_invalid_token";
+    (response) => response,
 
-    if (isAuthError && !isRedirecting) {
-      isRedirecting = true;
+    (error) => {
 
-      clearToken();
+        const status = error?.response?.status;
+        const code = error?.response?.data?.code;
 
-      // prevents double redirect + gives room for future upgrade
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
-      }
+        const isAuthError =
+            status === 401 ||
+            status === 403 ||
+            code === "jwt_auth_invalid_token";
+
+        if (isAuthError && !isRedirecting) {
+
+            isRedirecting = true;
+
+            clearToken();
+
+            if (window.location.pathname !== "/login") {
+                window.location.href = "/login";
+            }
+        }
+
+        return Promise.reject(error);
     }
-
-    return Promise.reject(error);
-  }
 );

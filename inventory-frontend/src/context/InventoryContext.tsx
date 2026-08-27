@@ -5,14 +5,19 @@ import React, {
     useCallback,
     useEffect,
 } from "react";
+
 import { api } from "../api/client";
 
-
 import type {
-  Product,
-  Part,
-  Term,
+    Product,
+    Part,
+    Term,
 } from "../types";
+
+
+// ============================================================
+// CONTEXT TYPE
+// ============================================================
 
 type InventoryContextType = {
 
@@ -30,28 +35,54 @@ type InventoryContextType = {
     categories: Term[];
     series: Term[];
 
-    // Inventory fetches
+    // Bootstrap
+    fetchBootstrap: () => Promise<void>;
+
+    // Individual fetches
     fetchProducts: () => Promise<void>;
     fetchParts: () => Promise<void>;
 
-    // Taxonomy fetches
     fetchBrands: () => Promise<void>;
     fetchShelves: () => Promise<void>;
     fetchConditions: () => Promise<void>;
     fetchCategories: () => Promise<void>;
     fetchSeries: () => Promise<void>;
 
-    // Refresh helpers
+    // Refresh
     refreshInventory: () => Promise<void>;
     refreshTaxonomies: () => Promise<void>;
     refreshEverything: () => Promise<void>;
 };
 
 
-const InventoryContext = createContext<InventoryContextType | undefined>(
-    undefined
-);
+// ============================================================
+// BOOTSTRAP RESPONSE
+// ============================================================
 
+type BootstrapResponse = {
+    products: Product[];
+    parts: Part[];
+
+    brands: Term[];
+    shelves: Term[];
+    conditions: Term[];
+    categories: Term[];
+    series: Term[];
+};
+
+
+// ============================================================
+// CONTEXT
+// ============================================================
+
+const InventoryContext = createContext<
+    InventoryContextType | undefined
+>(undefined);
+
+
+// ============================================================
+// PROVIDER
+// ============================================================
 
 export const InventoryProvider = ({
     children,
@@ -59,259 +90,380 @@ export const InventoryProvider = ({
     children: React.ReactNode;
 }) => {
 
-
-    // =========================
-    // INVENTORY STATE
-    // =========================
+    // ========================================================
+    // STATE
+    // ========================================================
 
     const [products, setProducts] = useState<Product[]>([]);
     const [parts, setParts] = useState<Part[]>([]);
 
+    const [brands, setBrands] = useState<Term[]>([]);
+    const [shelves, setShelves] = useState<Term[]>([]);
+    const [conditions, setConditions] = useState<Term[]>([]);
+    const [categories, setCategories] = useState<Term[]>([]);
+    const [series, setSeries] = useState<Term[]>([]);
+
     const [isLoading, setIsLoading] = useState(true);
 
 
+    // ========================================================
+    // BOOTSTRAP
+    //
+    // ONE REQUEST loads:
+    //
+    // products
+    // parts
+    // brands
+    // shelves
+    // conditions
+    // categories
+    // series
+    // ========================================================
 
-    // =========================
-    // TAXONOMY STATE
-    // =========================
+    const fetchBootstrap = useCallback(async () => {
 
-    const [brands, setBrands] = useState<any[]>([]);
-    const [shelves, setShelves] = useState<any[]>([]);
-    const [conditions, setConditions] = useState<any[]>([]);
-    const [categories, setCategories] = useState<any[]>([]);
-    const [series, setSeries] = useState<any[]>([]);
-
-
-
-    // =========================
-    // PRODUCTS
-    // =========================
-
-    const fetchProducts = useCallback(async () => {
-
-        try {
-
-
-
-            const res = await api.get("/wp/v2/product");
-
-
-
-
-
-            setProducts(res.data || []);
-
-        } catch (err) {
-
-            console.error(
-                "fetchProducts failed:",
-                err
-            );
-
-        }
-
-    }, []);
-
-
-
-    // =========================
-    // PARTS
-    // =========================
-
-    const fetchParts = useCallback(async () => {
+        const start = performance.now();
 
         try {
 
-            console.time("FETCH PARTS");
+            console.log("========================================");
+            console.log("BOOTSTRAP: START");
 
-
-
-            const url =
-                "/inventory/v1/parts";
-
-
-
-            const res = await api.get(
-                url,
+            const response = await api.get<BootstrapResponse>(
+                "/inventory/v1/bootstrap",
                 {
                     timeout: 10000,
                 }
             );
 
+            const data = response.data;
+
+            // =================================================
+            // UPDATE ALL STATE
+            // =================================================
+
+            setProducts(data?.products ?? []);
+            setParts(data?.parts ?? []);
+
+            setBrands(data?.brands ?? []);
+            setShelves(data?.shelves ?? []);
+            setConditions(data?.conditions ?? []);
+            setCategories(data?.categories ?? []);
+            setSeries(data?.series ?? []);
 
 
+            const elapsed = performance.now() - start;
 
-            console.timeEnd("FETCH PARTS");
-
-
-            setParts(
-                res.data || []
+            console.log("BOOTSTRAP: COMPLETE");
+            console.log(
+                "TIME:",
+                elapsed.toFixed(2),
+                "ms"
             );
 
+            console.log(
+                "PRODUCTS:",
+                data?.products?.length ?? 0
+            );
+
+            console.log(
+                "PARTS:",
+                data?.parts?.length ?? 0
+            );
+
+            console.log(
+                "BRANDS:",
+                data?.brands?.length ?? 0
+            );
+
+            console.log(
+                "SHELVES:",
+                data?.shelves?.length ?? 0
+            );
+
+            console.log(
+                "CONDITIONS:",
+                data?.conditions?.length ?? 0
+            );
+
+            console.log(
+                "CATEGORIES:",
+                data?.categories?.length ?? 0
+            );
+
+            console.log(
+                "SERIES:",
+                data?.series?.length ?? 0
+            );
+
+            console.log(
+                "RESPONSE SIZE:",
+                JSON.stringify(data).length,
+                "bytes"
+            );
+
+            console.log("========================================");
+
+        } catch (err: any) {
+
+            console.error(
+                "BOOTSTRAP FAILED:",
+                err?.response?.data ||
+                err?.message ||
+                err
+            );
+
+            throw err;
+
+        }
+
+    }, []);
+
+
+    // ========================================================
+    // PRODUCTS
+    //
+    // Keep this available for situations where you only
+    // specifically need products.
+    // ========================================================
+
+    const fetchProducts = useCallback(async () => {
+
+        const start = performance.now();
+
+        try {
+
+            const response = await api.get<Product[]>(
+                "/wp/v2/product"
+            );
+
+            setProducts(response.data ?? []);
+
+            console.log(
+                "FETCH PRODUCTS:",
+                (performance.now() - start).toFixed(2),
+                "ms"
+            );
+
+        } catch (err: any) {
+
+            console.error(
+                "fetchProducts failed:",
+                err?.response?.data ||
+                err?.message ||
+                err
+            );
+
+            throw err;
+
+        }
+
+    }, []);
+
+
+    // ========================================================
+    // PARTS
+    // ========================================================
+
+    const fetchParts = useCallback(async () => {
+
+        const start = performance.now();
+
+        try {
+
+            const response = await api.get<Part[]>(
+                "/inventory/v1/parts",
+                {
+                    timeout: 10000,
+                }
+            );
+
+            setParts(response.data ?? []);
+
+            console.log(
+                "FETCH PARTS:",
+                (performance.now() - start).toFixed(2),
+                "ms"
+            );
 
         } catch (err: any) {
 
             console.error(
                 "fetchParts failed:",
-                err.response?.data || err.message || err
+                err?.response?.data ||
+                err?.message ||
+                err
             );
 
+            throw err;
 
         }
 
     }, []);
 
 
-
-
-    // =========================
+    // ========================================================
     // BRANDS
-    // =========================
+    // ========================================================
 
     const fetchBrands = useCallback(async () => {
 
         try {
 
-            const res = await api.get(
+            const response = await api.get<Term[]>(
                 "/wp/v2/brand?per_page=100"
             );
 
-            setBrands(res.data || []);
+            setBrands(response.data ?? []);
 
-        } catch (err) {
+        } catch (err: any) {
 
             console.error(
                 "fetchBrands failed:",
+                err?.response?.data ||
+                err?.message ||
                 err
             );
+
+            throw err;
 
         }
 
     }, []);
 
 
-
-    // =========================
+    // ========================================================
     // SHELVES
-    // =========================
+    // ========================================================
 
     const fetchShelves = useCallback(async () => {
 
         try {
 
-            const res = await api.get(
+            const response = await api.get<Term[]>(
                 "/wp/v2/shelf?per_page=100"
             );
 
-            setShelves(res.data || []);
+            setShelves(response.data ?? []);
 
-        } catch (err) {
+        } catch (err: any) {
 
             console.error(
                 "fetchShelves failed:",
+                err?.response?.data ||
+                err?.message ||
                 err
             );
+
+            throw err;
 
         }
 
     }, []);
 
 
-
-
-    // =========================
+    // ========================================================
     // CONDITIONS
-    // =========================
+    // ========================================================
 
     const fetchConditions = useCallback(async () => {
 
         try {
 
-            const res = await api.get(
+            const response = await api.get<Term[]>(
                 "/wp/v2/condition?per_page=100"
             );
 
-            setConditions(res.data || []);
+            setConditions(response.data ?? []);
 
-        } catch (err) {
+        } catch (err: any) {
 
             console.error(
                 "fetchConditions failed:",
+                err?.response?.data ||
+                err?.message ||
                 err
             );
+
+            throw err;
 
         }
 
     }, []);
 
 
-
-
-    // =========================
+    // ========================================================
     // CATEGORIES
-    // =========================
+    // ========================================================
 
     const fetchCategories = useCallback(async () => {
 
         try {
 
-            const res = await api.get(
+            const response = await api.get<Term[]>(
                 "/wp/v2/inventory_category?per_page=100"
             );
 
-            setCategories(res.data || []);
+            setCategories(response.data ?? []);
 
-        } catch (err) {
+        } catch (err: any) {
 
             console.error(
                 "fetchCategories failed:",
+                err?.response?.data ||
+                err?.message ||
                 err
             );
+
+            throw err;
 
         }
 
     }, []);
 
 
-
-
-    // =========================
+    // ========================================================
     // SERIES
-    // =========================
+    // ========================================================
 
     const fetchSeries = useCallback(async () => {
 
         try {
 
-            const res = await api.get(
+            const response = await api.get<Term[]>(
                 "/wp/v2/series?per_page=100"
             );
 
-            setSeries(res.data || []);
+            setSeries(response.data ?? []);
 
-        } catch (err) {
+        } catch (err: any) {
 
             console.error(
                 "fetchSeries failed:",
+                err?.response?.data ||
+                err?.message ||
                 err
             );
+
+            throw err;
 
         }
 
     }, []);
 
 
-
-
-    // =========================
+    // ========================================================
     // REFRESH INVENTORY
-    // =========================
+    //
+    // ONLY products + parts
+    // ========================================================
 
     const refreshInventory = useCallback(async () => {
 
-        await fetchProducts();
-
-        await fetchParts();
+        await Promise.all([
+            fetchProducts(),
+            fetchParts(),
+        ]);
 
     }, [
         fetchProducts,
@@ -319,11 +471,11 @@ export const InventoryProvider = ({
     ]);
 
 
-
-
-    // =========================
+    // ========================================================
     // REFRESH TAXONOMIES
-    // =========================
+    //
+    // ONLY taxonomy data
+    // ========================================================
 
     const refreshTaxonomies = useCallback(async () => {
 
@@ -344,70 +496,95 @@ export const InventoryProvider = ({
     ]);
 
 
-
-
-    // =========================
+    // ========================================================
     // REFRESH EVERYTHING
-    // =========================
+    //
+    // IMPORTANT:
+    //
+    // One bootstrap request.
+    // ========================================================
 
     const refreshEverything = useCallback(async () => {
 
-        await Promise.all([
-            refreshInventory(),
-            refreshTaxonomies(),
-        ]);
+        await fetchBootstrap();
 
     }, [
-        refreshInventory,
-        refreshTaxonomies,
+        fetchBootstrap,
     ]);
 
 
-
-
-    // =========================
-    // INITIAL APP LOAD
-    // =========================
+    // ========================================================
+    // INITIAL LOAD
+    // ========================================================
 
     useEffect(() => {
 
+        let mounted = true;
+
         const loadInventory = async () => {
 
+            const start = performance.now();
 
+            console.log("========================================");
+            console.log("INVENTORY INITIAL LOAD: START");
 
             setIsLoading(true);
 
-            await refreshEverything();
+            try {
 
-            setIsLoading(false);
+                await fetchBootstrap();
+
+            } catch (err) {
+
+                console.error(
+                    "INITIAL INVENTORY LOAD FAILED:",
+                    err
+                );
+
+            } finally {
+
+                if (!mounted) {
+                    return;
+                }
+
+                setIsLoading(false);
+
+                console.log(
+                    "INVENTORY INITIAL LOAD:",
+                    (performance.now() - start).toFixed(2),
+                    "ms"
+                );
+
+                console.log("========================================");
+            }
 
         };
 
-
         loadInventory();
 
+        return () => {
+            mounted = false;
+        };
 
     }, [
-        refreshEverything,
+        fetchBootstrap,
     ]);
 
 
-
+    // ========================================================
+    // PROVIDER
+    // ========================================================
 
     return (
-
         <InventoryContext.Provider
-
             value={{
 
                 // Loading
                 isLoading,
 
-
                 // Inventory
                 products,
                 parts,
-
 
                 // Taxonomies
                 brands,
@@ -416,8 +593,10 @@ export const InventoryProvider = ({
                 categories,
                 series,
 
+                // Bootstrap
+                fetchBootstrap,
 
-                // Fetch functions
+                // Individual fetches
                 fetchProducts,
                 fetchParts,
 
@@ -427,31 +606,26 @@ export const InventoryProvider = ({
                 fetchCategories,
                 fetchSeries,
 
-
                 // Refresh
                 refreshInventory,
                 refreshTaxonomies,
                 refreshEverything,
 
             }}
-
         >
-
             {children}
-
         </InventoryContext.Provider>
-
     );
-
 };
 
 
-
+// ============================================================
+// HOOK
+// ============================================================
 
 export const useInventory = () => {
 
     const ctx = useContext(InventoryContext);
-
 
     if (!ctx) {
 
@@ -461,7 +635,5 @@ export const useInventory = () => {
 
     }
 
-
     return ctx;
-
 };

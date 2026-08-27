@@ -68,7 +68,7 @@ export default function DetailCard({
   value={
     product.part?.[0] ? (
       <Link
-        to={`/parts/${product.part[0].id}`}
+        to={`/part/${product.part[0].id}`}
         className="
           text-blue-600
           hover:underline

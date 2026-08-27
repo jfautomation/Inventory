@@ -1,86 +1,196 @@
-import Input from "../../UI/Input/Input";
 import { Search } from "lucide-react";
 
-<Search size={18} />
+import Input from "../../UI/Input/Input";
+import { useInventory } from "../../../context/InventoryContext";
+
+
+// ============================================================
+// TYPES
+// ============================================================
 
 type InventoryFiltersProps = {
-    entityName: string;
+    entityName?: string;
 };
 
+
+// ============================================================
+// COMPONENT
+// ============================================================
 
 export default function InventoryFilters({
     entityName,
 }: InventoryFiltersProps) {
 
+    const {
+        brands,
+        categories,
+        shelves,
+        conditions,
+    } = useInventory();
+
 
     return (
         <div
             className="
-        flex
-        items-center
-        gap-4
-        mb-6
-      "
+                flex
+                items-center
+                gap-4
+                mb-6
+            "
         >
 
-            {/* Search */}
+            {/* ==================================================
+                SEARCH
+            ================================================== */}
+
             <div className="flex-1">
+
                 <Input
-                    placeholder="Search products..."
+                    placeholder={`Search ${entityName || "inventory"}...`}
                     icon={<Search size={18} />}
                     className="w-full"
                 />
+
             </div>
 
-            {/* Part Type */}
+
+            {/* ==================================================
+                CATEGORY
+            ================================================== */}
+
             <select
                 className="
-          w-44
-          border
-          border-gray-300
-          rounded-lg
-          px-4
-          py-2
-          bg-white
-        "
+                    w-44
+                    border
+                    border-gray-300
+                    rounded-lg
+                    px-4
+                    py-2
+                    bg-white
+                "
+                defaultValue=""
             >
-                <option>Part Type</option>
-                <option>Product</option>
-                <option>Component</option>
+
+                <option value="">
+                    Category
+                </option>
+
+                {categories.map((category) => (
+
+                    <option
+                        key={category.id}
+                        value={category.id}
+                    >
+                        {category.name}
+                    </option>
+
+                ))}
+
             </select>
 
-            {/* Brand */}
+
+            {/* ==================================================
+                BRAND
+            ================================================== */}
+
             <select
                 className="
-          w-44
-          border
-          border-gray-300
-          rounded-lg
-          px-4
-          py-2
-          bg-white
-        "
+                    w-44
+                    border
+                    border-gray-300
+                    rounded-lg
+                    px-4
+                    py-2
+                    bg-white
+                "
+                defaultValue=""
             >
-                <option>Brand</option>
-                <option>Siemens</option>
-                <option>Allen Bradley</option>
+
+                <option value="">
+                    Brand
+                </option>
+
+                {brands.map((brand) => (
+
+                    <option
+                        key={brand.id}
+                        value={brand.id}
+                    >
+                        {brand.name}
+                    </option>
+
+                ))}
+
             </select>
 
-            {/* Status */}
+
+            {/* ==================================================
+                SHELF
+            ================================================== */}
+
             <select
                 className="
-          w-44
-          border
-          border-gray-300
-          rounded-lg
-          px-4
-          py-2
-          bg-white
-        "
+                    w-44
+                    border
+                    border-gray-300
+                    rounded-lg
+                    px-4
+                    py-2
+                    bg-white
+                "
+                defaultValue=""
             >
-                <option>Status</option>
-                <option>In Stock</option>
-                <option>Low Stock</option>
+
+                <option value="">
+                    Shelf
+                </option>
+
+                {shelves.map((shelf) => (
+
+                    <option
+                        key={shelf.id}
+                        value={shelf.id}
+                    >
+                        {shelf.name}
+                    </option>
+
+                ))}
+
+            </select>
+
+
+            {/* ==================================================
+                CONDITION
+            ================================================== */}
+
+            <select
+                className="
+                    w-44
+                    border
+                    border-gray-300
+                    rounded-lg
+                    px-4
+                    py-2
+                    bg-white
+                "
+                defaultValue=""
+            >
+
+                <option value="">
+                    Condition
+                </option>
+
+                {conditions.map((condition) => (
+
+                    <option
+                        key={condition.id}
+                        value={condition.id}
+                    >
+                        {condition.name}
+                    </option>
+
+                ))}
+
             </select>
 
         </div>

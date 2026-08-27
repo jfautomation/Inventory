@@ -1,8 +1,12 @@
 <?php
 
+
+
 if (!defined('ABSPATH')) {
     exit;
 }
+
+error_log('🔥 PRODUCT-ENDPOINTS FILE LOADED');
 
 //////////////////////////////////////////////////////////
 // HELPERS (API-SAFE WRAPPER ONLY)
@@ -35,7 +39,10 @@ function inventory_meta_exists($meta_key, $meta_value, $exclude_post_id = 0)
 //////////////////////////////////////////////////////////
 
 function inventory_transform_product($post)
+ 
 {
+   
+    error_log('PRODUCT TRANSFORM FILE LOADED');
     $data = [
         'id'    => $post->ID,
         'title' => get_the_title($post->ID) ?: "",
@@ -111,7 +118,7 @@ function inventory_transform_product($post)
             ];
         }, $terms);
     }
-
+    error_log('TRANSFORM END');
     return $data;
 }
 

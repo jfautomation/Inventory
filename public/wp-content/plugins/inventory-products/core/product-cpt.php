@@ -15,7 +15,6 @@ function inventory_register_product_cpt()
         // REST API
         'show_in_rest' => true,
         'rest_base' => 'product',
-        'rest_controller_class' => 'WP_REST_Posts_Controller',
 
         // Query behavior
         'publicly_queryable' => true,

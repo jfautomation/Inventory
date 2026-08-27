@@ -31,12 +31,13 @@ export type Product = {
 export type Part = {
   id: number;
   name: string;
+  slug?: string;
 
-  brand?: Term | null;
-  category?: Term | null;
-  series?: Term[];
+  brand_id: string;
+  category_id: string;
+  series_id?: string;
 
-  price_new?: number;
+  base_price?: number;
   description?: string;
 
   image_id?: number;

@@ -9,12 +9,12 @@ add_action('init', 'inventory_register_taxonomies', 0);
 function inventory_register_taxonomies()
 {
     $taxonomies = [
-        'inventory_category',
         'brand',
         'part',
         'shelf',
         'series',
         'condition',
+        'inventory_category',
     ];
 
     foreach ($taxonomies as $taxonomy) {

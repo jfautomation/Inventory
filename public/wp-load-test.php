@@ -1,0 +1,5 @@
+<?php
+
+require __DIR__ . '/wp-load.php';
+
+echo 'WP LOAD TEST';

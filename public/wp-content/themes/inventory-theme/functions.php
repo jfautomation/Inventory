@@ -6,39 +6,38 @@
 /**
  * Load React build assets (CRA via asset-manifest.json)
  */
+
 function inventory_react_app_assets() {
 
     $build_dir = get_template_directory() . '/build';
     $build_uri = get_template_directory_uri() . '/build';
 
-    $manifest_path = $build_dir . '/asset-manifest.json';
+    // Find the CRA main JS bundle
+    $js_files = glob($build_dir . '/static/js/main.*.js');
 
-    if (!file_exists($manifest_path)) {
-        return;
-    }
+    if (!empty($js_files)) {
 
-    $manifest = json_decode(file_get_contents($manifest_path), true);
+        $js_file = $js_files[0];
 
-    if (!$manifest || empty($manifest['files'])) {
-        return;
-    }
-
-    // MAIN JS
-    if (!empty($manifest['files']['main.js'])) {
         wp_enqueue_script(
             'inventory-app',
-            $build_uri . $manifest['files']['main.js'],
+            $build_uri . '/static/js/' . basename($js_file),
             [],
             null,
             true
         );
     }
 
-    // CSS (optional)
-    if (!empty($manifest['files']['main.css'])) {
+    // Find the CRA main CSS bundle
+    $css_files = glob($build_dir . '/static/css/main.*.css');
+
+    if (!empty($css_files)) {
+
+        $css_file = $css_files[0];
+
         wp_enqueue_style(
             'inventory-app',
-            $build_uri . $manifest['files']['main.css'],
+            $build_uri . '/static/css/' . basename($css_file),
             [],
             null
         );
@@ -46,6 +45,11 @@ function inventory_react_app_assets() {
 }
 
 add_action('wp_enqueue_scripts', 'inventory_react_app_assets');
+
+
+
+add_action('wp_enqueue_scripts', 'inventory_react_app_assets');
+
 
 /**
  * =========================
@@ -73,12 +77,14 @@ add_action('template_redirect', function () {
     }
 }, 0);
 
+
 /**
  * =========================
  * REMOVE WP LOGIN REDIRECTS
  * =========================
  */
 remove_action('template_redirect', 'wp_redirect_admin_locations', 1000);
+
 
 /**
  * =========================
