@@ -10,6 +10,21 @@ import { useInventory } from "../../../context/InventoryContext";
 
 type InventoryFiltersProps = {
     entityName?: string;
+
+    searchValue: string;
+    onSearchChange: (value: string) => void;
+
+    categoryValue: string;
+    onCategoryChange: (value: string) => void;
+
+    brandValue: string;
+    onBrandChange: (value: string) => void;
+
+    shelfValue: string;
+    onShelfChange: (value: string) => void;
+
+    conditionValue: string;
+    onConditionChange: (value: string) => void;
 };
 
 
@@ -19,6 +34,21 @@ type InventoryFiltersProps = {
 
 export default function InventoryFilters({
     entityName,
+
+    searchValue,
+    onSearchChange,
+
+    categoryValue,
+    onCategoryChange,
+
+    brandValue,
+    onBrandChange,
+
+    shelfValue,
+    onShelfChange,
+
+    conditionValue,
+    onConditionChange,
 }: InventoryFiltersProps) {
 
     const {
@@ -46,6 +76,10 @@ export default function InventoryFilters({
             <div className="flex-1">
 
                 <Input
+                    value={searchValue}
+                    onChange={(e) =>
+                        onSearchChange(e.target.value)
+                    }
                     placeholder={`Search ${entityName || "inventory"}...`}
                     icon={<Search size={18} />}
                     className="w-full"
@@ -59,6 +93,10 @@ export default function InventoryFilters({
             ================================================== */}
 
             <select
+                value={categoryValue}
+                onChange={(e) =>
+                    onCategoryChange(e.target.value)
+                }
                 className="
                     w-44
                     border
@@ -68,7 +106,6 @@ export default function InventoryFilters({
                     py-2
                     bg-white
                 "
-                defaultValue=""
             >
 
                 <option value="">
@@ -94,6 +131,10 @@ export default function InventoryFilters({
             ================================================== */}
 
             <select
+                value={brandValue}
+                onChange={(e) =>
+                    onBrandChange(e.target.value)
+                }
                 className="
                     w-44
                     border
@@ -103,7 +144,6 @@ export default function InventoryFilters({
                     py-2
                     bg-white
                 "
-                defaultValue=""
             >
 
                 <option value="">
@@ -129,6 +169,10 @@ export default function InventoryFilters({
             ================================================== */}
 
             <select
+                value={shelfValue}
+                onChange={(e) =>
+                    onShelfChange(e.target.value)
+                }
                 className="
                     w-44
                     border
@@ -138,7 +182,6 @@ export default function InventoryFilters({
                     py-2
                     bg-white
                 "
-                defaultValue=""
             >
 
                 <option value="">
@@ -164,6 +207,10 @@ export default function InventoryFilters({
             ================================================== */}
 
             <select
+                value={conditionValue}
+                onChange={(e) =>
+                    onConditionChange(e.target.value)
+                }
                 className="
                     w-44
                     border
@@ -173,7 +220,6 @@ export default function InventoryFilters({
                     py-2
                     bg-white
                 "
-                defaultValue=""
             >
 
                 <option value="">
@@ -196,3 +242,4 @@ export default function InventoryFilters({
         </div>
     );
 }
+

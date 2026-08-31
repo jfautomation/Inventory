@@ -68,8 +68,6 @@ const GlobalModals = () => {
                 await handleProductRefresh();
                 closeProduct();
               }}
-
-              onClose={closeProduct}
             />
 
             <button onClick={closeProduct}>
@@ -100,8 +98,6 @@ const GlobalModals = () => {
                 await handlePartRefresh();
                 closePart();
               }}
-
-              onClose={closePart}
             />
 
             <button onClick={closePart}>

@@ -53,12 +53,13 @@ export type ProductPayload = {
   work_order?: string;
   list_price?: number;
   notes?: string;
-
   image_id?: number;
-
   test_date?: string;
 
-  inventory_status?: "active" | "sold" | "archived";
+  inventory_status?:
+    | "active"
+    | "sold"
+    | "archived";
 
   test_status?: boolean;
 

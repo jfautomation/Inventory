@@ -1,105 +1,109 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { useInventory } from "../../context/InventoryContext";
+import { useModal } from "../../context/ModalContext";
+import { ProductService } from "../../services/productService";
 import PageContainer from "../UI/PageContainer";
 import PageHeader from "../UI/PageHeader";
 import Button from "../UI/Button/Button";
-import DetailImageCard from "../UI/Detail/DetailImageCard"
+import DetailImageCard from "../UI/Detail/DetailImageCard";
 import DetailCard from "../UI/Detail/DetailCard";
 import StatCard from "../UI/Detail/StatCard";
 import DetailActions from "../UI/Detail/DetailActions";
 
-
 const ProductDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  const {
-    products,
-  } = useInventory();
-
+  const { products, fetchProducts } = useInventory();
+  const { openEditProduct } = useModal();
 
   const [product, setProduct] = useState<any>(null);
-
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-
     if (!id) return;
 
-
-    // =========================
-    // CHECK GLOBAL CACHE FIRST
-    // =========================
     const existingProduct = products.find(
       (p) => p.id === Number(id)
     );
 
-
     if (existingProduct) {
-
       setProduct(existingProduct);
       return;
     }
 
-
-    // =========================
-    // FALLBACK API FETCH
-    // =========================
     const fetchProduct = async () => {
-
       try {
-
-
         const res = await api.get(
           `/wp/v2/product/${id}`
         );
 
         setProduct(res.data);
-
       } catch (err) {
-
-       
-
+        console.error("Failed to load product:", err);
+        setProduct(null);
       }
-
     };
 
-
     fetchProduct();
-
-
-  }, [
-    id,
-    products,
-  ]);
-
-
+  }, [id, products]);
 
   if (!product) {
     return <div>Loading product...</div>;
   }
 
-  
+  const handleDeleteProduct = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${product.title}"?\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+
+      await ProductService.delete(product.id);
+
+      await fetchProducts();
+
+      navigate("/products");
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete product.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleEditProduct = () => {
+    openEditProduct(product);
+  };
 
   return (
     <PageContainer>
 
-      <PageHeader
-        title="Product Details"
-      >
-        <Button variant="danger">
-          Delete Product
+      <PageHeader title="Product Details">
+        <Button
+          variant="danger"
+          onClick={handleDeleteProduct}
+          disabled={deleting}
+        >
+          {deleting ? "Deleting..." : "Delete Product"}
         </Button>
       </PageHeader>
 
       <div
         className="
-        grid
-  grid-cols-1
-  xl:grid-cols-[35%_65%]
-  gap-6
-  p-6
-    "
+          grid
+          grid-cols-1
+          xl:grid-cols-[35%_65%]
+          gap-6
+          p-6
+        "
       >
 
         <DetailImageCard
@@ -114,16 +118,16 @@ const ProductDetail = () => {
 
       <div
         className="
-    grid
-    grid-cols-5
-    gap-4
-    mx-6
-    p-5
-    border
-    border-gray-200
-    rounded-xl
-    bg-white
-  "
+          grid
+          grid-cols-5
+          gap-4
+          mx-6
+          p-5
+          border
+          border-gray-200
+          rounded-xl
+          bg-white
+        "
       >
 
         <StatCard
@@ -154,22 +158,18 @@ const ProductDetail = () => {
         />
 
       </div>
+
       <div className="mt-3">
         <DetailActions
           onAdd={() => {
             console.log("Add new product");
           }}
-          onEdit={() => {
-            console.log("Edit product", product.id);
-          }}
+          onEdit={handleEditProduct}
         />
       </div>
-
-
 
     </PageContainer>
   );
 };
-
 
 export default ProductDetail;

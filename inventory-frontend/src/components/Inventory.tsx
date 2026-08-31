@@ -22,6 +22,12 @@ const Inventory: React.FC = () => {
     openEditProduct,
   } = useModal();
 
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [brand, setBrand] = useState("");
+  const [shelf, setShelf] = useState("");
+  const [condition, setCondition] = useState("");
+
   const navigate = useNavigate();
 
   const {
@@ -91,6 +97,38 @@ const Inventory: React.FC = () => {
     .sort((a, b) => b.id - a.id)
     .slice(0, 5);
 
+  const searchTerm = search.trim().toLowerCase();
+
+const filteredRecentProducts = recentProducts.filter((product) => {
+  const partName =
+    product.part?.[0]?.name?.toLowerCase() || "";
+
+  const productTitle =
+    product.title?.toLowerCase() || "";
+
+  const serialNumber =
+    product.serial_number?.toLowerCase() || "";
+
+  const workOrder =
+    product.work_order?.toLowerCase() || "";
+
+  const brandName =
+    product.brand?.[0]?.name?.toLowerCase() || "";
+
+  const conditionName =
+    product.condition?.[0]?.name?.toLowerCase() || "";
+
+  return (
+    !searchTerm ||
+    partName.includes(searchTerm) ||
+    productTitle.includes(searchTerm) ||
+    serialNumber.includes(searchTerm) ||
+    workOrder.includes(searchTerm) ||
+    brandName.includes(searchTerm) ||
+    conditionName.includes(searchTerm)
+  );
+});
+
   // =========================
   // UI
   // =========================
@@ -114,7 +152,19 @@ const Inventory: React.FC = () => {
 
       <div className="p-4">
 
-        <InventoryFilters entityName="Products" />
+        <InventoryFilters
+          entityName="Products"
+          searchValue={search}
+          onSearchChange={setSearch}
+          categoryValue={category}
+          onCategoryChange={setCategory}
+          brandValue={brand}
+          onBrandChange={setBrand}
+          shelfValue={shelf}
+          onShelfChange={setShelf}
+          conditionValue={condition}
+          onConditionChange={setCondition}
+        />
 
         <div className="mt-6">
 
@@ -133,7 +183,7 @@ const Inventory: React.FC = () => {
               openEditProduct,
               handleDeleteProduct
             )}
-            data={recentProducts}
+            data={filteredRecentProducts}
             getRowKey={(product) => product.id}
             onRowClick={(product) =>
               navigate(`/product/${product.id}`)

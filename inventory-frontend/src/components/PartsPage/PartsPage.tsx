@@ -46,48 +46,123 @@ const PartsPage = () => {
   return (
     <PageContainer>
 
+      {/* =====================================================
+          PAGE HEADER
+      ===================================================== */}
+
       <PageHeader title="Parts Inventory">
 
-        <Button onClick={openPart}>
-          Add Part
-        </Button>
+        <div className="flex items-center gap-3">
 
-        <Button variant="secondary">
-          Export
-        </Button>
+          <Button onClick={openPart}>
+            Add Part
+          </Button>
+
+          <Button variant="secondary">
+            Export
+          </Button>
+
+        </div>
 
       </PageHeader>
 
 
-      <div className="p-4">
+      {/* =====================================================
+          CONTENT
+      ===================================================== */}
 
-        <InventoryFilters entityName="Parts" />
+      <div className="p-6">
+
+        {/* ===================================================
+            FILTERS
+        =================================================== */}
+
+        <div className="
+          rounded-xl
+          border
+          border-gray-200
+          bg-white
+          p-4
+          shadow-sm
+        ">
+          <InventoryFilters entityName="Parts" />
+        </div>
 
 
-        <div className="mt-6">
+        {/* ===================================================
+            TABLE
+        =================================================== */}
 
-          <h3 className="
-            text-lg
-            font-semibold
-            mb-4
+        <div className="
+          mt-6
+          rounded-xl
+          border
+          border-gray-200
+          bg-white
+          shadow-sm
+          overflow-hidden
+        ">
+
+          {/* TABLE HEADER */}
+
+          <div className="
+            px-5
+            py-4
+            border-b
+            border-gray-200
           ">
-            Parts Inventory
-          </h3>
+
+            <div className="flex items-center justify-between">
+
+              <div>
+                <h3 className="
+                  text-lg
+                  font-semibold
+                  text-gray-900
+                ">
+                  Parts Inventory
+                </h3>
+
+                <p className="
+                  mt-1
+                  text-sm
+                  text-gray-500
+                ">
+                  Manage and review your parts library.
+                </p>
+              </div>
+
+              <div className="
+                text-sm
+                text-gray-500
+              ">
+                {parts.length} {parts.length === 1 ? "part" : "parts"}
+              </div>
+
+            </div>
+
+          </div>
 
 
-          <DataTable
-            columns={partColumns(
-              brands,
-              categories,
-              openEditPart,
-              handleDeletePart
-            )}
-            data={parts}
-            getRowKey={(part) => part.id}
-            onRowClick={(part) =>
-              navigate(`/part/${part.id}`)
-            }
-          />
+          {/* TABLE */}
+
+          <div className="overflow-x-auto">
+
+            <DataTable
+              columns={partColumns(
+                brands,
+                categories,
+                openEditPart,
+                handleDeletePart
+              )}
+              data={parts}
+              getRowKey={(part) => part.id}
+              onRowClick={(part) =>
+                navigate(`/part/${part.id}`)
+              }
+            />
+
+          </div>
 
         </div>
 
@@ -98,3 +173,4 @@ const PartsPage = () => {
 };
 
 export default PartsPage;
+

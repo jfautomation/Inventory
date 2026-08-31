@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ProductService } from "../../services/productService";
 import {
   Term,
@@ -30,8 +30,6 @@ const ProductForm: React.FC<Props> = ({
   onCreated,
   onUpdated,
   editingProduct,
-  clearEditing,
-  onClose,
 }) => {
   // =========================================================
   // GLOBAL INVENTORY DATA
@@ -49,13 +47,15 @@ const ProductForm: React.FC<Props> = ({
   const [title, setTitle] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
   const [workOrder, setWorkOrder] = useState("");
-  const [listPrice, setListPrice] = useState(0);
+  const [listPrice, setListPrice] = useState("");
   const [notes, setNotes] = useState("");
 
-  const [testStatus, setTestStatus] = useState(false);
+  // null = user has not selected a test status yet
+  const [testStatus, setTestStatus] =
+    useState<boolean | null>(null);
+
   const [testDate, setTestDate] = useState("");
 
-  // Relations
   const [selectedBrand, setSelectedBrand] =
     useState<Term | null>(null);
 
@@ -68,7 +68,6 @@ const ProductForm: React.FC<Props> = ({
   const [selectedPart, setSelectedPart] =
     useState<Part | null>(null);
 
-  // UI
   const [imageFile, setImageFile] =
     useState<File | null>(null);
 
@@ -79,18 +78,14 @@ const ProductForm: React.FC<Props> = ({
 
   // =========================================================
   // FILTER PARTS BY BRAND
-  //
-  // Part type uses:
-  //
-  // brand_id: string
-  //
   // =========================================================
 
   const parts = selectedBrand
     ? allParts.filter(
-        (part) =>
-          Number(part.brand_id) === selectedBrand.id
-      )
+      (part) =>
+        Number(part.brand_id) ===
+        Number(selectedBrand.id)
+    )
     : [];
 
   // =========================================================
@@ -117,7 +112,9 @@ const ProductForm: React.FC<Props> = ({
     );
 
     setListPrice(
-      Number(editingProduct.list_price || 0)
+      editingProduct.list_price != null
+        ? String(editingProduct.list_price)
+        : ""
     );
 
     setNotes(
@@ -125,7 +122,9 @@ const ProductForm: React.FC<Props> = ({
     );
 
     setTestStatus(
-      editingProduct.test_status || false
+      typeof editingProduct.test_status === "boolean"
+        ? editingProduct.test_status
+        : null
     );
 
     setTestDate(
@@ -143,26 +142,34 @@ const ProductForm: React.FC<Props> = ({
     setSelectedShelf(
       editingProduct.shelf?.[0] || null
     );
+  }, [editingProduct]);
 
-    // =======================================================
-    // PRODUCT.PART CONTAINS Term[]
-    //
-    // Find the corresponding full Part object from
-    // the globally loaded parts.
-    // =======================================================
+  // =========================================================
+  // PREFILL EXISTING PART IN EDIT MODE
+  // =========================================================
+
+  useEffect(() => {
+    if (!editingProduct) {
+      setSelectedPart(null);
+      return;
+    }
 
     const productPartId =
       editingProduct.part?.[0]?.id;
 
-    if (productPartId) {
-      const fullPart = allParts.find(
-        (part) => part.id === productPartId
-      );
-
-      setSelectedPart(fullPart || null);
-    } else {
+    if (!productPartId) {
       setSelectedPart(null);
+      return;
     }
+
+    const fullPart = allParts.find(
+      (part) =>
+        Number(part.id) === Number(productPartId)
+    );
+
+    setSelectedPart(
+      fullPart || null
+    );
   }, [
     editingProduct,
     allParts,
@@ -173,18 +180,13 @@ const ProductForm: React.FC<Props> = ({
   // =========================================================
 
   useEffect(() => {
-    if (!selectedBrand) {
-      setSelectedPart(null);
-      return;
-    }
-
-    if (!selectedPart) {
+    if (!selectedBrand || !selectedPart) {
       return;
     }
 
     if (
       Number(selectedPart.brand_id) !==
-      selectedBrand.id
+      Number(selectedBrand.id)
     ) {
       setSelectedPart(null);
     }
@@ -194,64 +196,123 @@ const ProductForm: React.FC<Props> = ({
   ]);
 
   // =========================================================
+  // REQUIRED FIELD VALIDATION
+  //
+  // REQUIRED:
+  // Serial Number
+  // Brand
+  // Condition
+  // Part
+  //
+  // OPTIONAL:
+  // Status
+  // List Price
+  // Work Order
+  // Notes
+  // Test Status
+  // Test Date
+  // Image
+  // Title
+  // =========================================================
+
+  const missingFields: string[] = [];
+
+  if (!selectedBrand) {
+    missingFields.push("Brand");
+  }
+
+  if (!selectedPart) {
+    missingFields.push("Part Number");
+  }
+
+  if (!serialNumber.trim()) {
+    missingFields.push("Serial Number");
+  }
+
+  if (!selectedCondition) {
+    missingFields.push("Condition");
+  }
+
+  const hasRequiredFields =
+    missingFields.length === 0;
+  // =========================================================
   // SUBMIT
   // =========================================================
 
   const handleSubmit = async () => {
+    if (!hasRequiredFields) {
+      alert(
+        `Please complete the following required fields:\n\n${missingFields.join(
+          "\n"
+        )}`
+      );
+
+      return;
+    }
+
     try {
       setLoading(true);
 
       // -----------------------------------------------------
       // IMAGE
       // -----------------------------------------------------
+      // Optional. Preserve existing image when editing.
+      // -----------------------------------------------------
 
       const imageId = imageFile
         ? await uploadImage(imageFile)
-        : undefined;
+        : editingProduct?.image_id;
 
       // -----------------------------------------------------
       // PAYLOAD
       // -----------------------------------------------------
 
       const payload: ProductPayload = {
-        title,
+        title: title.trim(),
 
-        inventory_status:
-          inventoryStatus,
+        serial_number: serialNumber.trim(),
 
-        serial_number:
-          serialNumber,
+        ...(listPrice.trim()
+          ? { list_price: Number(listPrice) }
+          : {}),
 
-        work_order:
-          workOrder,
+        part: [
+          selectedPart!.id,
+        ],
 
-        list_price:
-          listPrice,
-
-        notes,
-
-        test_status:
-          testStatus,
-
-        test_date:
-          testDate,
-
-        part: selectedPart
-          ? [selectedPart.id]
-          : [],
-
-        shelf: selectedShelf
-          ? [selectedShelf.id]
-          : [],
-
-        condition: selectedCondition
-          ? [selectedCondition.id]
-          : [],
-
-        image_id:
-          imageId,
+        condition: [
+          selectedCondition!.id,
+        ],
 
         status: "publish",
+
+        ...(workOrder.trim()
+          ? { work_order: workOrder.trim() }
+          : {}),
+
+        ...(notes.trim()
+          ? { notes: notes.trim() }
+          : {}),
+
+        ...(selectedShelf
+          ? { shelf: [selectedShelf.id] }
+          : {}),
+
+        ...(testStatus !== null
+          ? { test_status: testStatus }
+          : {}),
+
+        ...(testDate.trim()
+          ? { test_date: testDate }
+          : {}),
+
+        ...(inventoryStatus
+          ? { inventory_status: inventoryStatus }
+          : {}),
+
+        ...(imageId
+          ? { image_id: imageId }
+          : {}),
       };
 
       // -----------------------------------------------------
@@ -260,12 +321,12 @@ const ProductForm: React.FC<Props> = ({
 
       const res = isEditing
         ? await ProductService.update(
-            editingProduct!.id,
-            payload
-          )
+          editingProduct!.id,
+          payload
+        )
         : await ProductService.create(
-            payload
-          );
+          payload
+        );
 
       // -----------------------------------------------------
       // NORMALIZE
@@ -284,24 +345,22 @@ const ProductForm: React.FC<Props> = ({
         onCreated?.(normalized);
       }
 
-      // -----------------------------------------------------
-      // CLOSE / CLEAR
-      // -----------------------------------------------------
-
-      clearEditing?.();
-      onClose?.();
-
     } catch (err: any) {
       console.error(
         "Submit error:",
         err
       );
 
+      console.error(
+        "API ERROR:",
+        err?.response?.data
+      );
+
       alert(
         JSON.stringify(
           err?.response?.data ||
           err?.message ||
-          err
+          "Failed to save product."
         )
       );
 
@@ -323,6 +382,7 @@ const ProductForm: React.FC<Props> = ({
           : "Create Product"}
       </h2>
 
+
       {/* =====================================================
           STATUS
       ===================================================== */}
@@ -332,12 +392,16 @@ const ProductForm: React.FC<Props> = ({
         onChange={(e) =>
           setInventoryStatus(
             e.target.value as
-              | "active"
-              | "sold"
-              | "archived"
+            | "active"
+            | "sold"
+            | "archived"
           )
         }
       >
+        <option value="">
+          Select Status
+        </option>
+
         <option value="active">
           Active
         </option>
@@ -351,6 +415,7 @@ const ProductForm: React.FC<Props> = ({
         </option>
       </select>
 
+
       {/* =====================================================
           TITLE
       ===================================================== */}
@@ -363,6 +428,7 @@ const ProductForm: React.FC<Props> = ({
         placeholder="Title"
       />
 
+
       {/* =====================================================
           SERIAL NUMBER
       ===================================================== */}
@@ -374,8 +440,9 @@ const ProductForm: React.FC<Props> = ({
             e.target.value
           )
         }
-        placeholder="Serial Number"
+        placeholder="Serial Number *"
       />
+
 
       {/* =====================================================
           WORK ORDER
@@ -391,20 +458,23 @@ const ProductForm: React.FC<Props> = ({
         placeholder="Work Order"
       />
 
+
       {/* =====================================================
           PRICE
       ===================================================== */}
 
       <input
         type="number"
+        min="0"
         value={listPrice}
         onChange={(e) =>
           setListPrice(
-            Number(e.target.value)
+            e.target.value
           )
         }
         placeholder="Price"
       />
+
 
       {/* =====================================================
           BRAND
@@ -412,9 +482,10 @@ const ProductForm: React.FC<Props> = ({
 
       <select
         value={
-          selectedBrand?.id || ""
+          selectedBrand?.id ?? ""
         }
         onChange={(e) => {
+
           const brand =
             brands.find(
               (b) =>
@@ -427,10 +498,14 @@ const ProductForm: React.FC<Props> = ({
           setSelectedBrand(
             brand
           );
+
+          // A Part belongs to a Brand,
+          // so changing Brand clears Part.
+          setSelectedPart(null);
         }}
       >
         <option value="">
-          Select Brand
+          Select Brand *
         </option>
 
         {brands.map((b) => (
@@ -443,6 +518,7 @@ const ProductForm: React.FC<Props> = ({
         ))}
       </select>
 
+
       {/* =====================================================
           CONDITION
       ===================================================== */}
@@ -452,6 +528,7 @@ const ProductForm: React.FC<Props> = ({
           selectedCondition?.id || ""
         }
         onChange={(e) => {
+
           const condition =
             conditions.find(
               (c) =>
@@ -467,7 +544,7 @@ const ProductForm: React.FC<Props> = ({
         }}
       >
         <option value="">
-          Select Condition
+          Select Condition *
         </option>
 
         {conditions.map((c) => (
@@ -480,6 +557,7 @@ const ProductForm: React.FC<Props> = ({
         ))}
       </select>
 
+
       {/* =====================================================
           SHELF
       ===================================================== */}
@@ -489,6 +567,7 @@ const ProductForm: React.FC<Props> = ({
           selectedShelf?.id || ""
         }
         onChange={(e) => {
+
           const shelf =
             shelves.find(
               (s) =>
@@ -517,6 +596,7 @@ const ProductForm: React.FC<Props> = ({
         ))}
       </select>
 
+
       {/* =====================================================
           PART
       ===================================================== */}
@@ -527,6 +607,7 @@ const ProductForm: React.FC<Props> = ({
         }
         disabled={!selectedBrand}
         onChange={(e) => {
+
           const part =
             parts.find(
               (p) =>
@@ -546,7 +627,7 @@ const ProductForm: React.FC<Props> = ({
             ? "Select Brand First"
             : parts.length === 0
               ? "No Parts Available"
-              : "Select Part"}
+              : "Select Part *"}
         </option>
 
         {parts.map((p) => (
@@ -559,27 +640,64 @@ const ProductForm: React.FC<Props> = ({
         ))}
       </select>
 
+
       {/* =====================================================
           TEST STATUS
       ===================================================== */}
 
       <label>
-        <input
-          type="checkbox"
-          checked={testStatus}
-          onChange={(e) =>
-            setTestStatus(
-              e.target.checked
-            )
-          }
-        />
-
-        Tested
+        Test Status
       </label>
+
+      <select
+        value={
+          testStatus === null
+            ? ""
+            : testStatus
+              ? "tested"
+              : "not-tested"
+        }
+        onChange={(e) => {
+
+          if (
+            e.target.value ===
+            "tested"
+          ) {
+            setTestStatus(true);
+          } else if (
+            e.target.value ===
+            "not-tested"
+          ) {
+            setTestStatus(false);
+            setTestDate("");
+          } else {
+            setTestStatus(null);
+            setTestDate("");
+          }
+
+        }}
+      >
+        <option value="">
+          Select Test Status
+        </option>
+
+        <option value="tested">
+          Tested
+        </option>
+
+        <option value="not-tested">
+          Not Tested
+        </option>
+      </select>
+
 
       {/* =====================================================
           TEST DATE
       ===================================================== */}
+
+      <label>
+        Test Date
+      </label>
 
       <input
         type="date"
@@ -589,7 +707,11 @@ const ProductForm: React.FC<Props> = ({
             e.target.value
           )
         }
+        disabled={
+          testStatus !== true
+        }
       />
+
 
       {/* =====================================================
           NOTES
@@ -602,12 +724,17 @@ const ProductForm: React.FC<Props> = ({
             e.target.value
           )
         }
-        placeholder="Notes..."
+        placeholder="Notes"
       />
+
 
       {/* =====================================================
           IMAGE
       ===================================================== */}
+
+      <label>
+        Product Image
+      </label>
 
       <input
         type="file"
@@ -620,11 +747,13 @@ const ProductForm: React.FC<Props> = ({
         }
       />
 
+
       {/* =====================================================
-          ACTION
+          SAVE
       ===================================================== */}
 
       <button
+        type="button"
         onClick={handleSubmit}
         disabled={loading}
       >
