@@ -20,11 +20,7 @@ type InventoryFiltersProps = {
     brandValue: string;
     onBrandChange: (value: string) => void;
 
-    shelfValue: string;
-    onShelfChange: (value: string) => void;
-
-    conditionValue: string;
-    onConditionChange: (value: string) => void;
+    onClearFilters: () => void;
 };
 
 
@@ -34,21 +30,13 @@ type InventoryFiltersProps = {
 
 export default function InventoryFilters({
     entityName,
-
     searchValue,
     onSearchChange,
-
     categoryValue,
     onCategoryChange,
-
     brandValue,
     onBrandChange,
-
-    shelfValue,
-    onShelfChange,
-
-    conditionValue,
-    onConditionChange,
+    onClearFilters,
 }: InventoryFiltersProps) {
 
     const {
@@ -94,9 +82,9 @@ export default function InventoryFilters({
 
             <select
                 value={categoryValue}
-                onChange={(e) =>
-                    onCategoryChange(e.target.value)
-                }
+                onChange={(e) => {
+                    onCategoryChange(e.target.value);
+                }}
                 className="
                     w-44
                     border
@@ -132,9 +120,10 @@ export default function InventoryFilters({
 
             <select
                 value={brandValue}
-                onChange={(e) =>
-                    onBrandChange(e.target.value)
-                }
+                onChange={(e) => {
+                    onBrandChange(e.target.value);
+                }}
+
                 className="
                     w-44
                     border
@@ -164,80 +153,28 @@ export default function InventoryFilters({
             </select>
 
 
-            {/* ==================================================
-                SHELF
-            ================================================== */}
 
-            <select
-                value={shelfValue}
-                onChange={(e) =>
-                    onShelfChange(e.target.value)
-                }
+
+
+            <button
+                type="button"
+                onClick={onClearFilters}
                 className="
-                    w-44
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-4
-                    py-2
-                    bg-white
-                "
+        px-4
+        py-2
+        border
+        border-gray-300
+        rounded-lg
+        bg-white
+        text-sm
+        font-medium
+        text-gray-700
+        hover:bg-gray-50
+        transition
+    "
             >
-
-                <option value="">
-                    Shelf
-                </option>
-
-                {shelves.map((shelf) => (
-
-                    <option
-                        key={shelf.id}
-                        value={shelf.id}
-                    >
-                        {shelf.name}
-                    </option>
-
-                ))}
-
-            </select>
-
-
-            {/* ==================================================
-                CONDITION
-            ================================================== */}
-
-            <select
-                value={conditionValue}
-                onChange={(e) =>
-                    onConditionChange(e.target.value)
-                }
-                className="
-                    w-44
-                    border
-                    border-gray-300
-                    rounded-lg
-                    px-4
-                    py-2
-                    bg-white
-                "
-            >
-
-                <option value="">
-                    Condition
-                </option>
-
-                {conditions.map((condition) => (
-
-                    <option
-                        key={condition.id}
-                        value={condition.id}
-                    >
-                        {condition.name}
-                    </option>
-
-                ))}
-
-            </select>
+                Clear Filters
+            </button>
 
         </div>
     );

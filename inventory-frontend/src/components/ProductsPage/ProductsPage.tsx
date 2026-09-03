@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
 import { ProductService } from "../../services/productService";
@@ -7,12 +6,13 @@ import PageContainer from "../UI/PageContainer";
 import PageHeader from "../UI/PageHeader";
 import Button from "../UI/Button/Button";
 import InventoryFilters from "./Inventory/InventoryFilters";
-import DataTable from "../UI/DataTable/DataTable";
-import { productColumns } from "./productColumns";
+import ProductTable from "./ProductTable";
 import type { Product } from "../../types";
+import { filterProducts } from "./productFilters";
+
 
 const ProductsPage = () => {
-  const navigate = useNavigate();
+
 
   const {
     openProduct,
@@ -21,8 +21,10 @@ const ProductsPage = () => {
 
   const {
     products,
+    parts,
     fetchProducts,
   } = useInventory();
+
 
   // =====================================
   // FILTER STATE
@@ -33,6 +35,15 @@ const ProductsPage = () => {
   const [brand, setBrand] = useState("");
   const [shelf, setShelf] = useState("");
   const [condition, setCondition] = useState("");
+
+  // FILTER CLEAR FUNCTION
+  const handleClearFilters = () => {
+    setSearch("");
+    setCategory("");
+    setBrand("");
+    setShelf("");
+    setCondition("");
+  };
 
   // =====================================
   // DELETE PRODUCT
@@ -58,84 +69,17 @@ const ProductsPage = () => {
     }
   };
 
-  // =====================================
-  // FILTER PRODUCTS
-  // =====================================
-
-  const searchTerm = search.trim().toLowerCase();
-
-  const filteredProducts = products.filter((product) => {
-    // -------------------------------------
-    // SEARCH
-    // -------------------------------------
-
-    const partName =
-      product.part?.[0]?.name?.toLowerCase() || "";
-
-    const productTitle =
-      product.title?.toLowerCase() || "";
-
-    const serialNumber =
-      product.serial_number?.toLowerCase() || "";
-
-    const workOrder =
-      product.work_order?.toLowerCase() || "";
-
-    const brandName =
-      product.brand?.[0]?.name?.toLowerCase() || "";
-
-    const conditionName =
-      product.condition?.[0]?.name?.toLowerCase() || "";
-
-    const matchesSearch =
-      !searchTerm ||
-      partName.includes(searchTerm) ||
-      productTitle.includes(searchTerm) ||
-      serialNumber.includes(searchTerm) ||
-      workOrder.includes(searchTerm) ||
-      brandName.includes(searchTerm) ||
-      conditionName.includes(searchTerm);
-
-    // -------------------------------------
-    // BRAND
-    // -------------------------------------
-
-    const productBrandId =
-      product.brand?.[0]?.id;
-
-    const matchesBrand =
-      !brand ||
-      Number(productBrandId) === Number(brand);
-
-    // -------------------------------------
-    // SHELF
-    // -------------------------------------
-
-    const productShelfId =
-      product.shelf?.[0]?.id;
-
-    const matchesShelf =
-      !shelf ||
-      Number(productShelfId) === Number(shelf);
-
-    // -------------------------------------
-    // CONDITION
-    // -------------------------------------
-
-    const productConditionId =
-      product.condition?.[0]?.id;
-
-    const matchesCondition =
-      !condition ||
-      Number(productConditionId) === Number(condition);
-
-    return (
-      matchesSearch &&
-      matchesBrand &&
-      matchesShelf &&
-      matchesCondition
-    );
-  });
+  const filteredProducts = filterProducts(
+    products,
+    parts,
+    {
+      search,
+      category,
+      brand,
+      shelf,
+      condition,
+    }
+  );
 
   // =====================================
   // UI
@@ -171,20 +115,15 @@ const ProductsPage = () => {
 
           conditionValue={condition}
           onConditionChange={setCondition}
+          onClearFilters={handleClearFilters}
         />
 
         <div className="mt-6">
 
-          <DataTable
-            columns={productColumns(
-              openEditProduct,
-              handleDeleteProduct
-            )}
-            data={filteredProducts}
-            getRowKey={(product) => product.id}
-            onRowClick={(product) =>
-              navigate(`/product/${product.id}`)
-            }
+          <ProductTable
+            products={filteredProducts}
+            onEdit={openEditProduct}
+            onDelete={handleDeleteProduct}
           />
 
         </div>

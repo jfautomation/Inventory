@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
@@ -25,6 +26,12 @@ const PartsPage = () => {
     fetchParts,
   } = useInventory();
 
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [brand, setBrand] = useState("");
+  const [shelf, setShelf] = useState("");
+  const [condition, setCondition] = useState("");
+
   const handleDeletePart = async (part: Part) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${part.name}"?\n\nThis action cannot be undone.`
@@ -42,6 +49,42 @@ const PartsPage = () => {
       alert("Failed to delete part.");
     }
   };
+
+  const searchTerm = search.trim().toLowerCase();
+
+  const filteredParts = parts.filter((part) => {
+    const partName = part.name?.toLowerCase() || "";
+
+    const brandName =
+      brands.find(
+        (brand) => Number(brand.id) === Number(part.brand_id)
+      )?.name?.toLowerCase() || "";
+
+    const categoryName =
+      categories.find(
+        (category) => Number(category.id) === Number(part.category_id)
+      )?.name?.toLowerCase() || "";
+
+    const matchesSearch =
+      !searchTerm ||
+      partName.includes(searchTerm) ||
+      brandName.includes(searchTerm) ||
+      categoryName.includes(searchTerm);
+
+    const matchesBrand =
+      !brand ||
+      Number(part.brand_id) === Number(brand);
+
+    const matchesCategory =
+      !category ||
+      Number(part.category_id) === Number(category);
+
+    return (
+      matchesSearch &&
+      matchesBrand &&
+      matchesCategory
+    );
+  });
 
   return (
     <PageContainer>
@@ -85,7 +128,19 @@ const PartsPage = () => {
           p-4
           shadow-sm
         ">
-          <InventoryFilters entityName="Parts" />
+          <InventoryFilters
+            entityName="Parts"
+            searchValue={search}
+            onSearchChange={setSearch}
+            categoryValue={category}
+            onCategoryChange={setCategory}
+            brandValue={brand}
+            onBrandChange={setBrand}
+            shelfValue={shelf}
+            onShelfChange={setShelf}
+            conditionValue={condition}
+            onConditionChange={setCondition}
+          />
         </div>
 
 
@@ -155,7 +210,7 @@ const PartsPage = () => {
                 openEditPart,
                 handleDeletePart
               )}
-              data={parts}
+              data={filteredParts}
               getRowKey={(part) => part.id}
               onRowClick={(part) =>
                 navigate(`/part/${part.id}`)

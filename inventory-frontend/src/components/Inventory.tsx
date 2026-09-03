@@ -8,11 +8,10 @@ import Login from "./Login/Login";
 import { getToken } from "../api/client";
 import Button from "../components/UI/Button/Button";
 import InventoryFilters from "./ProductsPage/Inventory/InventoryFilters";
-import DataTable from "./UI/DataTable/DataTable";
-import { useNavigate } from "react-router-dom";
-import { productColumns } from "../components/ProductsPage/productColumns";
+import ProductTable from "./ProductsPage/ProductTable";
 import { ProductService } from "../services/productService";
 import type { Product } from "../types";
+import { filterProducts } from "./ProductsPage/productFilters";
 
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -28,13 +27,23 @@ const Inventory: React.FC = () => {
   const [shelf, setShelf] = useState("");
   const [condition, setCondition] = useState("");
 
-  const navigate = useNavigate();
+  const handleClearFilters = () => {
+    setSearch("");
+    setCategory("");
+    setBrand("");
+    setShelf("");
+    setCondition("");
+  };
 
   const {
     products,
+    parts,
     fetchProducts,
     isLoading,
   } = useInventory();
+
+
+
 
   // =========================
   // AUTH CHECK
@@ -97,37 +106,17 @@ const Inventory: React.FC = () => {
     .sort((a, b) => b.id - a.id)
     .slice(0, 5);
 
-  const searchTerm = search.trim().toLowerCase();
-
-const filteredRecentProducts = recentProducts.filter((product) => {
-  const partName =
-    product.part?.[0]?.name?.toLowerCase() || "";
-
-  const productTitle =
-    product.title?.toLowerCase() || "";
-
-  const serialNumber =
-    product.serial_number?.toLowerCase() || "";
-
-  const workOrder =
-    product.work_order?.toLowerCase() || "";
-
-  const brandName =
-    product.brand?.[0]?.name?.toLowerCase() || "";
-
-  const conditionName =
-    product.condition?.[0]?.name?.toLowerCase() || "";
-
-  return (
-    !searchTerm ||
-    partName.includes(searchTerm) ||
-    productTitle.includes(searchTerm) ||
-    serialNumber.includes(searchTerm) ||
-    workOrder.includes(searchTerm) ||
-    brandName.includes(searchTerm) ||
-    conditionName.includes(searchTerm)
+  const filteredRecentProducts = filterProducts(
+    recentProducts,
+    parts,
+    {
+      search,
+      category,
+      brand,
+      shelf,
+      condition,
+    }
   );
-});
 
   // =========================
   // UI
@@ -164,6 +153,7 @@ const filteredRecentProducts = recentProducts.filter((product) => {
           onShelfChange={setShelf}
           conditionValue={condition}
           onConditionChange={setCondition}
+          onClearFilters={handleClearFilters}
         />
 
         <div className="mt-6">
@@ -178,18 +168,11 @@ const filteredRecentProducts = recentProducts.filter((product) => {
             Recently Added Products
           </h3>
 
-          <DataTable
-            columns={productColumns(
-              openEditProduct,
-              handleDeleteProduct
-            )}
-            data={filteredRecentProducts}
-            getRowKey={(product) => product.id}
-            onRowClick={(product) =>
-              navigate(`/product/${product.id}`)
-            }
+          <ProductTable
+            products={filteredRecentProducts}
+            onEdit={openEditProduct}
+            onDelete={handleDeleteProduct}
           />
-
         </div>
 
       </div>
