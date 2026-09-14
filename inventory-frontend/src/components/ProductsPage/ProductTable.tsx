@@ -5,35 +5,47 @@ import { useInventory } from "../../context/InventoryContext";
 import type { Product } from "../../types";
 
 type ProductTableProps = {
-  products: Product[];
-  onEdit: (product: Product) => void;
-  onDelete: (product: Product) => void;
+    products: Product[];
+    onEdit: (product: Product) => void;
+    onDelete: (product: Product) => void;
 };
 
 const ProductTable = ({
-  products,
-  onEdit,
-  onDelete,
+    products,
+    onEdit,
+    onDelete,
 }: ProductTableProps) => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  const { parts, categories } = useInventory();
+    const { parts, categories } = useInventory();
 
-  return (
-    <DataTable
-      columns={productColumns(
-        parts,
-        categories,
-        onEdit,
-        onDelete
-      )}
-      data={products}
-      getRowKey={(product) => product.id}
-      onRowClick={(product) =>
-        navigate(`/product/${product.id}`)
-      }
-    />
-  );
+    return (
+        <div>
+            <h3
+                className="
+          text-lg
+          font-semibold
+          text-gray-900
+          mb-4
+        "
+            >
+                Recently Added Products
+            </h3>
+            <DataTable
+                columns={productColumns(
+                    parts,
+                    categories,
+                    onEdit,
+                    onDelete
+                )}
+                data={products}
+                getRowKey={(product) => product.id}
+                onRowClick={(product) =>
+                    navigate(`/product/${product.id}`)
+                }
+            />
+        </div>
+    );
 };
 
 export default ProductTable;

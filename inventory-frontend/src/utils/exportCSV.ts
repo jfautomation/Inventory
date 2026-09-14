@@ -1,5 +1,7 @@
 export const exportProductsCSV = (products: any[]) => {
 
+  console.log("EXPORT FUNCTION CALLED:", products);
+
   const headers = [
     "ID",
     "Name",
@@ -77,16 +79,17 @@ export const exportProductsCSV = (products: any[]) => {
 
   const url = URL.createObjectURL(blob);
 
+const link = document.createElement("a");
 
-  const link = document.createElement("a");
+link.href = url;
+link.download = "inventory_products.csv";
 
-  link.href = url;
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
 
-  link.download = "inventory_products.csv";
-
-  link.click();
-
-
+setTimeout(() => {
   URL.revokeObjectURL(url);
+}, 100);
 
 };

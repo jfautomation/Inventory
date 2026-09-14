@@ -23,7 +23,7 @@ export const productColumns = (
 
         return (
           <Link
-            to={`/part/${part.id}`}
+            to={`/product/${product.id}`}
             onClick={(e) => e.stopPropagation()}
             className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
           >

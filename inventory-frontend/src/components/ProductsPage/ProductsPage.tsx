@@ -9,7 +9,7 @@ import InventoryFilters from "./Inventory/InventoryFilters";
 import ProductTable from "./ProductTable";
 import type { Product } from "../../types";
 import { filterProducts } from "./productFilters";
-
+import { exportProductsCSV } from "../../utils/exportCSV";
 
 const ProductsPage = () => {
 
@@ -76,8 +76,6 @@ const ProductsPage = () => {
       search,
       category,
       brand,
-      shelf,
-      condition,
     }
   );
 
@@ -90,9 +88,20 @@ const ProductsPage = () => {
 
       <PageHeader title="Products Inventory">
 
-        <Button onClick={openProduct}>
-          Add Product
-        </Button>
+        <div className="flex items-center gap-3">
+
+          <Button onClick={openProduct}>
+            Add Product
+          </Button>
+
+          <Button
+            onClick={() => exportProductsCSV(filteredProducts)}
+            variant="secondary"
+          >
+            Export
+          </Button>
+
+        </div>
 
       </PageHeader>
 
@@ -110,11 +119,6 @@ const ProductsPage = () => {
           brandValue={brand}
           onBrandChange={setBrand}
 
-          shelfValue={shelf}
-          onShelfChange={setShelf}
-
-          conditionValue={condition}
-          onConditionChange={setCondition}
           onClearFilters={handleClearFilters}
         />
 

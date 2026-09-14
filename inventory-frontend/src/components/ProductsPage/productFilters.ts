@@ -4,8 +4,6 @@ type ProductFilterValues = {
   search: string;
   category: string;
   brand: string;
-  shelf: string;
-  condition: string;
 };
 
 export const filterProducts = (
@@ -31,17 +29,13 @@ export const filterProducts = (
     const brandName =
       product.brand?.[0]?.name?.toLowerCase() || "";
 
-    const conditionName =
-      product.condition?.[0]?.name?.toLowerCase() || "";
-
     const matchesSearch =
       !searchTerm ||
       partName.includes(searchTerm) ||
       productTitle.includes(searchTerm) ||
       serialNumber.includes(searchTerm) ||
       workOrder.includes(searchTerm) ||
-      brandName.includes(searchTerm) ||
-      conditionName.includes(searchTerm);
+      brandName.includes(searchTerm);
 
     const productBrandId =
       product.brand?.[0]?.id;
@@ -61,26 +55,10 @@ export const filterProducts = (
       !filters.category ||
       Number(fullPart?.category_id) === Number(filters.category);
 
-    const productShelfId =
-      product.shelf?.[0]?.id;
-
-    const matchesShelf =
-      !filters.shelf ||
-      Number(productShelfId) === Number(filters.shelf);
-
-    const productConditionId =
-      product.condition?.[0]?.id;
-
-    const matchesCondition =
-      !filters.condition ||
-      Number(productConditionId) === Number(filters.condition);
-
     return (
       matchesSearch &&
       matchesCategory &&
-      matchesBrand &&
-      matchesShelf &&
-      matchesCondition
+      matchesBrand
     );
   });
 };

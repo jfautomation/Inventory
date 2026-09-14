@@ -10,6 +10,8 @@ import DataTable from "../UI/DataTable/DataTable";
 import { partColumns } from "./partColumns";
 import { TaxonomyService } from "../../services/taxonomyService";
 import { Part } from "../../types";
+import { filterParts } from "./filterParts";
+import { exportPartsCSV } from "../../utils/exportPartsCSV";
 
 const PartsPage = () => {
   const navigate = useNavigate();
@@ -24,13 +26,19 @@ const PartsPage = () => {
     brands,
     categories,
     fetchParts,
+    series,
   } = useInventory();
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
-  const [shelf, setShelf] = useState("");
-  const [condition, setCondition] = useState("");
+
+  const handleClearFilters = () => {
+    setSearch("");
+    setCategory("");
+    setBrand("");
+  };
+
 
   const handleDeletePart = async (part: Part) => {
     const confirmed = window.confirm(
@@ -50,41 +58,19 @@ const PartsPage = () => {
     }
   };
 
-  const searchTerm = search.trim().toLowerCase();
+  const filteredParts = filterParts(
+    parts,
+    brands,
+    categories,
+    series,
+    {
+      search,
+      category,
+      brand,
+    }
+  );
 
-  const filteredParts = parts.filter((part) => {
-    const partName = part.name?.toLowerCase() || "";
 
-    const brandName =
-      brands.find(
-        (brand) => Number(brand.id) === Number(part.brand_id)
-      )?.name?.toLowerCase() || "";
-
-    const categoryName =
-      categories.find(
-        (category) => Number(category.id) === Number(part.category_id)
-      )?.name?.toLowerCase() || "";
-
-    const matchesSearch =
-      !searchTerm ||
-      partName.includes(searchTerm) ||
-      brandName.includes(searchTerm) ||
-      categoryName.includes(searchTerm);
-
-    const matchesBrand =
-      !brand ||
-      Number(part.brand_id) === Number(brand);
-
-    const matchesCategory =
-      !category ||
-      Number(part.category_id) === Number(category);
-
-    return (
-      matchesSearch &&
-      matchesBrand &&
-      matchesCategory
-    );
-  });
 
   return (
     <PageContainer>
@@ -101,7 +87,10 @@ const PartsPage = () => {
             Add Part
           </Button>
 
-          <Button variant="secondary">
+          <Button
+            onClick={() => exportPartsCSV(filteredParts)}
+            variant="secondary"
+          >
             Export
           </Button>
 
@@ -136,10 +125,8 @@ const PartsPage = () => {
             onCategoryChange={setCategory}
             brandValue={brand}
             onBrandChange={setBrand}
-            shelfValue={shelf}
-            onShelfChange={setShelf}
-            conditionValue={condition}
-            onConditionChange={setCondition}
+            onClearFilters={handleClearFilters}
+
           />
         </div>
 
@@ -188,10 +175,11 @@ const PartsPage = () => {
               </div>
 
               <div className="
-                text-sm
-                text-gray-500
-              ">
-                {parts.length} {parts.length === 1 ? "part" : "parts"}
+  text-sm
+  text-gray-500
+">
+                {filteredParts.length}{" "}
+                {filteredParts.length === 1 ? "part" : "parts"}
               </div>
 
             </div>

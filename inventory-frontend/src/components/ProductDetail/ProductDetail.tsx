@@ -159,6 +159,26 @@ const ProductDetail = () => {
 
       </div>
 
+      <div className="mx-6 mt-6">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="text-base font-semibold text-gray-900">
+            Notes
+          </h3>
+
+          <div className="mt-3">
+            {product.notes ? (
+              <p className="whitespace-pre-wrap text-sm leading-6 text-gray-700">
+                {product.notes}
+              </p>
+            ) : (
+              <p className="text-sm italic text-gray-400">
+                No notes added.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="mt-3">
         <DetailActions
           onAdd={() => {

@@ -373,397 +373,701 @@ const ProductForm: React.FC<Props> = ({
   // UI
   // =========================================================
 
+  // =========================================================
+  // UI
+  // =========================================================
+
   return (
-    <div>
+    <div className="w-full max-w-4xl">
 
-      <h2>
-        {isEditing
-          ? "Edit Product"
-          : "Create Product"}
-      </h2>
+      {/* =====================================================
+        FORM HEADER
+    ===================================================== */}
+
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          {isEditing ? "Edit Product" : "Create Product"}
+        </h2>
+
+        <p className="mt-1 text-sm text-gray-500">
+          {isEditing
+            ? "Update the product information below."
+            : "Add a new product to your inventory."}
+        </p>
+      </div>
 
 
       {/* =====================================================
-          STATUS
-      ===================================================== */}
+        FORM
+    ===================================================== */}
 
-      <select
-        value={inventoryStatus}
-        onChange={(e) =>
-          setInventoryStatus(
-            e.target.value as
-            | "active"
-            | "sold"
-            | "archived"
-          )
-        }
-      >
-        <option value="">
-          Select Status
-        </option>
+      <div className="space-y-8">
 
-        <option value="active">
-          Active
-        </option>
+        {/* ===================================================
+          BASIC INFORMATION
+      =================================================== */}
 
-        <option value="sold">
-          Sold
-        </option>
+        <section>
 
-        <option value="archived">
-          Archived
-        </option>
-      </select>
+          <div className="mb-4">
+            <h3 className="text-base font-semibold text-gray-900">
+              Basic Information
+            </h3>
 
+            <p className="mt-1 text-sm text-gray-500">
+              Identify the product and link it to the appropriate part.
+            </p>
+          </div>
 
-      {/* =====================================================
-          TITLE
-      ===================================================== */}
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
 
-      <input
-        value={title}
-        onChange={(e) =>
-          setTitle(e.target.value)
-        }
-        placeholder="Title"
-      />
+            {/* TITLE */}
+            <div className="md:col-span-2">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Title
+              </label>
 
-
-      {/* =====================================================
-          SERIAL NUMBER
-      ===================================================== */}
-
-      <input
-        value={serialNumber}
-        onChange={(e) =>
-          setSerialNumber(
-            e.target.value
-          )
-        }
-        placeholder="Serial Number *"
-      />
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Brand New Siemens Drive"
+                className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                transition
+                placeholder:text-gray-400
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              />
+            </div>
 
 
-      {/* =====================================================
-          WORK ORDER
-      ===================================================== */}
+            {/* BRAND */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Brand <span className="text-red-500">*</span>
+              </label>
 
-      <input
-        value={workOrder}
-        onChange={(e) =>
-          setWorkOrder(
-            e.target.value
-          )
-        }
-        placeholder="Work Order"
-      />
+              <select
+                value={selectedBrand?.id ?? ""}
+                onChange={(e) => {
+                  const brand =
+                    brands.find(
+                      (b) => b.id === Number(e.target.value)
+                    ) || null;
+
+                  setSelectedBrand(brand);
+                  setSelectedPart(null);
+                }}
+                className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              >
+                <option value="">
+                  Select Brand
+                </option>
+
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
 
-      {/* =====================================================
-          PRICE
-      ===================================================== */}
+            {/* PART */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Part Number <span className="text-red-500">*</span>
+              </label>
 
-      <input
-        type="number"
-        min="0"
-        value={listPrice}
-        onChange={(e) =>
-          setListPrice(
-            e.target.value
-          )
-        }
-        placeholder="Price"
-      />
+              <select
+                value={selectedPart?.id || ""}
+                disabled={!selectedBrand}
+                onChange={(e) => {
+                  const part =
+                    parts.find(
+                      (p) => p.id === Number(e.target.value)
+                    ) || null;
+
+                  setSelectedPart(part);
+                }}
+                className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                disabled:cursor-not-allowed
+                disabled:bg-gray-100
+                disabled:text-gray-400
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              >
+                <option value="">
+                  {!selectedBrand
+                    ? "Select Brand First"
+                    : parts.length === 0
+                      ? "No Parts Available"
+                      : "Select Part Number"}
+                </option>
+
+                {parts.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
 
-      {/* =====================================================
-          BRAND
-      ===================================================== */}
+            {/* SERIAL NUMBER */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Serial Number <span className="text-red-500">*</span>
+              </label>
 
-      <select
-        value={
-          selectedBrand?.id ?? ""
-        }
-        onChange={(e) => {
+              <input
+                value={serialNumber}
+                onChange={(e) => setSerialNumber(e.target.value)}
+                placeholder="Enter serial number"
+                className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              />
+            </div>
 
-          const brand =
-            brands.find(
-              (b) =>
-                b.id ===
-                Number(
-                  e.target.value
-                )
-            ) || null;
 
-          setSelectedBrand(
-            brand
-          );
+            {/* WORK ORDER */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Work Order
+              </label>
 
-          // A Part belongs to a Brand,
-          // so changing Brand clears Part.
-          setSelectedPart(null);
-        }}
-      >
-        <option value="">
-          Select Brand *
-        </option>
+              <input
+                value={workOrder}
+                onChange={(e) => setWorkOrder(e.target.value)}
+                placeholder="Enter work order"
+                className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              />
+            </div>
 
-        {brands.map((b) => (
-          <option
-            key={b.id}
-            value={b.id}
+          </div>
+        </section>
+
+
+        {/* ===================================================
+          INVENTORY INFORMATION
+      =================================================== */}
+
+        <section>
+
+          <div className="mb-4">
+            <h3 className="text-base font-semibold text-gray-900">
+              Inventory Information
+            </h3>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Set the current inventory and condition details.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+
+            {/* STATUS */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Status
+              </label>
+
+              <select
+                value={inventoryStatus}
+                onChange={(e) =>
+                  setInventoryStatus(
+                    e.target.value as
+                    | "active"
+                    | "sold"
+                    | "archived"
+                  )
+                }
+                className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              >
+                <option value="active">Active</option>
+                <option value="sold">Sold</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+
+
+            {/* CONDITION */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Condition <span className="text-red-500">*</span>
+              </label>
+
+              <select
+                value={selectedCondition?.id || ""}
+                onChange={(e) => {
+                  const condition =
+                    conditions.find(
+                      (c) => c.id === Number(e.target.value)
+                    ) || null;
+
+                  setSelectedCondition(condition);
+                }}
+                className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              >
+                <option value="">
+                  Select Condition
+                </option>
+
+                {conditions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+
+            {/* PRICE */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                List Price
+              </label>
+
+              <div className="relative">
+                <span className="
+                absolute
+                left-3
+                top-1/2
+                -translate-y-1/2
+                text-sm
+                text-gray-400
+              ">
+                  $
+                </span>
+
+                <input
+                  type="number"
+                  min="0"
+                  value={listPrice}
+                  onChange={(e) => setListPrice(e.target.value)}
+                  placeholder="0.00"
+                  className="
+                  w-full
+                  rounded-lg
+                  border
+                  border-gray-300
+                  bg-white
+                  py-2.5
+                  pl-7
+                  pr-3
+                  text-sm
+                  text-gray-900
+                  shadow-sm
+                  outline-none
+                  focus:border-gray-400
+                  focus:ring-2
+                  focus:ring-gray-200
+                "
+                />
+              </div>
+            </div>
+
+
+            {/* SHELF */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Shelf
+              </label>
+
+              <select
+                value={selectedShelf?.id || ""}
+                onChange={(e) => {
+                  const shelf =
+                    shelves.find(
+                      (s) => s.id === Number(e.target.value)
+                    ) || null;
+
+                  setSelectedShelf(shelf);
+                }}
+                className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              >
+                <option value="">
+                  Select Shelf
+                </option>
+
+                {shelves.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+          </div>
+        </section>
+
+
+        {/* ===================================================
+          TESTING
+      =================================================== */}
+
+        <section>
+
+          <div className="mb-4">
+            <h3 className="text-base font-semibold text-gray-900">
+              Testing
+            </h3>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Record whether the product has been tested and when.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+
+            {/* TEST STATUS */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Test Status
+              </label>
+
+              <select
+                value={
+                  testStatus === null
+                    ? ""
+                    : testStatus
+                      ? "tested"
+                      : "not-tested"
+                }
+                onChange={(e) => {
+                  if (e.target.value === "tested") {
+                    setTestStatus(true);
+                  } else if (e.target.value === "not-tested") {
+                    setTestStatus(false);
+                    setTestDate("");
+                  } else {
+                    setTestStatus(null);
+                    setTestDate("");
+                  }
+                }}
+                className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              >
+                <option value="">
+                  Select Test Status
+                </option>
+
+                <option value="tested">
+                  Tested
+                </option>
+
+                <option value="not-tested">
+                  Not Tested
+                </option>
+              </select>
+            </div>
+
+
+            {/* TEST DATE */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Test Date
+              </label>
+
+              <input
+                type="date"
+                value={testDate}
+                onChange={(e) => setTestDate(e.target.value)}
+                disabled={testStatus !== true}
+                className="
+                w-full
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                disabled:cursor-not-allowed
+                disabled:bg-gray-100
+                disabled:text-gray-400
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              />
+            </div>
+
+          </div>
+        </section>
+
+
+        {/* ===================================================
+          NOTES & IMAGE
+      =================================================== */}
+
+        <section>
+
+          <div className="mb-4">
+            <h3 className="text-base font-semibold text-gray-900">
+              Additional Information
+            </h3>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Add notes or an image to help identify the product.
+            </p>
+          </div>
+
+          <div className="space-y-5">
+
+            {/* NOTES */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Notes
+              </label>
+
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add notes about this product..."
+                rows={4}
+                className="
+                w-full
+                resize-y
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                px-3
+                py-2.5
+                text-sm
+                text-gray-900
+                shadow-sm
+                outline-none
+                placeholder:text-gray-400
+                focus:border-gray-400
+                focus:ring-2
+                focus:ring-gray-200
+              "
+              />
+            </div>
+
+
+            {/* IMAGE */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Product Image
+              </label>
+
+            <input
+  type="file"
+  accept="image/*"
+  onChange={(e) =>
+    setImageFile(e.target.files?.[0] || null)
+  }
+  className="
+    block
+    w-fit
+    max-w-full
+    rounded-lg
+    border
+    border-gray-300
+    bg-white
+    px-3
+    py-2
+    text-sm
+    text-gray-600
+    file:mr-4
+    file:rounded-md
+    file:border-0
+    file:bg-gray-100
+    file:px-3
+    file:py-1.5
+    file:text-sm
+    file:font-medium
+    file:text-gray-700
+  "
+/>
+            </div>
+
+          </div>
+        </section>
+
+
+        {/* ===================================================
+          FOOTER
+      =================================================== */}
+
+        <div className="
+        flex
+        flex-col
+        gap-3
+        border-t
+        border-gray-200
+        pt-6
+        sm:flex-row
+        sm:items-center
+        sm:justify-end
+      ">
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="
+            inline-flex
+            items-center
+            justify-center
+            rounded-lg
+            bg-blue-600
+            px-5
+            py-2.5
+            text-sm
+            font-semibold
+            text-white
+            shadow-sm
+            transition
+            hover:bg-blue-700
+            disabled:cursor-not-allowed
+            disabled:opacity-60
+          "
           >
-            {b.name}
-          </option>
-        ))}
-      </select>
+            {loading
+              ? "Saving..."
+              : isEditing
+                ? "Update Product"
+                : "Create Product"}
+          </button>
 
+        </div>
 
-      {/* =====================================================
-          CONDITION
-      ===================================================== */}
-
-      <select
-        value={
-          selectedCondition?.id || ""
-        }
-        onChange={(e) => {
-
-          const condition =
-            conditions.find(
-              (c) =>
-                c.id ===
-                Number(
-                  e.target.value
-                )
-            ) || null;
-
-          setSelectedCondition(
-            condition
-          );
-        }}
-      >
-        <option value="">
-          Select Condition *
-        </option>
-
-        {conditions.map((c) => (
-          <option
-            key={c.id}
-            value={c.id}
-          >
-            {c.name}
-          </option>
-        ))}
-      </select>
-
-
-      {/* =====================================================
-          SHELF
-      ===================================================== */}
-
-      <select
-        value={
-          selectedShelf?.id || ""
-        }
-        onChange={(e) => {
-
-          const shelf =
-            shelves.find(
-              (s) =>
-                s.id ===
-                Number(
-                  e.target.value
-                )
-            ) || null;
-
-          setSelectedShelf(
-            shelf
-          );
-        }}
-      >
-        <option value="">
-          Select Shelf
-        </option>
-
-        {shelves.map((s) => (
-          <option
-            key={s.id}
-            value={s.id}
-          >
-            {s.name}
-          </option>
-        ))}
-      </select>
-
-
-      {/* =====================================================
-          PART
-      ===================================================== */}
-
-      <select
-        value={
-          selectedPart?.id || ""
-        }
-        disabled={!selectedBrand}
-        onChange={(e) => {
-
-          const part =
-            parts.find(
-              (p) =>
-                p.id ===
-                Number(
-                  e.target.value
-                )
-            ) || null;
-
-          setSelectedPart(
-            part
-          );
-        }}
-      >
-        <option value="">
-          {!selectedBrand
-            ? "Select Brand First"
-            : parts.length === 0
-              ? "No Parts Available"
-              : "Select Part *"}
-        </option>
-
-        {parts.map((p) => (
-          <option
-            key={p.id}
-            value={p.id}
-          >
-            {p.name}
-          </option>
-        ))}
-      </select>
-
-
-      {/* =====================================================
-          TEST STATUS
-      ===================================================== */}
-
-      <label>
-        Test Status
-      </label>
-
-      <select
-        value={
-          testStatus === null
-            ? ""
-            : testStatus
-              ? "tested"
-              : "not-tested"
-        }
-        onChange={(e) => {
-
-          if (
-            e.target.value ===
-            "tested"
-          ) {
-            setTestStatus(true);
-          } else if (
-            e.target.value ===
-            "not-tested"
-          ) {
-            setTestStatus(false);
-            setTestDate("");
-          } else {
-            setTestStatus(null);
-            setTestDate("");
-          }
-
-        }}
-      >
-        <option value="">
-          Select Test Status
-        </option>
-
-        <option value="tested">
-          Tested
-        </option>
-
-        <option value="not-tested">
-          Not Tested
-        </option>
-      </select>
-
-
-      {/* =====================================================
-          TEST DATE
-      ===================================================== */}
-
-      <label>
-        Test Date
-      </label>
-
-      <input
-        type="date"
-        value={testDate}
-        onChange={(e) =>
-          setTestDate(
-            e.target.value
-          )
-        }
-        disabled={
-          testStatus !== true
-        }
-      />
-
-
-      {/* =====================================================
-          NOTES
-      ===================================================== */}
-
-      <textarea
-        value={notes}
-        onChange={(e) =>
-          setNotes(
-            e.target.value
-          )
-        }
-        placeholder="Notes"
-      />
-
-
-      {/* =====================================================
-          IMAGE
-      ===================================================== */}
-
-      <label>
-        Product Image
-      </label>
-
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) =>
-          setImageFile(
-            e.target.files?.[0] ||
-            null
-          )
-        }
-      />
-
-
-      {/* =====================================================
-          SAVE
-      ===================================================== */}
-
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={loading}
-      >
-        {loading
-          ? "Saving..."
-          : isEditing
-            ? "Update Product"
-            : "Create Product"}
-      </button>
-
+      </div>
     </div>
   );
 };

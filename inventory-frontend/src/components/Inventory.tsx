@@ -24,15 +24,12 @@ const Inventory: React.FC = () => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
-  const [shelf, setShelf] = useState("");
-  const [condition, setCondition] = useState("");
+
 
   const handleClearFilters = () => {
     setSearch("");
     setCategory("");
     setBrand("");
-    setShelf("");
-    setCondition("");
   };
 
   const {
@@ -113,8 +110,6 @@ const Inventory: React.FC = () => {
       search,
       category,
       brand,
-      shelf,
-      condition,
     }
   );
 
@@ -149,24 +144,12 @@ const Inventory: React.FC = () => {
           onCategoryChange={setCategory}
           brandValue={brand}
           onBrandChange={setBrand}
-          shelfValue={shelf}
-          onShelfChange={setShelf}
-          conditionValue={condition}
-          onConditionChange={setCondition}
           onClearFilters={handleClearFilters}
         />
 
         <div className="mt-6">
 
-          <h3
-            className="
-              text-lg
-              font-semibold
-              mb-4
-            "
-          >
-            Recently Added Products
-          </h3>
+
 
           <ProductTable
             products={filteredRecentProducts}

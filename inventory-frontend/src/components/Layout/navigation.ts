@@ -18,6 +18,11 @@ const navigation = [
     name: "Add Product",
     action: "openProduct",
   },
+
+  {
+    name: "Add Part",
+    action: "openPart",
+  },
 ];
 
 export default navigation;

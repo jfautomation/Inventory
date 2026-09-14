@@ -366,239 +366,372 @@ const PartForm: React.FC<Props> = ({
   // UI
   // =========================================================
 
-  return (
-    <div>
+ // =========================================================
+// UI
+// =========================================================
 
-      <h2>
-        {isEditMode
-          ? "Edit Part"
-          : "Create Part"}
+return (
+  <div className="w-full max-w-4xl">
+
+    {/* =====================================================
+        FORM HEADER
+    ===================================================== */}
+
+    <div className="mb-6">
+      <h2 className="text-2xl font-semibold text-gray-900">
+        {isEditMode ? "Edit Part" : "Create Part"}
       </h2>
 
+      <p className="mt-1 text-sm text-gray-500">
+        {isEditMode
+          ? "Update the part information below."
+          : "Add a new part to your parts library."}
+      </p>
+    </div>
 
-      {/* =====================================================
-          BRAND
-      ===================================================== */}
 
-      <div style={{ marginBottom: 12 }}>
+    {/* =====================================================
+        BASIC INFORMATION
+    ===================================================== */}
 
-        <label>
-          Brand *
-        </label>
+    <section>
+      <div className="mb-4">
+        <h3 className="text-base font-semibold text-gray-900">
+          Basic Information
+        </h3>
 
-        <select
-          value={selectedBrand?.id ?? ""}
-          disabled={!!initialBrand}
-          onChange={(e) => {
+        <p className="mt-1 text-sm text-gray-500">
+          Identify the part and assign its classification.
+        </p>
+      </div>
 
-            const brand =
-              brands.find(
-                (b) =>
-                  b.id ===
-                  Number(e.target.value)
-              ) || null;
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
 
-            setSelectedBrand(brand);
-            setSelectedSeries(null);
-          }}
-        >
+        {/* BRAND */}
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            Brand <span className="text-red-500">*</span>
+          </label>
 
-          <option value="">
-            {initialBrand
-              ? "Brand (from product)"
-              : "Select Brand"}
-          </option>
+          <select
+            value={selectedBrand?.id ?? ""}
+            disabled={!!initialBrand}
+            onChange={(e) => {
+              const brand =
+                brands.find(
+                  (b) => b.id === Number(e.target.value)
+                ) || null;
 
-          {brands.map((brand) => (
-            <option
-              key={brand.id}
-              value={brand.id}
-            >
-              {brand.name}
+              setSelectedBrand(brand);
+              setSelectedSeries(null);
+            }}
+            className="
+              w-full
+              rounded-lg
+              border
+              border-gray-300
+              bg-white
+              px-3
+              py-2.5
+              text-sm
+              text-gray-900
+              shadow-sm
+              outline-none
+              disabled:cursor-not-allowed
+              disabled:bg-gray-100
+              disabled:text-gray-400
+              focus:border-gray-400
+              focus:ring-2
+              focus:ring-gray-200
+            "
+          >
+            <option value="">
+              {initialBrand
+                ? "Brand (from product)"
+                : "Select Brand"}
             </option>
-          ))}
 
-        </select>
+            {brands.map((brand) => (
+              <option key={brand.id} value={brand.id}>
+                {brand.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      </div>
 
+        {/* CATEGORY */}
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            Category <span className="text-red-500">*</span>
+          </label>
 
-      {/* =====================================================
-          CATEGORY
-      ===================================================== */}
+          <select
+            value={selectedCategory?.id ?? ""}
+            onChange={(e) => {
+              const category =
+                categories.find(
+                  (c) => c.id === Number(e.target.value)
+                ) || null;
 
-      <div style={{ marginBottom: 12 }}>
-
-        <label>
-          Category *
-        </label>
-
-        <select
-          value={selectedCategory?.id ?? ""}
-          onChange={(e) => {
-
-            const category =
-              categories.find(
-                (c) =>
-                  c.id ===
-                  Number(e.target.value)
-              ) || null;
-
-            setSelectedCategory(
-              category
-            );
-          }}
-        >
-
-          <option value="">
-            Select Category
-          </option>
-
-          {categories.map((category) => (
-            <option
-              key={category.id}
-              value={category.id}
-            >
-              {category.name}
+              setSelectedCategory(category);
+            }}
+            className="
+              w-full
+              rounded-lg
+              border
+              border-gray-300
+              bg-white
+              px-3
+              py-2.5
+              text-sm
+              text-gray-900
+              shadow-sm
+              outline-none
+              focus:border-gray-400
+              focus:ring-2
+              focus:ring-gray-200
+            "
+          >
+            <option value="">
+              Select Category
             </option>
-          ))}
 
-        </select>
-
-      </div>
-
-
-      {/* =====================================================
-          PART NAME
-      ===================================================== */}
-
-      <div style={{ marginBottom: 12 }}>
-
-        <label>
-          Part Number / Name *
-        </label>
-
-        <input
-          value={partName}
-          onChange={(e) =>
-            setPartName(
-              e.target.value
-            )
-          }
-          placeholder="Enter part number"
-        />
-
-      </div>
+            {categories.map((category) => (
+              <option
+                key={category.id}
+                value={category.id}
+              >
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
 
-      {/* =====================================================
-          SERIES
-      ===================================================== */}
+        {/* PART NAME */}
+        <div className="md:col-span-2">
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            Part Number / Name <span className="text-red-500">*</span>
+          </label>
 
-      <div style={{ marginBottom: 12 }}>
+          <input
+            value={partName}
+            onChange={(e) =>
+              setPartName(e.target.value)
+            }
+            placeholder="Enter part number"
+            className="
+              w-full
+              rounded-lg
+              border
+              border-gray-300
+              bg-white
+              px-3
+              py-2.5
+              text-sm
+              text-gray-900
+              shadow-sm
+              outline-none
+              placeholder:text-gray-400
+              focus:border-gray-400
+              focus:ring-2
+              focus:ring-gray-200
+            "
+          />
+        </div>
 
-        <label>
-          Series
-        </label>
 
-        <select
-          value={selectedSeries?.id ?? ""}
-          disabled={
-            !selectedBrand ||
-            availableSeries.length === 0
-          }
-          onChange={(e) => {
+        {/* SERIES */}
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            Series
+          </label>
 
-            const series =
-              availableSeries.find(
-                (s) =>
-                  s.id ===
-                  Number(e.target.value)
-              ) || null;
+          <select
+            value={selectedSeries?.id ?? ""}
+            disabled={
+              !selectedBrand ||
+              availableSeries.length === 0
+            }
+            onChange={(e) => {
+              const series =
+                availableSeries.find(
+                  (s) => s.id === Number(e.target.value)
+                ) || null;
 
-            setSelectedSeries(series);
-          }}
-        >
-
-          <option value="">
-            {!selectedBrand
-              ? "Select Brand First"
-              : availableSeries.length === 0
-                ? "No Series Available"
-                : "Select Series"}
-          </option>
-
-          {availableSeries.map((series) => (
-            <option
-              key={series.id}
-              value={series.id}
-            >
-              {series.name}
+              setSelectedSeries(series);
+            }}
+            className="
+              w-full
+              rounded-lg
+              border
+              border-gray-300
+              bg-white
+              px-3
+              py-2.5
+              text-sm
+              text-gray-900
+              shadow-sm
+              outline-none
+              disabled:cursor-not-allowed
+              disabled:bg-gray-100
+              disabled:text-gray-400
+              focus:border-gray-400
+              focus:ring-2
+              focus:ring-gray-200
+            "
+          >
+            <option value="">
+              {!selectedBrand
+                ? "Select Brand First"
+                : availableSeries.length === 0
+                  ? "No Series Available"
+                  : "Select Series"}
             </option>
-          ))}
 
-        </select>
+            {availableSeries.map((series) => (
+              <option
+                key={series.id}
+                value={series.id}
+              >
+                {series.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
       </div>
+    </section>
 
 
-      {/* =====================================================
-          BASE PRICE
-      ===================================================== */}
+    {/* =====================================================
+        PRICING
+    ===================================================== */}
 
-      <div style={{ marginBottom: 12 }}>
+    <section className="mt-6">
+      <div className="mb-4">
+        <h3 className="text-base font-semibold text-gray-900">
+          Pricing
+        </h3>
 
-        <label>
+        <p className="mt-1 text-sm text-gray-500">
+          Set the base price for this part.
+        </p>
+      </div>
+
+      <div className="max-w-sm">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">
           Base Price
         </label>
 
-        <input
-          type="number"
-          min="0"
-          value={priceNew}
-          onChange={(e) =>
-            setPriceNew(
-              e.target.value
-            )
-          }
-          placeholder="Enter base price"
-        />
+        <div className="relative">
+          <span
+            className="
+              absolute
+              left-3
+              top-1/2
+              -translate-y-1/2
+              text-sm
+              text-gray-400
+            "
+          >
+            $
+          </span>
 
+          <input
+            type="number"
+            min="0"
+            value={priceNew}
+            onChange={(e) =>
+              setPriceNew(e.target.value)
+            }
+            placeholder="0.00"
+            className="
+              w-full
+              rounded-lg
+              border
+              border-gray-300
+              bg-white
+              py-2.5
+              pl-7
+              pr-3
+              text-sm
+              text-gray-900
+              shadow-sm
+              outline-none
+              focus:border-gray-400
+              focus:ring-2
+              focus:ring-gray-200
+            "
+          />
+        </div>
       </div>
+    </section>
 
 
-      {/* =====================================================
-          DESCRIPTION
-      ===================================================== */}
+    {/* =====================================================
+        DESCRIPTION
+    ===================================================== */}
 
-      <div style={{ marginBottom: 12 }}>
-
-        <label>
+    <section className="mt-6">
+      <div className="mb-4">
+        <h3 className="text-base font-semibold text-gray-900">
           Description
-        </label>
+        </h3>
 
-        <textarea
-          value={description}
-          onChange={(e) =>
-            setDescription(
-              e.target.value
-            )
-          }
-          placeholder="Enter part description"
-          rows={4}
-        />
-
+        <p className="mt-1 text-sm text-gray-500">
+          Add useful information about this part.
+        </p>
       </div>
 
+      <textarea
+        value={description}
+        onChange={(e) =>
+          setDescription(e.target.value)
+        }
+        placeholder="Enter part description..."
+        rows={4}
+        className="
+          w-full
+          resize-y
+          rounded-lg
+          border
+          border-gray-300
+          bg-white
+          px-3
+          py-2.5
+          text-sm
+          text-gray-900
+          shadow-sm
+          outline-none
+          placeholder:text-gray-400
+          focus:border-gray-400
+          focus:ring-2
+          focus:ring-gray-200
+        "
+      />
+    </section>
 
-      {/* =====================================================
-          IMAGE
-      ===================================================== */}
 
-      <div style={{ marginBottom: 12 }}>
+    {/* =====================================================
+        IMAGE
+    ===================================================== */}
 
-        <label>
+    <section className="mt-6">
+      <div className="mb-4">
+        <h3 className="text-base font-semibold text-gray-900">
           Part Image
+        </h3>
+
+        <p className="mt-1 text-sm text-gray-500">
+          Upload an image to help identify the part.
+        </p>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          Image
         </label>
 
         <input
@@ -606,60 +739,90 @@ const PartForm: React.FC<Props> = ({
           accept="image/*"
           onChange={(e) =>
             setImageFile(
-              e.target.files?.[0] ||
-              null
+              e.target.files?.[0] || null
             )
           }
+          className="
+            block
+            w-fit
+            max-w-full
+            rounded-lg
+            border
+            border-gray-300
+            bg-white
+            px-3
+            py-2
+            text-sm
+            text-gray-600
+            file:mr-4
+            file:rounded-md
+            file:border-0
+            file:bg-gray-100
+            file:px-3
+            file:py-1.5
+            file:text-sm
+            file:font-medium
+            file:text-gray-700
+          "
         />
 
         {isEditMode &&
           existingImageId &&
           !imageFile && (
-            <div style={{ marginTop: 6 }}>
+            <p className="mt-2 text-sm text-gray-500">
               Existing image attached
-            </div>
+            </p>
           )}
-
       </div>
+    </section>
 
 
-      {/* =====================================================
-          ACTION
-      ===================================================== */}
+    {/* =====================================================
+        ACTIONS
+    ===================================================== */}
+
+    <div className="
+      mt-8
+      border-t
+      border-gray-200
+      pt-5
+      flex
+      justify-end
+    ">
 
       <button
         type="button"
         onClick={handleSubmit}
         disabled={loading}
+        className="
+          inline-flex
+          items-center
+          justify-center
+          rounded-lg
+          bg-blue-600
+          px-5
+          py-2.5
+          text-sm
+          font-semibold
+          text-white
+          shadow-sm
+          transition
+          hover:bg-blue-700
+          disabled:cursor-not-allowed
+          disabled:opacity-60
+        "
       >
-
         {loading
           ? "Saving..."
           : isEditMode
             ? "Update Part"
             : "Create Part"}
-
       </button>
 
-
-      {/* =====================================================
-          CANCEL
-      ===================================================== */}
-
-      {isEditMode && (
-        <button
-          type="button"
-          onClick={handleCancel}
-          style={{
-            marginLeft: 10,
-          }}
-        >
-          Cancel
-        </button>
-      )}
-
     </div>
-  );
+
+  </div>
+);
 };
 
 export default PartForm;

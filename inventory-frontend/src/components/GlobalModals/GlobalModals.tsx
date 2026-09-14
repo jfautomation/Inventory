@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import ProductForm from "../ProductForm/ProductForm";
 import PartForm from "../PartForm/PartForm";
 import { useModal } from "../../context/ModalContext";
@@ -12,6 +13,8 @@ const GlobalModals = () => {
     isPartOpen,
     closePart,
     editingPart,
+
+
   } = useModal();
 
   const {
@@ -23,6 +26,27 @@ const GlobalModals = () => {
     fetchProducts,
     fetchParts,
   } = useInventory();
+
+  // =====================================
+  // LOCK BACKGROUND SCROLL WHEN MODAL OPEN
+  // =====================================
+
+  useEffect(() => {
+    const modalOpen = isProductOpen || isPartOpen;
+
+    if (!modalOpen) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+
+  }, [isProductOpen, isPartOpen]);
 
   // =====================================
   // AFTER PRODUCT CREATE / UPDATE
@@ -45,73 +69,94 @@ const GlobalModals = () => {
   return (
     <>
       {/* =====================================
-          PRODUCT MODAL
-      ===================================== */}
+PRODUCT MODAL
+===================================== */}
 
       {isProductOpen && (
         <div style={overlayStyle}>
           <div style={modalStyle}>
-            <ProductForm
-              brands={brands}
-              shelves={shelves}
-              conditions={conditions}
-              categories={categories}
-              series={series}
-              editingProduct={editingProduct}
 
-              onCreated={async () => {
-                await handleProductRefresh();
-                closeProduct();
-              }}
+            <div style={modalContentStyle}>
+              <ProductForm
+                brands={brands}
+                shelves={shelves}
+                conditions={conditions}
+                categories={categories}
+                series={series}
+                editingProduct={editingProduct}
 
-              onUpdated={async () => {
-                await handleProductRefresh();
-                closeProduct();
-              }}
-            />
+                onCreated={async () => {
+                  await handleProductRefresh();
+                  closeProduct();
+                }}
 
-            <button onClick={closeProduct}>
-              Close
-            </button>
+                onUpdated={async () => {
+                  await handleProductRefresh();
+                  closeProduct();
+                }}
+              />
+            </div>
+
+            <div style={modalFooterStyle}>
+              <button
+                type="button"
+                onClick={closeProduct}
+                style={footerButtonStyle}
+              >
+                Close
+              </button>
+            </div>
+
           </div>
         </div>
       )}
 
       {/* =====================================
-          PART MODAL
-      ===================================== */}
+      PART MODAL
+  ===================================== */}
 
       {isPartOpen && (
         <div style={overlayStyle}>
           <div style={modalStyle}>
-            <PartForm
-              brands={brands}
-              categories={categories}
-              editingPart={editingPart}
 
-              onCreated={async () => {
-                await handlePartRefresh();
-                closePart();
-              }}
+            <div style={modalContentStyle}>
+              <PartForm
+                brands={brands}
+                categories={categories}
+                editingPart={editingPart}
 
-              onUpdated={async () => {
-                await handlePartRefresh();
-                closePart();
-              }}
-            />
+                onCreated={async () => {
+                  await handlePartRefresh();
+                  closePart();
+                }}
 
-            <button onClick={closePart}>
-              Close
-            </button>
+                onUpdated={async () => {
+                  await handlePartRefresh();
+                  closePart();
+                }}
+              />
+            </div>
+
+            <div style={modalFooterStyle}>
+              <button
+                type="button"
+                onClick={closePart}
+                style={footerButtonStyle}
+              >
+                Close
+              </button>
+            </div>
+
           </div>
         </div>
       )}
     </>
+
+
   );
 };
 
 export default GlobalModals;
-
 
 // ===============================
 // STYLES
@@ -120,16 +165,60 @@ export default GlobalModals;
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "rgba(0,0,0,0.5)",
+  background: "rgba(15, 23, 42, 0.55)",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
+  padding: "24px",
   zIndex: 9999,
 };
 
 const modalStyle: React.CSSProperties = {
+  width: "100%",
+  maxWidth: "860px",
+  height: "calc(100vh - 48px)",
+  maxHeight: "calc(100vh - 48px)",
+
   background: "#fff",
-  padding: 20,
-  width: 700,
-  borderRadius: 8,
+  borderRadius: "14px",
+  boxShadow: "0 20px 60px rgba(0, 0, 0, 0.18)",
+
+  display: "flex",
+  flexDirection: "column",
+
+  overflow: "hidden",
+};
+
+const modalContentStyle: React.CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  overflowY: "auto",
+
+  padding: "20px 24px",
+};
+
+const modalFooterStyle: React.CSSProperties = {
+  flexShrink: 0,
+
+  display: "flex",
+  justifyContent: "flex-end",
+
+  padding: "12px 24px",
+
+  borderTop: "1px solid #e5e7eb",
+  background: "#f9fafb",
+};
+
+const footerButtonStyle: React.CSSProperties = {
+  padding: "8px 16px",
+  borderRadius: "8px",
+
+  border: "1px solid #d1d5db",
+  background: "#fff",
+
+  color: "#374151",
+  fontSize: "14px",
+  fontWeight: 500,
+
+  cursor: "pointer",
 };
