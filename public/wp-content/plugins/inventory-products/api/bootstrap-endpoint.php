@@ -19,7 +19,6 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
         'callback'            => 'inventory_bootstrap',
     ]);
-
 });
 
 
@@ -55,22 +54,21 @@ function inventory_bootstrap($request)
 
     error_log(
         'BOOTSTRAP | PRODUCT QUERY: ' .
-        round((microtime(true) - $start) * 1000, 2) .
-        ' ms'
+            round((microtime(true) - $start) * 1000, 2) .
+            ' ms'
     );
 
 
     foreach ($product_query->posts as $post) {
 
         $products[] = inventory_transform_product($post);
-
     }
 
 
     error_log(
         'BOOTSTRAP | PRODUCT TRANSFORM: ' .
-        round((microtime(true) - $start) * 1000, 2) .
-        ' ms'
+            round((microtime(true) - $start) * 1000, 2) .
+            ' ms'
     );
 
 
@@ -122,7 +120,7 @@ function inventory_bootstrap($request)
                     true
                 ),
 
-                'price_new'   => (float) get_term_meta(
+                'base_price' => (float) get_term_meta(
                     $term_id,
                     'base_price',
                     true
@@ -143,16 +141,14 @@ function inventory_bootstrap($request)
                     )
                     : null,
             ];
-
         }
-
     }
 
 
     error_log(
         'BOOTSTRAP | PARTS: ' .
-        round((microtime(true) - $start) * 1000, 2) .
-        ' ms'
+            round((microtime(true) - $start) * 1000, 2) .
+            ' ms'
     );
 
 
@@ -189,25 +185,32 @@ function inventory_bootstrap($request)
 
 
         $taxonomy_data[$taxonomy] = array_map(
-            function ($term) {
+            function ($term) use ($taxonomy) {
 
-                return [
+                $data = [
                     'id'   => $term->term_id,
                     'name' => $term->name,
                     'slug' => $term->slug,
                 ];
 
+                if ($taxonomy === 'condition') {
+                    $data['price_percentage'] =
+                        inventory_get_condition_price_percentage(
+                            $term->slug
+                        );
+                }
+
+                return $data;
             },
             $terms
         );
-
     }
 
 
     error_log(
         'BOOTSTRAP | TAXONOMIES: ' .
-        round((microtime(true) - $start) * 1000, 2) .
-        ' ms'
+            round((microtime(true) - $start) * 1000, 2) .
+            ' ms'
     );
 
 
@@ -239,32 +242,27 @@ function inventory_bootstrap($request)
 
     error_log(
         '🔥 BOOTSTRAP TOTAL: ' .
-        round($elapsed, 2) .
-        ' ms'
+            round($elapsed, 2) .
+            ' ms'
     );
 
     error_log(
         '🔥 BOOTSTRAP PRODUCTS: ' .
-        count($products)
+            count($products)
     );
 
     error_log(
         '🔥 BOOTSTRAP PARTS: ' .
-        count($parts)
+            count($parts)
     );
 
     error_log(
         '🔥 BOOTSTRAP RESPONSE SIZE: ' .
-        strlen(wp_json_encode($response)) .
-        ' bytes'
+            strlen(wp_json_encode($response)) .
+            ' bytes'
     );
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | RESPONSE
-    |--------------------------------------------------------------------------
-    */
 
     return rest_ensure_response($response);
 }

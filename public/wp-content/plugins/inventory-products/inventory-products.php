@@ -45,8 +45,8 @@ require_once __DIR__ . '/core/product-cpt.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | product-cpt.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -56,8 +56,8 @@ require_once __DIR__ . '/core/taxonomies.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | taxonomies.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -74,10 +74,12 @@ $inventory_step_start = microtime(true);
 
 require_once __DIR__ . '/domain/inventory-rules.php';
 
+require_once __DIR__ . '/domain/condition-pricing.php';
+
 inventory_profile_log(
     'INVENTORY TIMING | inventory-rules.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -95,7 +97,7 @@ inventory_profile_log(
 // require_once __DIR__ . '/domain/part-stock-engine.php';
 
 // inventory_profile_log(
-//     'INVENTORY TIMING | part-stock-engine.php: ' .
+//     'INVENTORY TIMING | part-stock-engine.php: '.
 //     round((microtime(true) - $inventory_step_start) * 1000, 2) .
 //     ' ms'
 // );
@@ -157,8 +159,8 @@ require_once __DIR__ . '/api/product-endpoints.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | product-endpoints.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -174,8 +176,8 @@ require_once __DIR__ . '/api/parts-endpoints.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | parts-endpoints.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -191,8 +193,8 @@ require_once __DIR__ . '/api/taxonomy-endpoints.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | taxonomy-endpoints.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -208,8 +210,8 @@ require_once __DIR__ . '/api/series-endpoints.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | series-endpoints.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -225,8 +227,8 @@ require_once __DIR__ . '/api/part-summary-endpoint.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | part-summary-endpoint.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -242,8 +244,8 @@ require_once __DIR__ . '/api/media-endpoints.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | media-endpoints.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -263,8 +265,8 @@ require_once __DIR__ . '/api/bootstrap-endpoint.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | bootstrap-endpoint.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -280,8 +282,8 @@ require_once __DIR__ . '/api/debug-endpoints.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | debug-endpoints.php: ' .
-    round((microtime(true) - $inventory_step_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_step_start) * 1000, 2) .
+        ' ms'
 );
 
 
@@ -292,13 +294,15 @@ inventory_profile_log(
 */
 
 add_action('wp_head', function () {
-    ?>
+?>
+
 <script>
 window.wpApiSettings = {
     root: "<?php echo esc_url_raw(rest_url()); ?>",
     nonce: "<?php echo wp_create_nonce('wp_rest'); ?>"
 };
 </script>
+
 <?php
 });
 
@@ -311,8 +315,8 @@ window.wpApiSettings = {
 
 inventory_profile_log(
     'INVENTORY TIMING | TOTAL PLUGIN BOOTSTRAP: ' .
-    round((microtime(true) - $inventory_profile_start) * 1000, 2) .
-    ' ms'
+        round((microtime(true) - $inventory_profile_start) * 1000, 2) .
+        ' ms'
 );
 
 inventory_profile_log('=== INVENTORY PLUGIN PROFILE END ===');

@@ -52,6 +52,7 @@ function inventory_transform_product($post)
         'serial_number',
         'work_order',
         'list_price',
+        'price_mode',
         'notes',
         'test_date',
         'inventory_status',
@@ -215,15 +216,15 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
      * =========================
      */
     $meta_fields = [
-        'serial_number',
-        'work_order',
-        'list_price',
-        'notes',
-        'test_status',
-        'test_date',
-        'inventory_status',
-        'image_id'
-    ];
+    'serial_number',
+    'work_order',
+    'notes',
+    'test_status',
+    'test_date',
+    'inventory_status',
+    'image_id',
+    'price_mode'
+];
 
     foreach ($meta_fields as $field) {
         $value = $request->get_param($field);
@@ -245,11 +246,13 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
     update_post_meta($post->ID, 'inventory_status', $status);
     update_post_meta($post->ID, 'quantity', inventory_calculate_quantity($status));
 
-    /**
+       /**
      * =========================
-     * PART → BRAND + CATEGORY (DOMAIN RULES)
+     * PART → BRAND + CATEGORY
+     * + PRODUCT PRICING
      * =========================
      */
+
     $part_ids = $request->get_param('part');
 
     $brand_id = 0;
@@ -259,15 +262,174 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
 
         $part_id = (int) $part_ids[0];
 
-        $brand_id    = inventory_get_brand_from_part($part_id);
+        $brand_id = inventory_get_brand_from_part($part_id);
         $category_id = inventory_get_category_from_part($part_id);
 
         if ($brand_id) {
-            wp_set_post_terms($post->ID, [$brand_id], 'brand', false);
+            wp_set_post_terms(
+                $post->ID,
+                [$brand_id],
+                'brand',
+                false
+            );
         }
 
         if ($category_id) {
-            wp_set_post_terms($post->ID, [$category_id], 'inventory_category', false);
+            wp_set_post_terms(
+                $post->ID,
+                [$category_id],
+                'inventory_category',
+                false
+            );
+        }
+    }
+
+    /**
+     * =========================
+     * PRICING MODE
+     * =========================
+     *
+     * Automatic is the default.
+     * Manual is the override.
+     */
+
+    $requested_price_mode =
+        $request->get_param('price_mode');
+
+    $existing_price_mode =
+        get_post_meta(
+            $post->ID,
+            'price_mode',
+            true
+        );
+
+    if ($requested_price_mode !== null) {
+
+        $price_mode =
+            inventory_normalize_price_mode(
+                $requested_price_mode
+            );
+
+    } elseif ($existing_price_mode !== '') {
+
+        $price_mode =
+            inventory_normalize_price_mode(
+                $existing_price_mode
+            );
+
+    } else {
+
+        $price_mode = 'automatic';
+    }
+
+    update_post_meta(
+        $post->ID,
+        'price_mode',
+        $price_mode
+    );
+
+    /**
+     * =========================
+     * GET PRODUCT PART
+     * =========================
+     */
+
+    $product_parts =
+        wp_get_post_terms(
+            $post->ID,
+            'part'
+        );
+
+    $product_part_id = 0;
+
+    if (
+        !empty($product_parts) &&
+        !is_wp_error($product_parts)
+    ) {
+        $product_part_id =
+            (int) $product_parts[0]->term_id;
+    }
+
+    /**
+     * =========================
+     * GET PRODUCT CONDITION
+     * =========================
+     */
+
+    $product_conditions =
+        wp_get_post_terms(
+            $post->ID,
+            'condition'
+        );
+
+    $product_condition_id = 0;
+
+    if (
+        !empty($product_conditions) &&
+        !is_wp_error($product_conditions)
+    ) {
+        $product_condition_id =
+            (int) $product_conditions[0]->term_id;
+    }
+
+    /**
+     * =========================
+     * AUTOMATIC PRICING
+     * =========================
+     */
+
+    if ($price_mode === 'automatic') {
+
+        $calculated_price =
+            inventory_calculate_product_price(
+                $product_part_id,
+                $product_condition_id
+            );
+
+        if ($calculated_price !== null) {
+
+            update_post_meta(
+                $post->ID,
+                'list_price',
+                $calculated_price
+            );
+
+        } else {
+
+            delete_post_meta(
+                $post->ID,
+                'list_price'
+            );
+        }
+    }
+
+    /**
+     * =========================
+     * MANUAL PRICING
+     * =========================
+     *
+     * Manual mode uses the supplied
+     * list_price value.
+     */
+
+    if ($price_mode === 'manual') {
+
+        $manual_price =
+            $request->get_param('list_price');
+
+        if ($manual_price !== null) {
+
+            $manual_price =
+                (float) $manual_price;
+
+            if ($manual_price >= 0) {
+
+                update_post_meta(
+                    $post->ID,
+                    'list_price',
+                    $manual_price
+                );
+            }
         }
     }
 

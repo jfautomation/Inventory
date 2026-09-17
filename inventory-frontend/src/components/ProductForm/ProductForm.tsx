@@ -48,6 +48,8 @@ const ProductForm: React.FC<Props> = ({
   const [serialNumber, setSerialNumber] = useState("");
   const [workOrder, setWorkOrder] = useState("");
   const [listPrice, setListPrice] = useState("");
+  const [priceMode, setPriceMode] =
+    useState<"automatic" | "manual">("automatic");
   const [notes, setNotes] = useState("");
 
   // null = user has not selected a test status yet
@@ -89,6 +91,17 @@ const ProductForm: React.FC<Props> = ({
     : [];
 
   // =========================================================
+  // AUTOMATIC PRICE
+  // =========================================================
+
+  const automaticPrice =
+    selectedPart?.base_price != null &&
+      selectedCondition?.price_percentage != null
+      ? selectedPart.base_price *
+      (selectedCondition.price_percentage / 100)
+      : null;
+
+  // =========================================================
   // PREFILL EDIT MODE
   // =========================================================
 
@@ -115,6 +128,12 @@ const ProductForm: React.FC<Props> = ({
       editingProduct.list_price != null
         ? String(editingProduct.list_price)
         : ""
+    );
+
+    setPriceMode(
+      editingProduct.price_mode === "manual"
+        ? "manual"
+        : "automatic"
     );
 
     setNotes(
@@ -267,12 +286,15 @@ const ProductForm: React.FC<Props> = ({
       // PAYLOAD
       // -----------------------------------------------------
 
+
       const payload: ProductPayload = {
         title: title.trim(),
 
         serial_number: serialNumber.trim(),
 
-        ...(listPrice.trim()
+        price_mode: priceMode,
+
+        ...(priceMode === "manual" && listPrice.trim()
           ? { list_price: Number(listPrice) }
           : {}),
 
@@ -721,48 +743,109 @@ const ProductForm: React.FC<Props> = ({
             </div>
 
 
-            {/* PRICE */}
+            {/* PRICING */}
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                List Price
+                Pricing
               </label>
 
-              <div className="relative">
-                <span className="
-                absolute
-                left-3
-                top-1/2
-                -translate-y-1/2
-                text-sm
-                text-gray-400
-              ">
-                  $
-                </span>
+              <div className="space-y-3">
 
-                <input
-                  type="number"
-                  min="0"
-                  value={listPrice}
-                  onChange={(e) => setListPrice(e.target.value)}
-                  placeholder="0.00"
+                {/* PRICING MODE */}
+                <select
+                  value={priceMode}
+                  onChange={(e) =>
+                    setPriceMode(
+                      e.target.value as "automatic" | "manual"
+                    )
+                  }
                   className="
-                  w-full
-                  rounded-lg
-                  border
-                  border-gray-300
-                  bg-white
-                  py-2.5
-                  pl-7
-                  pr-3
-                  text-sm
-                  text-gray-900
-                  shadow-sm
-                  outline-none
-                  focus:border-gray-400
-                  focus:ring-2
-                  focus:ring-gray-200
-                "
-                />
+        w-full
+        rounded-lg
+        border
+        border-gray-300
+        bg-white
+        px-3
+        py-2.5
+        text-sm
+        text-gray-900
+        shadow-sm
+        outline-none
+        focus:border-gray-400
+        focus:ring-2
+        focus:ring-gray-200
+      "
+                >
+                  <option value="automatic">
+                    Automatic
+                  </option>
+
+                  <option value="manual">
+                    Manual
+                  </option>
+                </select>
+
+                {/* PRICE */}
+                <div className="relative">
+                  <span
+                    className="
+          absolute
+          left-3
+          top-1/2
+          -translate-y-1/2
+          text-sm
+          text-gray-400
+        "
+                  >
+                    $
+                  </span>
+
+                  <input
+                    type="number"
+                    min="0"
+                    value={
+                      priceMode === "manual"
+                        ? listPrice
+                        : automaticPrice != null
+                          ? automaticPrice.toFixed(2)
+                          : ""
+                    }
+                    onChange={(e) => setListPrice(e.target.value)}
+                    disabled={priceMode === "automatic"}
+                    placeholder={
+                      priceMode === "automatic"
+                        ? "Calculated automatically"
+                        : "0.00"
+                    }
+                    className="
+          w-full
+          rounded-lg
+          border
+          border-gray-300
+          bg-white
+          py-2.5
+          pl-7
+          pr-3
+          text-sm
+          text-gray-900
+          shadow-sm
+          outline-none
+          disabled:cursor-not-allowed
+          disabled:bg-gray-100
+          disabled:text-gray-500
+          focus:border-gray-400
+          focus:ring-2
+          focus:ring-gray-200
+        "
+                  />
+                </div>
+
+                <p className="text-xs text-gray-500">
+                  {priceMode === "automatic"
+                    ? "Price is calculated from the selected part and condition."
+                    : "Price is entered manually."}
+                </p>
+
               </div>
             </div>
 
@@ -985,13 +1068,13 @@ const ProductForm: React.FC<Props> = ({
                 Product Image
               </label>
 
-            <input
-  type="file"
-  accept="image/*"
-  onChange={(e) =>
-    setImageFile(e.target.files?.[0] || null)
-  }
-  className="
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setImageFile(e.target.files?.[0] || null)
+                }
+                className="
     block
     w-fit
     max-w-full
@@ -1013,7 +1096,7 @@ const ProductForm: React.FC<Props> = ({
     file:font-medium
     file:text-gray-700
   "
-/>
+              />
             </div>
 
           </div>
