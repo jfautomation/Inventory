@@ -61,7 +61,6 @@ add_action('rest_api_init', function () {
             ],
         ]
     );
-
 });
 
 
@@ -83,6 +82,24 @@ function inventory_create_part($request)
         return new WP_Error(
             'missing_name',
             'Part name is required.',
+            ['status' => 400]
+        );
+    }
+
+
+    // PART NUMBER
+    $part_number = isset($params['part_number'])
+        ? trim(
+            sanitize_text_field(
+                $params['part_number']
+            )
+        )
+        : '';
+
+    if ($part_number === '') {
+        return new WP_Error(
+            'missing_part_number',
+            'Part Number is required.',
             ['status' => 400]
         );
     }
@@ -117,9 +134,35 @@ function inventory_create_part($request)
 
 
     // SERIES
-    $series_id = isset($params['series_id'])
+    $series_id = isset($params['series_id']) &&
+        $params['series_id'] !== null
         ? (int) $params['series_id']
         : 0;
+
+
+    // DUPLICATE PART NUMBER CHECK
+    $existing_part_numbers = get_terms([
+        'taxonomy'   => 'part',
+        'hide_empty' => false,
+        'meta_query' => [
+            [
+                'key'     => 'part_number',
+                'value'   => $part_number,
+                'compare' => '=',
+            ],
+        ],
+    ]);
+
+    if (
+        !is_wp_error($existing_part_numbers) &&
+        !empty($existing_part_numbers)
+    ) {
+        return new WP_Error(
+            'duplicate_part_number',
+            'A part with this Part Number already exists.',
+            ['status' => 400]
+        );
+    }
 
 
     // DUPLICATE CHECK
@@ -181,50 +224,156 @@ function inventory_create_part($request)
 
     // SERIES
     if ($series_id) {
+
         update_term_meta(
             $term_id,
             'series_id',
             $series_id
         );
+    } else {
+
+        delete_term_meta(
+            $term_id,
+            'series_id'
+        );
     }
 
 
     // BASE PRICE
-    $base_price = isset($params['base_price'])
-        ? (float) $params['base_price']
-        : 0;
+    if (
+        array_key_exists('base_price', $params) &&
+        $params['base_price'] !== null &&
+        $params['base_price'] !== ''
+    ) {
 
+        update_term_meta(
+            $term_id,
+            'base_price',
+            (float) $params['base_price']
+        );
+    } else {
+
+        delete_term_meta(
+            $term_id,
+            'base_price'
+        );
+    }
+
+
+    // PART NUMBER
     update_term_meta(
         $term_id,
-        'base_price',
-        $base_price
+        'part_number',
+        $part_number
     );
 
 
-    // DESCRIPTION
-    $description = isset($params['description'])
-        ? sanitize_textarea_field($params['description'])
+    // SHORT DESCRIPTION
+    $short_description =
+        array_key_exists(
+            'short_description',
+            $params
+        ) &&
+        $params['short_description'] !== null
+        ? sanitize_textarea_field(
+            $params['short_description']
+        )
         : '';
 
     update_term_meta(
         $term_id,
+        'short_description',
+        $short_description
+    );
+
+
+    // LONG DESCRIPTION
+    $long_description =
+        array_key_exists(
+            'long_description',
+            $params
+        ) &&
+        $params['long_description'] !== null
+        ? sanitize_textarea_field(
+            $params['long_description']
+        )
+        : (
+            isset($params['description'])
+            ? sanitize_textarea_field(
+                $params['description']
+            )
+            : ''
+        );
+
+    update_term_meta(
+        $term_id,
+        'long_description',
+        $long_description
+    );
+
+
+    // LEGACY DESCRIPTION
+    update_term_meta(
+        $term_id,
         'description',
-        $description
+        $long_description
     );
 
 
     // IMAGE
-    $image_id = isset($params['image_id'])
-        ? (int) $params['image_id']
-        : 0;
+    if (
+        array_key_exists('image_id', $params) &&
+        $params['image_id'] !== null &&
+        $params['image_id'] !== ''
+    ) {
 
-    if ($image_id) {
-        update_term_meta(
+        $image_id = (int) $params['image_id'];
+
+        if ($image_id) {
+
+            update_term_meta(
+                $term_id,
+                'image_id',
+                $image_id
+            );
+        } else {
+
+            delete_term_meta(
+                $term_id,
+                'image_id'
+            );
+        }
+    } else {
+
+        delete_term_meta(
             $term_id,
-            'image_id',
-            $image_id
+            'image_id'
         );
     }
+
+
+    // ADDITIONAL IMAGES
+    $additional_image_ids =
+        array_key_exists(
+            'additional_image_ids',
+            $params
+        ) &&
+        is_array($params['additional_image_ids'])
+        ? array_values(
+            array_filter(
+                array_map(
+                    'absint',
+                    $params['additional_image_ids']
+                )
+            )
+        )
+        : [];
+
+    update_term_meta(
+        $term_id,
+        'additional_image_ids',
+        $additional_image_ids
+    );
 
 
     // RESPONSE
@@ -283,6 +432,35 @@ function inventory_update_part($request)
     }
 
 
+    // PART NUMBER
+    $part_number = array_key_exists(
+        'part_number',
+        $params
+    )
+        ? trim(
+            sanitize_text_field(
+                $params['part_number']
+            )
+        )
+        : trim(
+            sanitize_text_field(
+                get_term_meta(
+                    $term_id,
+                    'part_number',
+                    true
+                )
+            )
+        );
+
+    if ($part_number === '') {
+        return new WP_Error(
+            'missing_part_number',
+            'Part Number is required.',
+            ['status' => 400]
+        );
+    }
+
+
     // BRAND
     $brand_id = isset($params['brand_id'])
         ? (int) $params['brand_id']
@@ -316,6 +494,39 @@ function inventory_update_part($request)
             'Category is required.',
             ['status' => 400]
         );
+    }
+
+
+    // DUPLICATE PART NUMBER CHECK
+    $existing_part_numbers = get_terms([
+        'taxonomy'   => 'part',
+        'hide_empty' => false,
+        'meta_query' => [
+            [
+                'key'     => 'part_number',
+                'value'   => $part_number,
+                'compare' => '=',
+            ],
+        ],
+    ]);
+
+    if (!is_wp_error($existing_part_numbers)) {
+
+        foreach ($existing_part_numbers as $existing_part) {
+
+            if (
+                (int) $existing_part->term_id ===
+                $term_id
+            ) {
+                continue;
+            }
+
+            return new WP_Error(
+                'duplicate_part_number',
+                'A part with this Part Number already exists.',
+                ['status' => 400]
+            );
+        }
     }
 
 
@@ -388,71 +599,207 @@ function inventory_update_part($request)
 
 
     // SERIES
-    if (isset($params['series_id'])) {
+    if (array_key_exists('series_id', $params)) {
 
-        $series_id = (int) $params['series_id'];
-
-        if ($series_id) {
-
-            update_term_meta(
-                $term_id,
-                'series_id',
-                $series_id
-            );
-
-        } else {
+        if ($params['series_id'] === null) {
 
             delete_term_meta(
                 $term_id,
                 'series_id'
             );
+        } else {
+
+            $series_id = (int) $params['series_id'];
+
+            if ($series_id) {
+
+                update_term_meta(
+                    $term_id,
+                    'series_id',
+                    $series_id
+                );
+            } else {
+
+                delete_term_meta(
+                    $term_id,
+                    'series_id'
+                );
+            }
         }
     }
 
 
     // BASE PRICE
-    if (isset($params['base_price'])) {
+    if (array_key_exists('base_price', $params)) {
+
+        if (
+            $params['base_price'] === null ||
+            $params['base_price'] === ''
+        ) {
+
+            delete_term_meta(
+                $term_id,
+                'base_price'
+            );
+        } else {
+
+            update_term_meta(
+                $term_id,
+                'base_price',
+                (float) $params['base_price']
+            );
+        }
+    }
+
+
+    // PART NUMBER
+    if (array_key_exists('part_number', $params)) {
 
         update_term_meta(
             $term_id,
-            'base_price',
-            (float) $params['base_price']
+            'part_number',
+            $part_number
         );
     }
 
 
-    // DESCRIPTION
-    if (isset($params['description'])) {
+    // SHORT DESCRIPTION
+    if (array_key_exists('short_description', $params)) {
+
+        $short_description =
+            $params['short_description'] !== null
+            ? sanitize_textarea_field(
+                $params['short_description']
+            )
+            : '';
+
+        update_term_meta(
+            $term_id,
+            'short_description',
+            $short_description
+        );
+    }
+
+
+    // LONG DESCRIPTION
+    if (array_key_exists('long_description', $params)) {
+
+        $long_description =
+            $params['long_description'] !== null
+            ? sanitize_textarea_field(
+                $params['long_description']
+            )
+            : '';
+
+        update_term_meta(
+            $term_id,
+            'long_description',
+            $long_description
+        );
 
         update_term_meta(
             $term_id,
             'description',
-            sanitize_textarea_field(
+            $long_description
+        );
+
+    } elseif (array_key_exists('description', $params)) {
+
+        $description =
+            $params['description'] !== null
+            ? sanitize_textarea_field(
                 $params['description']
             )
+            : '';
+
+        update_term_meta(
+            $term_id,
+            'long_description',
+            $description
+        );
+
+        update_term_meta(
+            $term_id,
+            'description',
+            $description
         );
     }
 
 
     // IMAGE
-    if (isset($params['image_id'])) {
+    if (array_key_exists('image_id', $params)) {
 
-        $image_id = (int) $params['image_id'];
-
-        if ($image_id) {
-
-            update_term_meta(
-                $term_id,
-                'image_id',
-                $image_id
-            );
-
-        } else {
+        if (
+            $params['image_id'] === null ||
+            $params['image_id'] === ''
+        ) {
 
             delete_term_meta(
                 $term_id,
                 'image_id'
             );
+        } else {
+
+            $image_id = (int) $params['image_id'];
+
+            if ($image_id) {
+
+                update_term_meta(
+                    $term_id,
+                    'image_id',
+                    $image_id
+                );
+            } else {
+
+                delete_term_meta(
+                    $term_id,
+                    'image_id'
+                );
+            }
+        }
+    }
+
+
+    // ADDITIONAL IMAGES
+    if (array_key_exists('additional_image_ids', $params)) {
+
+        if (
+            $params['additional_image_ids'] === null ||
+            !is_array($params['additional_image_ids'])
+        ) {
+
+            delete_term_meta(
+                $term_id,
+                'additional_image_ids'
+            );
+
+        } else {
+
+            $additional_image_ids =
+                array_values(
+                    array_filter(
+                        array_map(
+                            'absint',
+                            $params['additional_image_ids']
+                        )
+                    )
+                );
+
+            if (empty($additional_image_ids)) {
+
+                delete_term_meta(
+                    $term_id,
+                    'additional_image_ids'
+                );
+
+            } else {
+
+                update_term_meta(
+                    $term_id,
+                    'additional_image_ids',
+                    $additional_image_ids
+                );
+            }
         }
     }
 
@@ -604,9 +951,31 @@ function inventory_format_part($term_id)
         true
     );
 
-    $base_price = (float) get_term_meta(
+    $base_price = get_term_meta(
         $term_id,
         'base_price',
+        true
+    );
+
+    $base_price = $base_price !== ''
+        ? (float) $base_price
+        : null;
+
+    $part_number = get_term_meta(
+        $term_id,
+        'part_number',
+        true
+    );
+
+    $short_description = get_term_meta(
+        $term_id,
+        'short_description',
+        true
+    );
+
+    $long_description = get_term_meta(
+        $term_id,
+        'long_description',
         true
     );
 
@@ -615,6 +984,20 @@ function inventory_format_part($term_id)
         'description',
         true
     );
+
+    $additional_image_ids = get_term_meta(
+        $term_id,
+        'additional_image_ids',
+        true
+    );
+
+    $additional_image_ids =
+        is_array($additional_image_ids)
+        ? array_map(
+            'absint',
+            $additional_image_ids
+        )
+        : [];
 
     $image_id = (int) get_term_meta(
         $term_id,
@@ -634,11 +1017,19 @@ function inventory_format_part($term_id)
 
         'category_id' => $category_id,
 
-        'series_id' => $series_id,
+        'series_id' => $series_id
+            ? $series_id
+            : null,
 
         'base_price' => $base_price,
 
         'description' => $description ?: '',
+
+        'part_number' => $part_number ?: '',
+
+        'short_description' => $short_description ?: '',
+
+        'long_description' => $long_description ?: '',
 
         'image_id' => $image_id,
 
@@ -648,5 +1039,7 @@ function inventory_format_part($term_id)
                 'medium'
             )
             : null,
+
+        'additional_image_ids' => $additional_image_ids,
     ];
 }

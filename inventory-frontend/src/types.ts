@@ -54,19 +54,35 @@ export type Product = {
 };
 
 export type Part = {
+
   id: number;
+
   name: string;
+
   slug?: string;
 
-  brand_id: string;
-  category_id: string;
-  series_id?: string;
+  part_number?: string;
 
-  base_price?: number;
+  brand_id: number;
+
+  category_id: number;
+
+  series_id?: number | null;
+
+  base_price?: number | null;
+
   description?: string;
 
+  short_description?: string;
+
+  long_description?: string;
+
   image_id?: number;
+
   image_url?: string | null;
+
+  additional_image_ids?: number[];
+
 };
 
 
@@ -102,17 +118,25 @@ export type ProductPayload = {
 };
 
 export type CreatePartPayload = {
+
   name: string;
+
+  part_number: string;
 
   brand_id: number;
 
-  category_id?: number;
+  category_id: number;
 
-  series?: number[];
+  series_id?: number | null;
 
-  base_price?: number;
+  base_price?: number | null;
 
-  description?: string;
+  short_description: string;
+
+  long_description: string;
 
   image_id?: number;
+
+  additional_image_ids?: number[];
+
 };

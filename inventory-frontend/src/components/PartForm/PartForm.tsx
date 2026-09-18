@@ -7,14 +7,18 @@ type PartResponse = {
   id: number;
   name: string;
   slug: string;
+  part_number?: string;
   brand_id: number;
   category_id: number;
-  series_id?: number;
-  base_price?: string | number;
-  description?: string;
+  series_id?: number | null;
+  base_price?: number | null;
+  short_description?: string;
+  long_description?: string;
   image_id?: number;
   image_url?: string | null;
+  additional_image_ids?: number[];
 };
+
 
 type Props = {
   brands: Term[];
@@ -53,13 +57,19 @@ const PartForm: React.FC<Props> = ({
   const [partName, setPartName] =
     useState("");
 
+  const [partNumber, setPartNumber] =
+    useState("");
+
   const [selectedSeries, setSelectedSeries] =
     useState<Term | null>(null);
 
   const [priceNew, setPriceNew] =
     useState("");
 
-  const [description, setDescription] =
+  const [shortDescription, setShortDescription] =
+    useState("");
+
+  const [longDescription, setLongDescription] =
     useState("");
 
   const [loading, setLoading] =
@@ -67,6 +77,9 @@ const PartForm: React.FC<Props> = ({
 
   const [imageFile, setImageFile] =
     useState<File | null>(null);
+
+  const [additionalImageFiles, setAdditionalImageFiles] =
+    useState<File[]>([]);
 
   const [existingImageId, setExistingImageId] =
     useState<number | undefined>(undefined);
@@ -88,20 +101,24 @@ const PartForm: React.FC<Props> = ({
 
     setPartName(editingPart.name || "");
 
+    setPartNumber(
+      editingPart.part_number || ""
+    );
+
     const brand = editingPart.brand_id
       ? brands.find(
-          (b) =>
-            b.id === Number(editingPart.brand_id)
-        ) || null
+        (b) =>
+          b.id === Number(editingPart.brand_id)
+      ) || null
       : null;
 
     setSelectedBrand(brand);
 
     const category = editingPart.category_id
       ? categories.find(
-          (c) =>
-            c.id === Number(editingPart.category_id)
-        ) || null
+        (c) =>
+          c.id === Number(editingPart.category_id)
+      ) || null
       : null;
 
     setSelectedCategory(category);
@@ -112,8 +129,12 @@ const PartForm: React.FC<Props> = ({
         : ""
     );
 
-    setDescription(
-      editingPart.description || ""
+    setShortDescription(
+      editingPart.short_description || ""
+    );
+
+    setLongDescription(
+      editingPart.long_description || ""
     );
 
     setExistingImageId(
@@ -185,18 +206,21 @@ const PartForm: React.FC<Props> = ({
   // REQUIRED:
   // Brand
   // Category
+  // Part Number
   // Part Name
   //
   // OPTIONAL:
   // Series
   // Base Price
-  // Description
+  // Short Description
+  // Long Description
   // Image
   // =========================================================
 
   const hasRequiredFields =
     !!selectedBrand &&
     !!selectedCategory &&
+    partNumber.trim().length > 0 &&
     partName.trim().length > 0;
 
 
@@ -208,7 +232,7 @@ const PartForm: React.FC<Props> = ({
 
     if (!hasRequiredFields) {
       alert(
-        "Please complete the required fields:\n\nBrand\nCategory\nPart Number / Name"
+        "Please complete the required fields:\n\nBrand\nCategory\nPart Number\nPart Name"
       );
 
       return;
@@ -231,38 +255,40 @@ const PartForm: React.FC<Props> = ({
       // PAYLOAD
       // -------------------------------------------------------
       //
-      // Only send optional fields when they have values.
+      // Send description fields even when blank so edits can clear existing values.
       // -------------------------------------------------------
 
       const payload: {
         name: string;
+        part_number: string;
         brand_id: number;
         category_id: number;
-        series_id?: number;
-        base_price?: number;
-        description?: string;
+        series_id?: number | null;
+        base_price?: number | null;
+        short_description: string;
+        long_description: string;
         image_id?: number;
+        additional_image_ids?: number[];
       } = {
         name: partName.trim(),
+        part_number: partNumber.trim(),
         brand_id: selectedBrand.id,
         category_id: selectedCategory.id,
+        short_description: shortDescription.trim(),
+        long_description: longDescription.trim(),
       };
 
 
-      if (selectedSeries) {
-        payload.series_id =
-          selectedSeries.id;
-      }
 
-      if (priceNew.trim()) {
-        payload.base_price =
-          Number(priceNew);
-      }
+      payload.series_id =
+        selectedSeries
+          ? selectedSeries.id
+          : null;
 
-      if (description.trim()) {
-        payload.description =
-          description.trim();
-      }
+      payload.base_price =
+        priceNew.trim()
+          ? Number(priceNew)
+          : null;
 
       if (imageId) {
         payload.image_id =
@@ -314,11 +340,13 @@ const PartForm: React.FC<Props> = ({
       // -------------------------------------------------------
 
       setPartName("");
+      setPartNumber("");
       setSelectedBrand(initialBrand);
       setSelectedCategory(null);
       setSelectedSeries(null);
       setPriceNew("");
-      setDescription("");
+      setShortDescription("");
+      setLongDescription("");
       setImageFile(null);
       setExistingImageId(undefined);
 
@@ -366,66 +394,66 @@ const PartForm: React.FC<Props> = ({
   // UI
   // =========================================================
 
- // =========================================================
-// UI
-// =========================================================
+  // =========================================================
+  // UI
+  // =========================================================
 
-return (
-  <div className="w-full max-w-4xl">
+  return (
+    <div className="w-full max-w-4xl">
 
-    {/* =====================================================
+      {/* =====================================================
         FORM HEADER
     ===================================================== */}
 
-    <div className="mb-6">
-      <h2 className="text-2xl font-semibold text-gray-900">
-        {isEditMode ? "Edit Part" : "Create Part"}
-      </h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          {isEditMode ? "Edit Part" : "Create Part"}
+        </h2>
 
-      <p className="mt-1 text-sm text-gray-500">
-        {isEditMode
-          ? "Update the part information below."
-          : "Add a new part to your parts library."}
-      </p>
-    </div>
+        <p className="mt-1 text-sm text-gray-500">
+          {isEditMode
+            ? "Update the part information below."
+            : "Add a new part to your parts library."}
+        </p>
+      </div>
 
 
-    {/* =====================================================
+      {/* =====================================================
         BASIC INFORMATION
     ===================================================== */}
 
-    <section>
-      <div className="mb-4">
-        <h3 className="text-base font-semibold text-gray-900">
-          Basic Information
-        </h3>
+      <section>
+        <div className="mb-4">
+          <h3 className="text-base font-semibold text-gray-900">
+            Basic Information
+          </h3>
 
-        <p className="mt-1 text-sm text-gray-500">
-          Identify the part and assign its classification.
-        </p>
-      </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Identify the part and assign its classification.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
 
-        {/* BRAND */}
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            Brand <span className="text-red-500">*</span>
-          </label>
+          {/* BRAND */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Brand <span className="text-red-500">*</span>
+            </label>
 
-          <select
-            value={selectedBrand?.id ?? ""}
-            disabled={!!initialBrand}
-            onChange={(e) => {
-              const brand =
-                brands.find(
-                  (b) => b.id === Number(e.target.value)
-                ) || null;
+            <select
+              value={selectedBrand?.id ?? ""}
+              disabled={!!initialBrand}
+              onChange={(e) => {
+                const brand =
+                  brands.find(
+                    (b) => b.id === Number(e.target.value)
+                  ) || null;
 
-              setSelectedBrand(brand);
-              setSelectedSeries(null);
-            }}
-            className="
+                setSelectedBrand(brand);
+                setSelectedSeries(null);
+              }}
+              className="
               w-full
               rounded-lg
               border
@@ -444,39 +472,39 @@ return (
               focus:ring-2
               focus:ring-gray-200
             "
-          >
-            <option value="">
-              {initialBrand
-                ? "Brand (from product)"
-                : "Select Brand"}
-            </option>
-
-            {brands.map((brand) => (
-              <option key={brand.id} value={brand.id}>
-                {brand.name}
+            >
+              <option value="">
+                {initialBrand
+                  ? "Brand (from product)"
+                  : "Select Brand"}
               </option>
-            ))}
-          </select>
-        </div>
+
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
 
-        {/* CATEGORY */}
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            Category <span className="text-red-500">*</span>
-          </label>
+          {/* CATEGORY */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Category <span className="text-red-500">*</span>
+            </label>
 
-          <select
-            value={selectedCategory?.id ?? ""}
-            onChange={(e) => {
-              const category =
-                categories.find(
-                  (c) => c.id === Number(e.target.value)
-                ) || null;
+            <select
+              value={selectedCategory?.id ?? ""}
+              onChange={(e) => {
+                const category =
+                  categories.find(
+                    (c) => c.id === Number(e.target.value)
+                  ) || null;
 
-              setSelectedCategory(category);
-            }}
-            className="
+                setSelectedCategory(category);
+              }}
+              className="
               w-full
               rounded-lg
               border
@@ -492,77 +520,110 @@ return (
               focus:ring-2
               focus:ring-gray-200
             "
-          >
-            <option value="">
-              Select Category
-            </option>
-
-            {categories.map((category) => (
-              <option
-                key={category.id}
-                value={category.id}
-              >
-                {category.name}
+            >
+              <option value="">
+                Select Category
               </option>
-            ))}
-          </select>
-        </div>
+
+              {categories.map((category) => (
+                <option
+                  key={category.id}
+                  value={category.id}
+                >
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
 
-        {/* PART NAME */}
-        <div className="md:col-span-2">
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            Part Number / Name <span className="text-red-500">*</span>
-          </label>
+          {/* PART NUMBER */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Part Number <span className="text-red-500">*</span>
+            </label>
 
-          <input
-            value={partName}
-            onChange={(e) =>
-              setPartName(e.target.value)
-            }
-            placeholder="Enter part number"
-            className="
-              w-full
-              rounded-lg
-              border
-              border-gray-300
-              bg-white
-              px-3
-              py-2.5
-              text-sm
-              text-gray-900
-              shadow-sm
-              outline-none
-              placeholder:text-gray-400
-              focus:border-gray-400
-              focus:ring-2
-              focus:ring-gray-200
-            "
-          />
-        </div>
+            <input
+              value={partNumber}
+              onChange={(e) =>
+                setPartNumber(e.target.value)
+              }
+              placeholder="Enter part number"
+              className="
+    w-full
+    rounded-lg
+    border
+    border-gray-300
+    bg-white
+    px-3
+    py-2.5
+    text-sm
+    text-gray-900
+    shadow-sm
+    outline-none
+    placeholder:text-gray-400
+    focus:border-gray-400
+    focus:ring-2
+    focus:ring-gray-200
+  "
+            />
+          </div>
 
 
-        {/* SERIES */}
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            Series
-          </label>
+          {/* PART NAME */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Part Name <span className="text-red-500">*</span>
+            </label>
 
-          <select
-            value={selectedSeries?.id ?? ""}
-            disabled={
-              !selectedBrand ||
-              availableSeries.length === 0
-            }
-            onChange={(e) => {
-              const series =
-                availableSeries.find(
-                  (s) => s.id === Number(e.target.value)
-                ) || null;
+            <input
+              value={partName}
+              onChange={(e) =>
+                setPartName(e.target.value)
+              }
+              placeholder="Enter part name"
+              className="
+    w-full
+    rounded-lg
+    border
+    border-gray-300
+    bg-white
+    px-3
+    py-2.5
+    text-sm
+    text-gray-900
+    shadow-sm
+    outline-none
+    placeholder:text-gray-400
+    focus:border-gray-400
+    focus:ring-2
+    focus:ring-gray-200
+  "
+            />
+          </div>
 
-              setSelectedSeries(series);
-            }}
-            className="
+
+          {/* SERIES */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Series
+            </label>
+
+            <select
+              value={selectedSeries?.id ?? ""}
+              disabled={
+                !selectedBrand ||
+                availableSeries.length === 0
+              }
+              onChange={(e) => {
+                const series =
+                  availableSeries.find(
+                    (s) => s.id === Number(e.target.value)
+                  ) || null;
+
+                setSelectedSeries(series);
+              }}
+              className="
               w-full
               rounded-lg
               border
@@ -581,53 +642,53 @@ return (
               focus:ring-2
               focus:ring-gray-200
             "
-          >
-            <option value="">
-              {!selectedBrand
-                ? "Select Brand First"
-                : availableSeries.length === 0
-                  ? "No Series Available"
-                  : "Select Series"}
-            </option>
-
-            {availableSeries.map((series) => (
-              <option
-                key={series.id}
-                value={series.id}
-              >
-                {series.name}
+            >
+              <option value="">
+                {!selectedBrand
+                  ? "Select Brand First"
+                  : availableSeries.length === 0
+                    ? "No Series Available"
+                    : "Select Series"}
               </option>
-            ))}
-          </select>
+
+              {availableSeries.map((series) => (
+                <option
+                  key={series.id}
+                  value={series.id}
+                >
+                  {series.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
         </div>
-
-      </div>
-    </section>
+      </section>
 
 
-    {/* =====================================================
+      {/* =====================================================
         PRICING
     ===================================================== */}
 
-    <section className="mt-6">
-      <div className="mb-4">
-        <h3 className="text-base font-semibold text-gray-900">
-          Pricing
-        </h3>
+      <section className="mt-6">
+        <div className="mb-4">
+          <h3 className="text-base font-semibold text-gray-900">
+            Pricing
+          </h3>
 
-        <p className="mt-1 text-sm text-gray-500">
-          Set the base price for this part.
-        </p>
-      </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Set the base price for this part.
+          </p>
+        </div>
 
-      <div className="max-w-sm">
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
-          Base Price
-        </label>
+        <div className="max-w-sm">
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            Base Price
+          </label>
 
-        <div className="relative">
-          <span
-            className="
+          <div className="relative">
+            <span
+              className="
               absolute
               left-3
               top-1/2
@@ -635,19 +696,19 @@ return (
               text-sm
               text-gray-400
             "
-          >
-            $
-          </span>
+            >
+              $
+            </span>
 
-          <input
-            type="number"
-            min="0"
-            value={priceNew}
-            onChange={(e) =>
-              setPriceNew(e.target.value)
-            }
-            placeholder="0.00"
-            className="
+            <input
+              type="number"
+              min="0"
+              value={priceNew}
+              onChange={(e) =>
+                setPriceNew(e.target.value)
+              }
+              placeholder="0.00"
+              className="
               w-full
               rounded-lg
               border
@@ -664,85 +725,131 @@ return (
               focus:ring-2
               focus:ring-gray-200
             "
-          />
+            />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
 
-    {/* =====================================================
-        DESCRIPTION
-    ===================================================== */}
+      {/* =====================================================
+  DESCRIPTIONS
+===================================================== */}
 
-    <section className="mt-6">
-      <div className="mb-4">
-        <h3 className="text-base font-semibold text-gray-900">
-          Description
-        </h3>
+      <section className="mt-6">
+        <div className="mb-4">
+          <h3 className="text-base font-semibold text-gray-900">
+            Descriptions
+          </h3>
 
-        <p className="mt-1 text-sm text-gray-500">
-          Add useful information about this part.
-        </p>
-      </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Add short and detailed information about this part.
+          </p>
+        </div>
 
-      <textarea
-        value={description}
-        onChange={(e) =>
-          setDescription(e.target.value)
-        }
-        placeholder="Enter part description..."
-        rows={4}
-        className="
-          w-full
-          resize-y
-          rounded-lg
-          border
-          border-gray-300
-          bg-white
-          px-3
-          py-2.5
-          text-sm
-          text-gray-900
-          shadow-sm
-          outline-none
-          placeholder:text-gray-400
-          focus:border-gray-400
-          focus:ring-2
-          focus:ring-gray-200
-        "
-      />
-    </section>
+        <div className="space-y-5">
+
+          {/* SHORT DESCRIPTION */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Short Description
+            </label>
+
+            <textarea
+              value={shortDescription}
+              onChange={(e) =>
+                setShortDescription(e.target.value)
+              }
+              placeholder="Enter a short part description..."
+              rows={3}
+              className="
+        w-full
+        resize-y
+        rounded-lg
+        border
+        border-gray-300
+        bg-white
+        px-3
+        py-2.5
+        text-sm
+        text-gray-900
+        shadow-sm
+        outline-none
+        placeholder:text-gray-400
+        focus:border-gray-400
+        focus:ring-2
+        focus:ring-gray-200
+      "
+            />
+          </div>
 
 
-    {/* =====================================================
+          {/* LONG DESCRIPTION */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Long Description
+            </label>
+
+            <textarea
+              value={longDescription}
+              onChange={(e) =>
+                setLongDescription(e.target.value)
+              }
+              placeholder="Enter detailed part information..."
+              rows={6}
+              className="
+        w-full
+        resize-y
+        rounded-lg
+        border
+        border-gray-300
+        bg-white
+        px-3
+        py-2.5
+        text-sm
+        text-gray-900
+        shadow-sm
+        outline-none
+        placeholder:text-gray-400
+        focus:border-gray-400
+        focus:ring-2
+        focus:ring-gray-200
+      "
+            />
+          </div>
+
+        </div>
+      </section>
+
+
+      {/* =====================================================
         IMAGE
     ===================================================== */}
 
-    <section className="mt-6">
-      <div className="mb-4">
-        <h3 className="text-base font-semibold text-gray-900">
-          Part Image
-        </h3>
+      <section className="mt-6">
+        <div className="mb-4">
+          <h3 className="text-base font-semibold text-gray-900">
+            Part Image
+          </h3>
 
-        <p className="mt-1 text-sm text-gray-500">
-          Upload an image to help identify the part.
-        </p>
-      </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Upload an image to help identify the part.
+          </p>
+        </div>
 
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
-          Image
-        </label>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            Image
+          </label>
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) =>
-            setImageFile(
-              e.target.files?.[0] || null
-            )
-          }
-          className="
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) =>
+              setImageFile(
+                e.target.files?.[0] || null
+              )
+            }
+            className="
             block
             w-fit
             max-w-full
@@ -764,24 +871,88 @@ return (
             file:font-medium
             file:text-gray-700
           "
-        />
+          />
 
-        {isEditMode &&
-          existingImageId &&
-          !imageFile && (
-            <p className="mt-2 text-sm text-gray-500">
-              Existing image attached
-            </p>
+          {isEditMode &&
+            existingImageId &&
+            !imageFile && (
+              <p className="mt-2 text-sm text-gray-500">
+                Existing image attached
+              </p>
+            )}
+        </div>
+      </section>
+
+      {/* =====================================================
+        ADDITIONAL IMAGES
+    ===================================================== */}
+
+      <section className="mt-6">
+        <div className="mb-4">
+          <h3 className="text-base font-semibold text-gray-900">
+            Additional Images
+          </h3>
+
+          <p className="mt-1 text-sm text-gray-500">
+            Upload additional images for this part.
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            Additional Images
+          </label>
+
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) =>
+              setAdditionalImageFiles(
+                Array.from(e.target.files || [])
+              )
+            }
+            className="
+            block
+            w-fit
+            max-w-full
+            rounded-lg
+            border
+            border-gray-300
+            bg-white
+            px-3
+            py-2
+            text-sm
+            text-gray-600
+            file:mr-4
+            file:rounded-md
+            file:border-0
+            file:bg-gray-100
+            file:px-3
+            file:py-1.5
+            file:text-sm
+            file:font-medium
+            file:text-gray-700
+          "
+          />
+
+          {additionalImageFiles.length > 0 && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">
+                {additionalImageFiles.length} additional image
+                {additionalImageFiles.length !== 1 ? "s" : ""} selected
+              </p>
+            </div>
           )}
-      </div>
-    </section>
+        </div>
+      </section>
 
 
-    {/* =====================================================
+      {/* =====================================================
         ACTIONS
     ===================================================== */}
 
-    <div className="
+      <div className="
       mt-8
       border-t
       border-gray-200
@@ -790,11 +961,11 @@ return (
       justify-end
     ">
 
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={loading}
-        className="
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={loading}
+          className="
           inline-flex
           items-center
           justify-center
@@ -811,18 +982,18 @@ return (
           disabled:cursor-not-allowed
           disabled:opacity-60
         "
-      >
-        {loading
-          ? "Saving..."
-          : isEditMode
-            ? "Update Part"
-            : "Create Part"}
-      </button>
+        >
+          {loading
+            ? "Saving..."
+            : isEditMode
+              ? "Update Part"
+              : "Create Part"}
+        </button>
+
+      </div>
 
     </div>
-
-  </div>
-);
+  );
 };
 
 export default PartForm;

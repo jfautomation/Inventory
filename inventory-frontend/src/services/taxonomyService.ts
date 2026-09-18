@@ -20,21 +20,23 @@ export const TaxonomyService = {
   //////////////////////////////////////////////////
 
   createPart: async (data: {
-  name: string;
-  brand_id: number;
-  category_id: number;
-  series_id?: number;
-  base_price?: number;
-  description?: string;
-  image_id?: number;
-}) => {
-  const res = await api.post(
-    "/inventory/v1/parts",
-    data
-  );
+    name: string;
+    part_number: string;
+    brand_id: number;
+    category_id: number;
+    series_id?: number | null;
+    base_price?: number | null;
+    short_description: string;
+    long_description: string;
+    image_id?: number;
+  }) => {
+    const res = await api.post(
+      "/inventory/v1/parts",
+      data
+    );
 
-  return res.data;
-},
+    return res.data;
+  },
 
 
   //////////////////////////////////////////////////
@@ -42,24 +44,26 @@ export const TaxonomyService = {
   //////////////////////////////////////////////////
 
   updatePart: async (
-  id: number,
-  data: {
-    name: string;
-    brand_id: number;
-    category_id: number;
-    series_id?: number;
-    base_price?: number;
-    description?: string;
-    image_id?: number;
-  }
-) => {
-  const res = await api.put(
-    `/inventory/v1/parts/${id}`,
-    data
-  );
+    id: number,
+    data: {
+      name: string;
+      part_number: string;
+      brand_id: number;
+      category_id: number;
+      series_id?: number | null;
+      base_price?: number | null;
+      short_description: string;
+      long_description: string;
+      image_id?: number;
+    }
+  ) => {
+    const res = await api.put(
+      `/inventory/v1/parts/${id}`,
+      data
+    );
 
-  return res.data;
-},
+    return res.data;
+  },
 
 
   //////////////////////////////////////////////////

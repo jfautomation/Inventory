@@ -89,58 +89,9 @@ function inventory_bootstrap($request)
 
         foreach ($part_terms as $term) {
 
-            $term_id = $term->term_id;
-
-            $image_id = (int) get_term_meta(
-                $term_id,
-                'image_id',
-                true
+            $parts[] = inventory_format_part(
+                $term->term_id
             );
-
-            $parts[] = [
-                'id'          => $term_id,
-                'name'        => $term->name,
-                'slug'        => $term->slug,
-
-                'brand_id'    => get_term_meta(
-                    $term_id,
-                    'brand_id',
-                    true
-                ),
-
-                'category_id' => get_term_meta(
-                    $term_id,
-                    'category_id',
-                    true
-                ),
-
-                'series_id'   => get_term_meta(
-                    $term_id,
-                    'series_id',
-                    true
-                ),
-
-                'base_price' => (float) get_term_meta(
-                    $term_id,
-                    'base_price',
-                    true
-                ),
-
-                'description' => get_term_meta(
-                    $term_id,
-                    'description',
-                    true
-                ),
-
-                'image_id'    => $image_id,
-
-                'image_url'   => $image_id
-                    ? wp_get_attachment_image_url(
-                        $image_id,
-                        'medium'
-                    )
-                    : null,
-            ];
         }
     }
 
