@@ -28,7 +28,8 @@ export const TaxonomyService = {
     base_price?: number | null;
     short_description: string;
     long_description: string;
-    image_id?: number;
+    image_id?: number | null;
+    additional_image_ids?: number[];
   }) => {
     const res = await api.post(
       "/inventory/v1/parts",
@@ -54,7 +55,8 @@ export const TaxonomyService = {
       base_price?: number | null;
       short_description: string;
       long_description: string;
-      image_id?: number;
+      image_id?: number | null;
+      additional_image_ids?: number[];
     }
   ) => {
     const res = await api.put(
@@ -108,4 +110,3 @@ export const TaxonomyService = {
   },
 
 };
-

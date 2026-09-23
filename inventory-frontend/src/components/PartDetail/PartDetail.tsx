@@ -194,6 +194,8 @@ const PartDetail = () => {
 
         <DetailImageCard
           image={part.image_url || ""}
+          additionalImages={part.additional_image_urls || []}
+          alt={part.name}
         />
 
 
@@ -284,8 +286,8 @@ const PartDetail = () => {
               <p className="font-medium text-gray-900">
                 {part.base_price != null
                   ? `$${Number(
-                      part.base_price
-                    ).toLocaleString()}`
+                    part.base_price
+                  ).toLocaleString()}`
                   : "-"}
               </p>
 
@@ -312,6 +314,8 @@ const PartDetail = () => {
         </div>
 
       </div>
+
+
 
 
       {/* =====================================================
@@ -353,8 +357,8 @@ const PartDetail = () => {
           value={
             part.base_price != null
               ? `$${Number(
-                  part.base_price
-                ).toLocaleString()}`
+                part.base_price
+              ).toLocaleString()}`
               : "-"
           }
         />

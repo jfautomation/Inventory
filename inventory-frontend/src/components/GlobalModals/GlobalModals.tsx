@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import ProductForm from "../ProductForm/ProductForm";
-import PartForm from "../PartForm/PartForm";
+import InventoryForm from "../InventoryForm/InventoryForm";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
 
@@ -55,6 +54,7 @@ const GlobalModals = () => {
   const handleProductRefresh = async () => {
     console.log("Refreshing products only...");
     await fetchProducts();
+    console.log("Product refresh completed.");
   };
 
   // =====================================
@@ -68,28 +68,22 @@ const GlobalModals = () => {
 
   return (
     <>
-      {/* =====================================
-PRODUCT MODAL
-===================================== */}
-
       {isProductOpen && (
         <div style={overlayStyle}>
           <div style={modalStyle}>
-
             <div style={modalContentStyle}>
-              <ProductForm
+              <InventoryForm
+                entity="product"
                 brands={brands}
                 shelves={shelves}
                 conditions={conditions}
                 categories={categories}
                 series={series}
                 editingProduct={editingProduct}
-
                 onCreated={async () => {
                   await handleProductRefresh();
                   closeProduct();
                 }}
-
                 onUpdated={async () => {
                   await handleProductRefresh();
                   closeProduct();
@@ -106,30 +100,23 @@ PRODUCT MODAL
                 Close
               </button>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* =====================================
-      PART MODAL
-  ===================================== */}
-
       {isPartOpen && (
         <div style={overlayStyle}>
           <div style={modalStyle}>
-
             <div style={modalContentStyle}>
-              <PartForm
+              <InventoryForm
+                entity="part"
                 brands={brands}
                 categories={categories}
                 editingPart={editingPart}
-
                 onCreated={async () => {
                   await handlePartRefresh();
                   closePart();
                 }}
-
                 onUpdated={async () => {
                   await handlePartRefresh();
                   closePart();
@@ -146,14 +133,13 @@ PRODUCT MODAL
                 Close
               </button>
             </div>
-
           </div>
         </div>
       )}
     </>
-
-
   );
+
+
 };
 
 export default GlobalModals;

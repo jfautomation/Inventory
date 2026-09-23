@@ -39,9 +39,9 @@ function inventory_meta_exists($meta_key, $meta_value, $exclude_post_id = 0)
 //////////////////////////////////////////////////////////
 
 function inventory_transform_product($post)
- 
+
 {
-   
+
     error_log('PRODUCT TRANSFORM FILE LOADED');
     $data = [
         'id'    => $post->ID,
@@ -60,32 +60,53 @@ function inventory_transform_product($post)
 
     foreach ($fields as $field) {
 
-    $value = get_post_meta($post->ID, $field, true);
+        $value = get_post_meta($post->ID, $field, true);
 
 
-    if ($field === 'inventory_status') {
+        if ($field === 'inventory_status') {
 
-        $data[$field] = $value ?: 'active';
+            $data[$field] = $value ?: 'active';
+        } elseif ($field === 'list_price') {
 
+            $data[$field] = $value !== ""
+                ? (float) $value
+                : null;
+        } else {
 
-    } elseif ($field === 'list_price') {
-
-        $data[$field] = $value !== ""
-            ? (float) $value
-            : null;
-
-
-    } else {
-
-        $data[$field] = $value ?: "";
-
+            $data[$field] = $value ?: "";
+        }
     }
-}
 
     $image_id = (int) get_post_meta($post->ID, 'image_id', true);
 
     $data['image_id'] = $image_id;
     $data['image']    = $image_id ? wp_get_attachment_url($image_id) : "";
+    $additional_image_ids = get_post_meta(
+        $post->ID,
+        'additional_image_ids',
+        true
+    );
+
+    if (!is_array($additional_image_ids)) {
+        $additional_image_ids = [];
+    }
+
+    $additional_image_ids = array_values(
+        array_filter(
+            array_map('intval', $additional_image_ids)
+        )
+    );
+
+    $data['additional_image_ids'] = $additional_image_ids;
+
+    $data['additional_image_urls'] = array_values(
+        array_filter(
+            array_map(
+                'wp_get_attachment_url',
+                $additional_image_ids
+            )
+        )
+    );
 
     $data['description'] = $data['notes'];
 
@@ -223,16 +244,22 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
     'test_date',
     'inventory_status',
     'image_id',
+    'additional_image_ids',
     'price_mode'
 ];
 
     foreach ($meta_fields as $field) {
-        $value = $request->get_param($field);
+    $value = $request->get_param($field);
 
-        if ($value !== null) {
-            update_post_meta($post->ID, $field, $value);
-        }
+    if ($field === 'image_id' && $value === null) {
+        delete_post_meta($post->ID, $field);
+        continue;
     }
+
+    if ($value !== null) {
+        update_post_meta($post->ID, $field, $value);
+    }
+}
 
     /**
      * =========================
@@ -246,7 +273,7 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
     update_post_meta($post->ID, 'inventory_status', $status);
     update_post_meta($post->ID, 'quantity', inventory_calculate_quantity($status));
 
-       /**
+    /**
      * =========================
      * PART → BRAND + CATEGORY
      * + PRODUCT PRICING
@@ -309,14 +336,12 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
             inventory_normalize_price_mode(
                 $requested_price_mode
             );
-
     } elseif ($existing_price_mode !== '') {
 
         $price_mode =
             inventory_normalize_price_mode(
                 $existing_price_mode
             );
-
     } else {
 
         $price_mode = 'automatic';
@@ -393,7 +418,6 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
                 'list_price',
                 $calculated_price
             );
-
         } else {
 
             delete_post_meta(
@@ -432,5 +456,4 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
             }
         }
     }
-
 }, 10, 3);

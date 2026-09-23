@@ -702,7 +702,6 @@ function inventory_update_part($request)
             'description',
             $long_description
         );
-
     } elseif (array_key_exists('description', $params)) {
 
         $description =
@@ -772,7 +771,6 @@ function inventory_update_part($request)
                 $term_id,
                 'additional_image_ids'
             );
-
         } else {
 
             $additional_image_ids =
@@ -791,7 +789,6 @@ function inventory_update_part($request)
                     $term_id,
                     'additional_image_ids'
                 );
-
             } else {
 
                 update_term_meta(
@@ -1039,6 +1036,20 @@ function inventory_format_part($term_id)
                 'medium'
             )
             : null,
+
+        'additional_image_urls' => array_values(
+            array_filter(
+                array_map(
+                    function ($image_id) {
+                        return wp_get_attachment_image_url(
+                            $image_id,
+                            'medium'
+                        );
+                    },
+                    $additional_image_ids
+                )
+            )
+        ),
 
         'additional_image_ids' => $additional_image_ids,
     ];

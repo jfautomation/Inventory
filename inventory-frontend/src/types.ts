@@ -11,46 +11,29 @@ export interface Term {
 }
 
 export type Product = {
-
   id: number;
-
   title: string; // ✅ REQUIRED (eBay, website, shop)
-
   serial_number?: string;
-
   work_order?: string;
-
   list_price?: number;
-
   price_mode?: "automatic" | "manual";
-
   image?: string;
-
-  image_id?: number;
-
+  image_id?: number | null;
   notes?: string;
-
-  description?: string; // 👈 ADD THIS (frontend alias)
-
+  description?: string; // 👈 frontend alias
   test_date?: string;
-
   inventory_status?: "active" | "sold" | "archived";
-
   test_status?: boolean;
-
   quantity?: number;
 
-
   brand?: Term[];
-
   part?: Term[];
-
   shelf?: Term[];
-
   condition?: Term[];
-
   inventory_category?: Term[];
 
+  additional_image_ids?: number[];
+  additional_image_urls?: string[];
 };
 
 export type Part = {
@@ -77,44 +60,40 @@ export type Part = {
 
   long_description?: string;
 
-  image_id?: number;
+  image_id?: number | null;
 
   image_url?: string | null;
 
   additional_image_ids?: number[];
+  
+  additional_image_urls?: string[];
 
 };
 
 
 
 export type ProductPayload = {
-  title: string;
-  serial_number?: string;
-  work_order?: string;
-
-  list_price?: number;
-
-  price_mode?: "automatic" | "manual";
-
-  notes?: string;
-  image_id?: number;
-  test_date?: string;
-
-  inventory_status?:
-    | "active"
-    | "sold"
-    | "archived";
-
-  test_status?: boolean;
-
-  part?: number[];
-  brand?: number[];
-  shelf?: number[];
-  series?: number[];
-  condition?: number[];
-  inventory_category?: number[];
-
-  status: "publish";
+    title: string;
+    serial_number?: string;
+    work_order?: string;
+    list_price?: number;
+    price_mode?: "automatic" | "manual";
+    notes?: string;
+    image_id?: number | null;
+    test_date?: string;
+    inventory_status?:
+        | "active"
+        | "sold"
+        | "archived";
+    test_status?: boolean;
+    part?: number[];
+    brand?: number[];
+    shelf?: number[];
+    series?: number[];
+    condition?: number[];
+    inventory_category?: number[];
+    additional_image_ids?: number[];
+    status: "publish";
 };
 
 export type CreatePartPayload = {
@@ -135,7 +114,7 @@ export type CreatePartPayload = {
 
   long_description: string;
 
-  image_id?: number;
+  image_id?: number | null;
 
   additional_image_ids?: number[];
 
