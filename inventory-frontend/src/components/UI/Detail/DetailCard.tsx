@@ -38,7 +38,7 @@ export default function DetailCard({
             text-gray-500
           "
         >
-          Product Name
+          Title
         </div>
 
         <div
@@ -63,25 +63,25 @@ export default function DetailCard({
         label="Part"
         value={product.part?.[0]?.name}
       /> */}
-     <DetailRow
-  label="Part"
-  value={
-    product.part?.[0] ? (
-      <Link
-        to={`/part/${product.part[0].id}`}
-        className="
+      <DetailRow
+        label="Part"
+        value={
+          product.part?.[0] ? (
+            <Link
+              to={`/part/${product.part[0].id}`}
+              className="
           text-blue-600
           hover:underline
           font-medium
         "
-      >
-        {product.part[0].name}
-      </Link>
-    ) : (
-      "-"
-    )
-  }
-/>
+            >
+              {product.part[0].name}
+            </Link>
+          ) : (
+            "-"
+          )
+        }
+      />
 
 
       <DetailRow
@@ -107,6 +107,53 @@ export default function DetailCard({
         value={product.work_order}
       />
 
+
+      {/* Notes */}
+      <div
+        className="
+          mt-6
+          pt-5
+          border-t
+          border-gray-200
+        "
+      >
+
+        <div
+          className="
+            text-sm
+            text-gray-500
+            mb-2
+          "
+        >
+          Notes
+        </div>
+
+        {product.notes ? (
+          <p
+            className="
+              text-sm
+              leading-6
+              text-gray-700
+              whitespace-pre-wrap
+            "
+          >
+            {product.notes}
+          </p>
+        ) : (
+          <p
+            className="
+              text-sm
+              italic
+              text-gray-400
+            "
+          >
+            No notes added.
+          </p>
+        )}
+
+      </div>
+
     </div>
   );
 }
+

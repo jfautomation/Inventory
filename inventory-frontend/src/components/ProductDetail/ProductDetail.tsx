@@ -1,16 +1,14 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { api } from "../../api/client";
+
 import { useInventory } from "../../context/InventoryContext";
 import { useModal } from "../../context/ModalContext";
 import { ProductService } from "../../services/productService";
-import PageContainer from "../UI/PageContainer";
-import PageHeader from "../UI/PageHeader";
-import Button from "../UI/Button/Button";
-import DetailImageCard from "../UI/Detail/DetailImageCard";
+import { api } from "../../api/client";
+
+import InventoryDetail from "../UI/Detail/InventoryDetail";
 import DetailCard from "../UI/Detail/DetailCard";
 import StatCard from "../UI/Detail/StatCard";
-import DetailActions from "../UI/Detail/DetailActions";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -21,6 +19,10 @@ const ProductDetail = () => {
 
   const [product, setProduct] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // =========================================================
+  // LOAD PRODUCT
+  // =========================================================
 
   useEffect(() => {
     if (!id) return;
@@ -42,7 +44,11 @@ const ProductDetail = () => {
 
         setProduct(res.data);
       } catch (err) {
-        console.error("Failed to load product:", err);
+        console.error(
+          "Failed to load product:",
+          err
+        );
+
         setProduct(null);
       }
     };
@@ -50,9 +56,19 @@ const ProductDetail = () => {
     fetchProduct();
   }, [id, products]);
 
+
+  // =========================================================
+  // LOADING
+  // =========================================================
+
   if (!product) {
     return <div>Loading product...</div>;
   }
+
+
+  // =========================================================
+  // DELETE
+  // =========================================================
 
   const handleDeleteProduct = async () => {
     const confirmed = window.confirm(
@@ -71,125 +87,108 @@ const ProductDetail = () => {
       await fetchProducts();
 
       navigate("/products");
+
     } catch (err) {
-      console.error("Delete failed:", err);
-      alert("Failed to delete product.");
+      console.error(
+        "Delete failed:",
+        err
+      );
+
+      alert(
+        "Failed to delete product."
+      );
+
     } finally {
       setDeleting(false);
     }
   };
 
+
+  // =========================================================
+  // EDIT
+  // =========================================================
+
   const handleEditProduct = () => {
     openEditProduct(product);
   };
 
+
+  // =========================================================
+  // UI
+  // =========================================================
+
+
+
   return (
-    <PageContainer>
+    <InventoryDetail
+      title="Product Details"
+      deleteLabel="Delete Product"
+      deleting={deleting}
+      addLabel="Add New Product"
+      editLabel="Edit Product Details"
+      statsColumns={5}
+      image={product.image}
+      additionalImages={
+        product.additional_image_urls || []
+      }
+      imageAlt={product.title}
+      onDelete={handleDeleteProduct}
+      onEdit={handleEditProduct}
+      onAdd={() => {
+        console.log("Add new product");
+      }}
 
-      <PageHeader title="Product Details">
-        <Button
-          variant="danger"
-          onClick={handleDeleteProduct}
-          disabled={deleting}
-        >
-          {deleting ? "Deleting..." : "Delete Product"}
-        </Button>
-      </PageHeader>
+      stats={
+        <>
+          <StatCard
+            label="Shelf"
+            value={product.shelf?.[0]?.name}
+          />
 
-      <div
-        className="
-          grid
-          grid-cols-1
-          xl:grid-cols-[35%_65%]
-          gap-6
-          p-6
-        "
-      >
+          <StatCard
+            label="Status"
+            value={product.inventory_status}
+            type="status"
+          />
 
-        <DetailImageCard
-          image={product.image}
-        />
+          <StatCard
+            label="Tested"
+            value={
+              product.test_status
+                ? "Yes"
+                : "No"
+            }
+          />
 
-        <DetailCard
-          product={product}
-        />
+          <StatCard
+            label="Test Date"
+            value={product.test_date}
+          />
 
-      </div>
+          <StatCard
+            label="Stock Level"
+            value={product.quantity}
+            type="stock"
+          />
+        </>
+      }
+    >
 
-      <div
-        className="
-          grid
-          grid-cols-5
-          gap-4
-          mx-6
-          p-5
-          border
-          border-gray-200
-          rounded-xl
-          bg-white
-        "
-      >
+      <DetailCard
+        product={product}
+      />
 
-        <StatCard
-          label="Shelf"
-          value={product.shelf?.[0]?.name}
-        />
-
-        <StatCard
-          label="Status"
-          value={product.inventory_status}
-          type="status"
-        />
-
-        <StatCard
-          label="Tested"
-          value={product.test_status ? "Yes" : "No"}
-        />
-
-        <StatCard
-          label="Test Date"
-          value={product.test_date}
-        />
-
-        <StatCard
-          label="Stock Level"
-          value={product.quantity}
-          type="stock"
-        />
-
-      </div>
-
-      <div className="mx-6 mt-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h3 className="text-base font-semibold text-gray-900">
-            Notes
-          </h3>
-
-          <div className="mt-3">
-            {product.notes ? (
-              <p className="whitespace-pre-wrap text-sm leading-6 text-gray-700">
-                {product.notes}
-              </p>
-            ) : (
-              <p className="text-sm italic text-gray-400">
-                No notes added.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-3">
-        <DetailActions
-          onAdd={() => {
-            console.log("Add new product");
-          }}
-          onEdit={handleEditProduct}
-        />
-      </div>
-
-    </PageContainer>
+    </InventoryDetail>
   );
 };
 
 export default ProductDetail;
+
+
+
+
+
+
+
+
+

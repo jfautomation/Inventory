@@ -3,11 +3,15 @@ import Button from "../Button/Button";
 type DetailActionsProps = {
   onAdd?: () => void;
   onEdit?: () => void;
+  addLabel?: string;
+  editLabel?: string;
 };
 
 export default function DetailActions({
   onAdd,
   onEdit,
+  addLabel = "Add New Product",
+  editLabel = "Edit Product Details",
 }: DetailActionsProps) {
   return (
     <div
@@ -18,21 +22,18 @@ export default function DetailActions({
         py-6
       "
     >
-
       <Button
         onClick={onAdd}
       >
-        Add New Product
+        {addLabel}
       </Button>
-
 
       <Button
         variant="secondary"
         onClick={onEdit}
       >
-        Edit Product Details
+        {editLabel}
       </Button>
-
     </div>
   );
 }

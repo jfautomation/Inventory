@@ -5,13 +5,8 @@ import { useInventory } from "../../context/InventoryContext";
 import { useModal } from "../../context/ModalContext";
 import { TaxonomyService } from "../../services/taxonomyService";
 
-import PageContainer from "../UI/PageContainer";
-import PageHeader from "../UI/PageHeader";
-import Button from "../UI/Button/Button";
-
-import DetailImageCard from "../UI/Detail/DetailImageCard";
+import InventoryDetail from "../UI/Detail/InventoryDetail";
 import StatCard from "../UI/Detail/StatCard";
-import DetailActions from "../UI/Detail/DetailActions";
 
 import type { Part } from "../../types";
 
@@ -52,10 +47,7 @@ const PartDetail = () => {
 
     setPart(existingPart);
 
-  }, [
-    id,
-    parts,
-  ]);
+  }, [id, parts]);
 
 
   // =========================================================
@@ -64,11 +56,9 @@ const PartDetail = () => {
 
   if (!part) {
     return (
-      <PageContainer>
-        <div className="p-6">
-          Loading part...
-        </div>
-      </PageContainer>
+      <div>
+        Loading part...
+      </div>
     );
   }
 
@@ -154,236 +144,170 @@ const PartDetail = () => {
   // UI
   // =========================================================
 
+
+
   return (
-    <PageContainer>
+    <InventoryDetail
+      title="Part Details"
+      deleteLabel="Delete Part"
+      deleting={deleting}
+      addLabel="Add New Part"
+      editLabel="Edit Part Details"
+      image={part.image_url}
+      statsColumns={4}
+      additionalImages={
+        part.additional_image_urls || []
+      }
+      imageAlt={part.name}
 
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+      onDelete={handleDeletePart}
+      onEdit={handleEditPart}
+      onAdd={() => {
+        navigate("/parts");
+      }}
 
-      <PageHeader title="Part Details">
+      stats={
+        <>
+          <StatCard
+            label="Brand"
+            value={brand?.name || "-"}
+          />
 
-        <Button
-          variant="danger"
-          onClick={handleDeletePart}
-          disabled={deleting}
-        >
-          {deleting
-            ? "Deleting..."
-            : "Delete Part"}
-        </Button>
+          <StatCard
+            label="Category"
+            value={category?.name || "-"}
+          />
 
-      </PageHeader>
+          <StatCard
+            label="Series"
+            value={partSeries?.name || "-"}
+          />
 
-
-      {/* =====================================================
-          MAIN DETAIL AREA
-      ===================================================== */}
+          <StatCard
+            label="Base Price"
+            value={
+              part.base_price != null
+                ? `$${Number(
+                  part.base_price
+                ).toLocaleString()}`
+                : "-"
+            }
+          />
+        </>
+      }
+    >
 
       <div
         className="
-          grid
-          grid-cols-1
-          xl:grid-cols-[35%_65%]
-          gap-6
+          bg-white
+          border
+          border-gray-200
+          rounded-xl
           p-6
         "
       >
 
-        {/* IMAGE */}
+        <div className="mb-6">
 
-        <DetailImageCard
-          image={part.image_url || ""}
-          additionalImages={part.additional_image_urls || []}
-          alt={part.name}
-        />
+          <p
+            className="
+              text-sm
+              text-gray-500
+              mb-2
+            "
+          >
+            Part Number / Name
+          </p>
+
+          <h1
+            className="
+              text-2xl
+              font-semibold
+              text-gray-900
+            "
+          >
+            {part.name}
+          </h1>
+
+        </div>
 
 
-        {/* PART DETAILS */}
+        <div className="space-y-5">
 
-        <div
-          className="
-            bg-white
-            border
-            border-gray-200
-            rounded-xl
-            p-6
-          "
-        >
+          <div>
+            <p className="text-sm text-gray-500">
+              Brand
+            </p>
 
-          <div className="mb-6">
+            <p className="font-medium text-gray-900">
+              {brand?.name || "-"}
+            </p>
+          </div>
 
+
+          <div>
+            <p className="text-sm text-gray-500">
+              Category
+            </p>
+
+            <p className="font-medium text-gray-900">
+              {category?.name || "-"}
+            </p>
+          </div>
+
+
+          <div>
+            <p className="text-sm text-gray-500">
+              Series
+            </p>
+
+            <p className="font-medium text-gray-900">
+              {partSeries?.name || "-"}
+            </p>
+          </div>
+
+
+          <div>
+            <p className="text-sm text-gray-500">
+              Base Price
+            </p>
+
+            <p className="font-medium text-gray-900">
+              {part.base_price != null
+                ? `$${Number(
+                  part.base_price
+                ).toLocaleString()}`
+                : "-"}
+            </p>
+          </div>
+
+
+          <div>
             <p
               className="
                 text-sm
                 text-gray-500
-                mb-2
               "
             >
-              Part Number / Name
+              Description
             </p>
 
-            <h1
+            <p
               className="
-                text-2xl
-                font-semibold
-                text-gray-900
-              "
-            >
-              {part.name}
-            </h1>
-
-          </div>
-
-
-          <div className="space-y-5">
-
-            <div>
-
-              <p className="text-sm text-gray-500">
-                Brand
-              </p>
-
-              <p className="font-medium text-gray-900">
-                {brand?.name || "-"}
-              </p>
-
-            </div>
-
-
-            <div>
-
-              <p className="text-sm text-gray-500">
-                Category
-              </p>
-
-              <p className="font-medium text-gray-900">
-                {category?.name || "-"}
-              </p>
-
-            </div>
-
-
-            <div>
-
-              <p className="text-sm text-gray-500">
-                Series
-              </p>
-
-              <p className="font-medium text-gray-900">
-                {partSeries?.name || "-"}
-              </p>
-
-            </div>
-
-
-            <div>
-
-              <p className="text-sm text-gray-500">
-                Base Price
-              </p>
-
-              <p className="font-medium text-gray-900">
-                {part.base_price != null
-                  ? `$${Number(
-                    part.base_price
-                  ).toLocaleString()}`
-                  : "-"}
-              </p>
-
-            </div>
-
-
-            <div>
-
-              <p className="text-sm text-gray-500">
-                Description
-              </p>
-
-              <p className="
                 text-gray-700
                 whitespace-pre-wrap
-              ">
-                {part.description || "-"}
-              </p>
-
-            </div>
-
+              "
+            >
+              {part.description || "-"}
+            </p>
           </div>
 
         </div>
 
       </div>
 
-
-
-
-      {/* =====================================================
-          STATS
-      ===================================================== */}
-
-      <div
-        className="
-          grid
-          grid-cols-2
-          xl:grid-cols-4
-          gap-4
-          mx-6
-          p-5
-          border
-          border-gray-200
-          rounded-xl
-          bg-white
-        "
-      >
-
-        <StatCard
-          label="Brand"
-          value={brand?.name || "-"}
-        />
-
-        <StatCard
-          label="Category"
-          value={category?.name || "-"}
-        />
-
-        <StatCard
-          label="Series"
-          value={partSeries?.name || "-"}
-        />
-
-        <StatCard
-          label="Base Price"
-          value={
-            part.base_price != null
-              ? `$${Number(
-                part.base_price
-              ).toLocaleString()}`
-              : "-"
-          }
-        />
-
-      </div>
-
-
-      {/* =====================================================
-          ACTIONS
-      ===================================================== */}
-
-      <div className="mt-3">
-
-        <DetailActions
-          onAdd={() => {
-            navigate("/parts");
-          }}
-          onEdit={handleEditPart}
-        />
-
-      </div>
-
-    </PageContainer>
+    </InventoryDetail>
   );
 };
 
 export default PartDetail;
-

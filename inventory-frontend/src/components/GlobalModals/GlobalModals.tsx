@@ -8,7 +8,6 @@ const GlobalModals = () => {
     isProductOpen,
     closeProduct,
     editingProduct,
-
     isPartOpen,
     closePart,
     editingPart,
