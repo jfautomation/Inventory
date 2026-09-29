@@ -59,10 +59,6 @@ export default function DetailCard({
       />
 
 
-      {/* <DetailRow
-        label="Part"
-        value={product.part?.[0]?.name}
-      /> */}
       <DetailRow
         label="Part"
         value={
@@ -95,10 +91,19 @@ export default function DetailCard({
         value={product.serial_number}
       />
 
-
       <DetailRow
         label="Condition"
         value={product.condition?.[0]?.name}
+      />
+
+
+      <DetailRow
+        label="List Price"
+        value={
+          product.list_price != null
+            ? `$${Number(product.list_price).toLocaleString()}`
+            : "-"
+        }
       />
 
 
@@ -107,6 +112,48 @@ export default function DetailCard({
         value={product.work_order}
       />
 
+      {/* Short Description */}
+      <div
+        className="
+    mt-6
+    pt-5
+    border-t
+    border-gray-200
+  "
+      >
+        <div
+          className="
+      text-sm
+      text-gray-500
+      mb-2
+    "
+        >
+          Short Description
+        </div>
+
+        {product.short_description ? (
+          <p
+            className="
+        text-sm
+        leading-6
+        text-gray-700
+        whitespace-pre-wrap
+      "
+          >
+            {product.short_description}
+          </p>
+        ) : (
+          <p
+            className="
+        text-sm
+        italic
+        text-gray-400
+      "
+          >
+            No short description added.
+          </p>
+        )}
+      </div>
 
       {/* Notes */}
       <div

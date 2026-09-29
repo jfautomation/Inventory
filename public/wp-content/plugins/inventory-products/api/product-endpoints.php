@@ -54,6 +54,8 @@ function inventory_transform_product($post)
         'list_price',
         'price_mode',
         'notes',
+        'short_description',
+        'long_description',
         'test_date',
         'inventory_status',
     ];
@@ -240,6 +242,8 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
     'serial_number',
     'work_order',
     'notes',
+    'short_description',
+    'long_description',
     'test_status',
     'test_date',
     'inventory_status',

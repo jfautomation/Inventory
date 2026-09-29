@@ -124,7 +124,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         useState<Part | null>(null);
 
     // =========================================================
-    // PART STATE
+    // DESCRIPTION STATE
     // =========================================================
 
     const [partName, setPartName] =
@@ -223,6 +223,14 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
 
         setNotes(
             editingProduct.notes || ""
+        );
+
+        setShortDescription(
+            editingProduct.short_description || ""
+        );
+
+        setLongDescription(
+            editingProduct.long_description || ""
         );
 
         setTestStatus(
@@ -588,18 +596,16 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                         : {}),
 
                     ...(notes.trim()
-                        ? {
-                            notes:
-                                notes.trim(),
-                        }
+                        ? { notes: notes.trim() }
                         : {}),
-
+                    ...(shortDescription.trim()
+                        ? { short_description: shortDescription.trim() }
+                        : {}),
+                    ...(longDescription.trim()
+                        ? { long_description: longDescription.trim() }
+                        : {}),
                     ...(selectedShelf
-                        ? {
-                            shelf: [
-                                selectedShelf.id,
-                            ],
-                        }
+                        ? { shelf: [selectedShelf.id] }
                         : {}),
 
                     ...(testStatus !== null
@@ -719,10 +725,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             // =====================================================
             // RESET PART STATE
             // =====================================================
-            // =====================================================
-            // RESET PART STATE
-            // =====================================================
-
             setPartName("");
             setPartNumber("");
             setSelectedBrand(initialBrand);
@@ -1679,8 +1681,64 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     </section>
 
                     {/* ================================================ */}
+                    {/* DESCRIPTIONS */}
+
+
+                    <section className="mt-6">
+                        <div className="mb-4">
+                            <h3 className="text-base font-semibold text-gray-900">
+                                Descriptions
+                            </h3>
+
+                            <p className="mt-1 text-sm text-gray-500">
+                                Add short and detailed information about this product.
+                            </p>
+                        </div>
+
+                        <div className="space-y-5">
+                            {/* Short Description */}
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Short Description
+                                </label>
+
+                                <textarea
+                                    value={shortDescription}
+                                    onChange={(e) =>
+                                        setShortDescription(e.target.value)
+                                    }
+                                    placeholder="Enter a short product description..."
+                                    rows={3}
+                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                />
+                            </div>
+
+                            {/* Long Description */}
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Long Description
+                                </label>
+
+                                <textarea
+                                    value={longDescription}
+                                    onChange={(e) =>
+                                        setLongDescription(e.target.value)
+                                    }
+                                    placeholder="Enter detailed product information..."
+                                    rows={6}
+                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+
+
+
                     {/* ADDITIONAL INFORMATION */}
-                    {/* ================================================ */}
+
 
                     <section className="mt-6">
                         <div className="mb-4">

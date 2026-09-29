@@ -66,13 +66,16 @@ export default function InventoryDetail({
 
             {/* MAIN DETAIL AREA */}
 
+
+
             <div
                 className="
           grid
-          grid-cols-1
-          xl:grid-cols-[35%_65%]
-          gap-6
-          p-6
+grid-cols-1
+xl:grid-cols-[35%_65%]
+items-stretch
+gap-6
+p-6
         "
             >
 

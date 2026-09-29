@@ -216,7 +216,7 @@ const PartDetail = () => {
               mb-2
             "
           >
-            Part Number / Name
+            Part Name
           </p>
 
           <h1
@@ -228,6 +228,24 @@ const PartDetail = () => {
           >
             {part.name}
           </h1>
+
+        </div>
+
+        <div className="mb-6">
+
+          <p
+            className="
+              text-sm
+              text-gray-500
+              mb-2
+            "
+          >
+            Part Number
+          </p>
+
+          <p className="font-medium text-gray-900">
+            {part.part_number || "-"}
+          </p>
 
         </div>
 

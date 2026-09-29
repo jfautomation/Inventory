@@ -20,6 +20,9 @@ export type Product = {
   image?: string;
   image_id?: number | null;
   notes?: string;
+  short_description?: string;
+  long_description?: string;
+
   description?: string; // 👈 frontend alias
   test_date?: string;
   inventory_status?: "active" | "sold" | "archived";
@@ -79,6 +82,8 @@ export type ProductPayload = {
     list_price?: number;
     price_mode?: "automatic" | "manual";
     notes?: string;
+    short_description?: string;
+    long_description?: string;
     image_id?: number | null;
     test_date?: string;
     inventory_status?:

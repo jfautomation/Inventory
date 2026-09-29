@@ -56,7 +56,7 @@ export default function DetailImageCard({
     <div
       className="
         w-full
-        h-[420px]
+        h-full
         border
         border-gray-200
         rounded-xl
@@ -90,9 +90,9 @@ export default function DetailImageCard({
             src={selectedImage}
             alt={alt}
             className="
-              max-h-full
-              max-w-full
-              object-contain
+                max-h-[260px]
+    max-w-full
+    object-contain
             "
             onError={() =>
               handleImageError(selectedImage)
