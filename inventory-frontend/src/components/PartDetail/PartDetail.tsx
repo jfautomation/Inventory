@@ -7,6 +7,8 @@ import { TaxonomyService } from "../../services/taxonomyService";
 
 import InventoryDetail from "../UI/Detail/InventoryDetail";
 import StatCard from "../UI/Detail/StatCard";
+import DetailCard from "../UI/Detail/DetailCard";
+import SEOCard from "../UI/Detail/SEOCard";
 
 import type { Part } from "../../types";
 
@@ -195,134 +197,21 @@ const PartDetail = () => {
           />
         </>
       }
+
+      bottomContent={
+        <SEOCard
+          seoTitle={part.seo_title}
+          metaDescription={part.meta_description}
+          searchTerms={part.search_terms}
+        />
+      }
     >
 
-      <div
-        className="
-          bg-white
-          border
-          border-gray-200
-          rounded-xl
-          p-6
-        "
-      >
-
-        <div className="mb-6">
-
-          <p
-            className="
-              text-sm
-              text-gray-500
-              mb-2
-            "
-          >
-            Part Name
-          </p>
-
-          <h1
-            className="
-              text-2xl
-              font-semibold
-              text-gray-900
-            "
-          >
-            {part.name}
-          </h1>
-
-        </div>
-
-        <div className="mb-6">
-
-          <p
-            className="
-              text-sm
-              text-gray-500
-              mb-2
-            "
-          >
-            Part Number
-          </p>
-
-          <p className="font-medium text-gray-900">
-            {part.part_number || "-"}
-          </p>
-
-        </div>
-
-
-        <div className="space-y-5">
-
-          <div>
-            <p className="text-sm text-gray-500">
-              Brand
-            </p>
-
-            <p className="font-medium text-gray-900">
-              {brand?.name || "-"}
-            </p>
-          </div>
-
-
-          <div>
-            <p className="text-sm text-gray-500">
-              Category
-            </p>
-
-            <p className="font-medium text-gray-900">
-              {category?.name || "-"}
-            </p>
-          </div>
-
-
-          <div>
-            <p className="text-sm text-gray-500">
-              Series
-            </p>
-
-            <p className="font-medium text-gray-900">
-              {partSeries?.name || "-"}
-            </p>
-          </div>
-
-
-          <div>
-            <p className="text-sm text-gray-500">
-              Base Price
-            </p>
-
-            <p className="font-medium text-gray-900">
-              {part.base_price != null
-                ? `$${Number(
-                  part.base_price
-                ).toLocaleString()}`
-                : "-"}
-            </p>
-          </div>
-
-
-          <div>
-            <p
-              className="
-                text-sm
-                text-gray-500
-              "
-            >
-              Description
-            </p>
-
-            <p
-              className="
-                text-gray-700
-                whitespace-pre-wrap
-              "
-            >
-              {part.description || "-"}
-            </p>
-          </div>
-
-        </div>
-
-      </div>
+      <DetailCard
+        part={part}
+        brand={brand}
+        category={category}
+      />
 
     </InventoryDetail>
   );

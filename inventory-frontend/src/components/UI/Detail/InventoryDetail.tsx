@@ -24,6 +24,7 @@ type InventoryDetailProps = {
     children: React.ReactNode;
     stats: React.ReactNode;
     statsColumns?: 4 | 5;
+    bottomContent?: React.ReactNode;
 };
 
 export default function InventoryDetail({
@@ -43,6 +44,7 @@ export default function InventoryDetail({
     editLabel,
 
     children,
+    bottomContent,
     statsColumns = 4,
     stats,
 
@@ -111,6 +113,19 @@ p-6
             >
                 {stats}
             </div>
+
+            {/* BOTTOM CONTENT */}
+
+            {bottomContent && (
+                <div className="mt-6 px-6">
+                    {bottomContent}
+                </div>
+            )}
+
+
+            {/* ACTIONS */}
+
+            <div className="mt-3"></div>
 
 
             {/* ACTIONS */}

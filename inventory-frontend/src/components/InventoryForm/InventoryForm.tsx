@@ -123,10 +123,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
     const [selectedProductPart, setSelectedProductPart] =
         useState<Part | null>(null);
 
-    // =========================================================
-    // DESCRIPTION STATE
-    // =========================================================
-
     const [partName, setPartName] =
         useState("");
 
@@ -147,6 +143,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
 
     const [longDescription, setLongDescription] =
         useState("");
+
+    const [seoTitle, setSeoTitle] = useState("");
+    const [metaDescription, setMetaDescription] = useState("");
+    const [searchTerms, setSearchTerms] = useState("");
 
     const [availableSeries, setAvailableSeries] =
         useState<Term[]>([]);
@@ -232,6 +232,20 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         setLongDescription(
             editingProduct.long_description || ""
         );
+
+        setSeoTitle(
+            editingProduct.seo_title || ""
+        );
+
+        setMetaDescription(
+            editingProduct.meta_description || ""
+        );
+
+        setSearchTerms(
+            editingProduct.search_terms || ""
+        );
+
+
 
         setTestStatus(
             typeof editingProduct.test_status === "boolean"
@@ -349,6 +363,18 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
 
         setLongDescription(
             editingPart.long_description || ""
+        );
+
+        setSeoTitle(
+            editingPart.seo_title || ""
+        );
+
+        setMetaDescription(
+            editingPart.meta_description || ""
+        );
+
+        setSearchTerms(
+            editingPart.search_terms || ""
         );
 
         setImageFile(null);
@@ -604,6 +630,15 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     ...(longDescription.trim()
                         ? { long_description: longDescription.trim() }
                         : {}),
+                    ...(seoTitle.trim()
+                        ? { seo_title: seoTitle.trim() }
+                        : {}),
+                    ...(metaDescription.trim()
+                        ? { meta_description: metaDescription.trim() }
+                        : {}),
+                    ...(searchTerms.trim()
+                        ? { search_terms: searchTerms.trim() }
+                        : {}),
                     ...(selectedShelf
                         ? { shelf: [selectedShelf.id] }
                         : {}),
@@ -697,6 +732,9 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     priceNew === "" ? null : Number(priceNew),
                 short_description: shortDescription.trim(),
                 long_description: longDescription.trim(),
+                seo_title: seoTitle.trim(),
+                meta_description: metaDescription.trim(),
+                search_terms: searchTerms.trim(),
                 image_id: undefined,
                 additional_image_ids: additionalImageIds,
             };
@@ -733,6 +771,9 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             setPriceNew("");
             setShortDescription("");
             setLongDescription("");
+            setSeoTitle("");
+            setMetaDescription("");
+            setSearchTerms("");
 
             setImageFile(null);
             setExistingImageRemoved(false);
@@ -984,9 +1025,70 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                         </div>
                     </section>
 
-                    {/* ================================================ */}
+                    <section className="mt-6">
+                        <div className="mb-4">
+                            <h3 className="text-base font-semibold text-gray-900">
+                                SEO
+                            </h3>
+
+                            <p className="mt-1 text-sm text-gray-500">
+                                Add search and metadata information for this part.
+                            </p>
+                        </div>
+
+                        <div className="space-y-5">
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    SEO Title
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value={seoTitle}
+                                    onChange={(e) =>
+                                        setSeoTitle(e.target.value)
+                                    }
+                                    placeholder="Enter an SEO title..."
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Meta Description
+                                </label>
+
+                                <textarea
+                                    value={metaDescription}
+                                    onChange={(e) =>
+                                        setMetaDescription(e.target.value)
+                                    }
+                                    placeholder="Enter a meta description..."
+                                    rows={3}
+                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Search Terms
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value={searchTerms}
+                                    onChange={(e) =>
+                                        setSearchTerms(e.target.value)
+                                    }
+                                    placeholder="Enter search terms..."
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+
                     {/* DESCRIPTIONS */}
-                    {/* ================================================ */}
 
                     <section className="mt-6">
                         <div className="mb-4">
@@ -1680,9 +1782,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                         </div>
                     </section>
 
-                    {/* ================================================ */}
                     {/* DESCRIPTIONS */}
-
 
                     <section className="mt-6">
                         <div className="mb-4">
@@ -1729,6 +1829,68 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                                     placeholder="Enter detailed product information..."
                                     rows={6}
                                     className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="mt-6">
+                        <div className="mb-4">
+                            <h3 className="text-base font-semibold text-gray-900">
+                                SEO
+                            </h3>
+
+                            <p className="mt-1 text-sm text-gray-500">
+                                Add search and metadata information for this product.
+                            </p>
+                        </div>
+
+                        <div className="space-y-5">
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    SEO Title
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value={seoTitle}
+                                    onChange={(e) =>
+                                        setSeoTitle(e.target.value)
+                                    }
+                                    placeholder="Enter an SEO title..."
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Meta Description
+                                </label>
+
+                                <textarea
+                                    value={metaDescription}
+                                    onChange={(e) =>
+                                        setMetaDescription(e.target.value)
+                                    }
+                                    placeholder="Enter a meta description..."
+                                    rows={3}
+                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Search Terms
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value={searchTerms}
+                                    onChange={(e) =>
+                                        setSearchTerms(e.target.value)
+                                    }
+                                    placeholder="Enter search terms..."
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
                                 />
                             </div>
                         </div>

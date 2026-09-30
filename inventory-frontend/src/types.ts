@@ -33,6 +33,9 @@ export type Product = {
   part?: Term[];
   shelf?: Term[];
   condition?: Term[];
+  seo_title?: string;
+  meta_description?: string;
+  search_terms?: string;
   inventory_category?: Term[];
 
   additional_image_ids?: number[];
@@ -67,8 +70,12 @@ export type Part = {
 
   image_url?: string | null;
 
+  seo_title?: string;
+  meta_description?: string;
+  search_terms?: string;
+
   additional_image_ids?: number[];
-  
+
   additional_image_urls?: string[];
 
 };
@@ -76,29 +83,32 @@ export type Part = {
 
 
 export type ProductPayload = {
-    title: string;
-    serial_number?: string;
-    work_order?: string;
-    list_price?: number;
-    price_mode?: "automatic" | "manual";
-    notes?: string;
-    short_description?: string;
-    long_description?: string;
-    image_id?: number | null;
-    test_date?: string;
-    inventory_status?:
-        | "active"
-        | "sold"
-        | "archived";
-    test_status?: boolean;
-    part?: number[];
-    brand?: number[];
-    shelf?: number[];
-    series?: number[];
-    condition?: number[];
-    inventory_category?: number[];
-    additional_image_ids?: number[];
-    status: "publish";
+  title: string;
+  serial_number?: string;
+  work_order?: string;
+  list_price?: number;
+  price_mode?: "automatic" | "manual";
+  notes?: string;
+  short_description?: string;
+  long_description?: string;
+  image_id?: number | null;
+  test_date?: string;
+  inventory_status?:
+  | "active"
+  | "sold"
+  | "archived";
+  test_status?: boolean;
+  part?: number[];
+  brand?: number[];
+  shelf?: number[];
+  series?: number[];
+  condition?: number[];
+  seo_title?: string;
+  meta_description?: string;
+  search_terms?: string;
+  inventory_category?: number[];
+  additional_image_ids?: number[];
+  status: "publish";
 };
 
 export type CreatePartPayload = {
@@ -114,6 +124,9 @@ export type CreatePartPayload = {
   series_id?: number | null;
 
   base_price?: number | null;
+  seo_title?: string;
+  meta_description?: string;
+  search_terms?: string;
 
   short_description: string;
 

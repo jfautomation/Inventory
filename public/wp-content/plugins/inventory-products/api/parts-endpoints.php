@@ -311,6 +311,62 @@ function inventory_create_part($request)
         $long_description
     );
 
+    // SEO TITLE
+    $seo_title =
+        array_key_exists(
+            'seo_title',
+            $params
+        ) &&
+        $params['seo_title'] !== null
+        ? sanitize_text_field(
+            $params['seo_title']
+        )
+        : '';
+
+    update_term_meta(
+        $term_id,
+        'seo_title',
+        $seo_title
+    );
+
+
+    // META DESCRIPTION
+    $meta_description =
+        array_key_exists(
+            'meta_description',
+            $params
+        ) &&
+        $params['meta_description'] !== null
+        ? sanitize_textarea_field(
+            $params['meta_description']
+        )
+        : '';
+
+    update_term_meta(
+        $term_id,
+        'meta_description',
+        $meta_description
+    );
+
+
+    // SEARCH TERMS
+    $search_terms =
+        array_key_exists(
+            'search_terms',
+            $params
+        ) &&
+        $params['search_terms'] !== null
+        ? sanitize_text_field(
+            $params['search_terms']
+        )
+        : '';
+
+    update_term_meta(
+        $term_id,
+        'search_terms',
+        $search_terms
+    );
+
 
     // LEGACY DESCRIPTION
     update_term_meta(
@@ -724,6 +780,59 @@ function inventory_update_part($request)
         );
     }
 
+    // SEO TITLE
+    if (array_key_exists('seo_title', $params)) {
+
+        $seo_title =
+            $params['seo_title'] !== null
+            ? sanitize_text_field(
+                $params['seo_title']
+            )
+            : '';
+
+        update_term_meta(
+            $term_id,
+            'seo_title',
+            $seo_title
+        );
+    }
+
+
+    // META DESCRIPTION
+    if (array_key_exists('meta_description', $params)) {
+
+        $meta_description =
+            $params['meta_description'] !== null
+            ? sanitize_textarea_field(
+                $params['meta_description']
+            )
+            : '';
+
+        update_term_meta(
+            $term_id,
+            'meta_description',
+            $meta_description
+        );
+    }
+
+
+    // SEARCH TERMS
+    if (array_key_exists('search_terms', $params)) {
+
+        $search_terms =
+            $params['search_terms'] !== null
+            ? sanitize_text_field(
+                $params['search_terms']
+            )
+            : '';
+
+        update_term_meta(
+            $term_id,
+            'search_terms',
+            $search_terms
+        );
+    }
+
 
     // IMAGE
     if (array_key_exists('image_id', $params)) {
@@ -976,6 +1085,24 @@ function inventory_format_part($term_id)
         true
     );
 
+    $seo_title = get_term_meta(
+        $term_id,
+        'seo_title',
+        true
+    );
+
+    $meta_description = get_term_meta(
+        $term_id,
+        'meta_description',
+        true
+    );
+
+    $search_terms = get_term_meta(
+        $term_id,
+        'search_terms',
+        true
+    );
+
     $description = get_term_meta(
         $term_id,
         'description',
@@ -1027,6 +1154,12 @@ function inventory_format_part($term_id)
         'short_description' => $short_description ?: '',
 
         'long_description' => $long_description ?: '',
+
+        'seo_title' => $seo_title ?: '',
+
+        'meta_description' => $meta_description ?: '',
+
+        'search_terms' => $search_terms ?: '',
 
         'image_id' => $image_id,
 

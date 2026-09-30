@@ -56,6 +56,9 @@ function inventory_transform_product($post)
         'notes',
         'short_description',
         'long_description',
+        'seo_title',
+        'meta_description',
+        'search_terms',
         'test_date',
         'inventory_status',
     ];
@@ -239,31 +242,34 @@ add_action('rest_after_insert_product', function ($post, $request, $creating) {
      * =========================
      */
     $meta_fields = [
-    'serial_number',
-    'work_order',
-    'notes',
-    'short_description',
-    'long_description',
-    'test_status',
-    'test_date',
-    'inventory_status',
-    'image_id',
-    'additional_image_ids',
-    'price_mode'
-];
+        'serial_number',
+        'work_order',
+        'notes',
+        'short_description',
+        'long_description',
+        'seo_title',
+        'meta_description',
+        'search_terms',
+        'test_status',
+        'test_date',
+        'inventory_status',
+        'image_id',
+        'additional_image_ids',
+        'price_mode'
+    ];
 
     foreach ($meta_fields as $field) {
-    $value = $request->get_param($field);
+        $value = $request->get_param($field);
 
-    if ($field === 'image_id' && $value === null) {
-        delete_post_meta($post->ID, $field);
-        continue;
-    }
+        if ($field === 'image_id' && $value === null) {
+            delete_post_meta($post->ID, $field);
+            continue;
+        }
 
-    if ($value !== null) {
-        update_post_meta($post->ID, $field, $value);
+        if ($value !== null) {
+            update_post_meta($post->ID, $field, $value);
+        }
     }
-}
 
     /**
      * =========================

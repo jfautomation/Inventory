@@ -9,6 +9,7 @@ import { api } from "../../api/client";
 import InventoryDetail from "../UI/Detail/InventoryDetail";
 import DetailCard from "../UI/Detail/DetailCard";
 import StatCard from "../UI/Detail/StatCard";
+import SEOCard from "../UI/Detail/SEOCard";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -171,6 +172,14 @@ const ProductDetail = () => {
             type="stock"
           />
         </>
+      }
+
+      bottomContent={
+        <SEOCard
+          seoTitle={product.seo_title}
+          metaDescription={product.meta_description}
+          searchTerms={product.search_terms}
+        />
       }
     >
 
