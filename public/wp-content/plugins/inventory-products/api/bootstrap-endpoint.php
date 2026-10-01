@@ -140,7 +140,11 @@ function inventory_bootstrap($request)
 
                 $data = [
                     'id'   => $term->term_id,
-                    'name' => $term->name,
+                    'name' => html_entity_decode(
+                        $term->name,
+                        ENT_QUOTES | ENT_HTML5,
+                        'UTF-8'
+                    ),
                     'slug' => $term->slug,
                 ];
 

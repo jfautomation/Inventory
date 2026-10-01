@@ -34,7 +34,10 @@ export default function SEOCard({
                         SEO Title
                     </div>
 
-                    <div className="font-medium text-gray-900">
+                    <div className="text-sm
+ leading-6
+ text-gray-700
+ whitespace-pre-wrap">
                         {seoTitle || "-"}
                     </div>
                 </div>
@@ -44,7 +47,10 @@ export default function SEOCard({
                         Meta Description
                     </div>
 
-                    <div className="font-medium text-gray-900">
+                    <div className="text-sm
+ leading-6
+ text-gray-700
+ whitespace-pre-wrap">
                         {metaDescription || "-"}
                     </div>
                 </div>
@@ -54,7 +60,10 @@ export default function SEOCard({
                         Search Terms
                     </div>
 
-                    <div className="font-medium text-gray-900">
+                    <div className="text-sm
+ leading-6
+ text-gray-700
+ whitespace-pre-wrap">
                         {searchTerms || "-"}
                     </div>
                 </div>

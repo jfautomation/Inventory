@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Column } from "../UI/DataTable/DataTable.types";
 import type { Product, Part } from "../../types";
+import ConditionPill from "../UI/ConditionPill";
 
 
 
@@ -63,12 +64,19 @@ export const productColumns = (
         product.brand?.[0]?.name ?? "-",
     },
 
-    {
-      key: "condition",
-      label: "Condition",
-      render: (product) =>
-        product.condition?.[0]?.name ?? "-",
-    },
+   {
+  key: "condition",
+  label: "Condition",
+  render: (product) => {
+    const condition = product.condition?.[0]?.name;
+
+    if (!condition) {
+      return "-";
+    }
+
+    return <ConditionPill condition={condition} />;
+  },
+},
 
     {
       key: "inventory_status",

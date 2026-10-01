@@ -474,6 +474,51 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
     ]);
 
     // =========================================================
+// PREFILL PRODUCT SEO FROM PART
+// =========================================================
+
+useEffect(() => {
+    if (
+        !isProduct ||
+        isEditing ||
+        !selectedProductPart
+    ) {
+        return;
+    }
+
+    if (
+        !seoTitle.trim() &&
+        selectedProductPart.seo_title
+    ) {
+        setSeoTitle(
+            selectedProductPart.seo_title
+        );
+    }
+
+    if (
+        !metaDescription.trim() &&
+        selectedProductPart.meta_description
+    ) {
+        setMetaDescription(
+            selectedProductPart.meta_description
+        );
+    }
+
+    if (
+        !searchTerms.trim() &&
+        selectedProductPart.search_terms
+    ) {
+        setSearchTerms(
+            selectedProductPart.search_terms
+        );
+    }
+}, [
+    isProduct,
+    isEditing,
+    selectedProductPart,
+]);
+
+    // =========================================================
     // REQUIRED FIELD VALIDATION
     // =========================================================
 
