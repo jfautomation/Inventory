@@ -25,6 +25,10 @@ type InventoryDetailProps = {
     stats: React.ReactNode;
     statsColumns?: 4 | 5;
     bottomContent?: React.ReactNode;
+    breadcrumbs?: {
+        label: string;
+        path?: string;
+    }[];
 };
 
 export default function InventoryDetail({
@@ -42,6 +46,7 @@ export default function InventoryDetail({
 
     addLabel,
     editLabel,
+    breadcrumbs,
 
     children,
     bottomContent,
@@ -55,7 +60,10 @@ export default function InventoryDetail({
 
             {/* HEADER */}
 
-            <PageHeader title={title}>
+            <PageHeader
+                title={title}
+                breadcrumbs={breadcrumbs}
+            >
                 <Button
                     variant="danger"
                     onClick={onDelete}
@@ -121,11 +129,6 @@ p-6
                     {bottomContent}
                 </div>
             )}
-
-
-            {/* ACTIONS */}
-
-            <div className="mt-3"></div>
 
 
             {/* ACTIONS */}

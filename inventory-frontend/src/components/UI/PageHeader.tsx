@@ -1,10 +1,17 @@
+import Breadcrumbs from './Breadcrumbs'
+
 type PageHeaderProps = {
   title: string;
+  breadcrumbs?: {
+    label: string;
+    path?: string;
+  }[];
   children?: React.ReactNode;
 };
 
 export default function PageHeader({
   title,
+  breadcrumbs,
   children,
 }: PageHeaderProps) {
   return (
@@ -14,17 +21,16 @@ export default function PageHeader({
           flex
           justify-between
           items-center
-          p-4
+          p-3
         "
       >
-        <h1
-          className="
-            text-3xl
-            font-bold
-          "
-        >
-          {title}
-        </h1>
+        <div className="flex items-center gap-3">
+          {breadcrumbs && (
+            <Breadcrumbs items={breadcrumbs} />
+          )}
+
+
+        </div>
 
         <div className="flex gap-3">
           {children}

@@ -26,7 +26,7 @@ export const productColumns = (
           <Link
             to={`/product/${product.id}`}
             onClick={(e) => e.stopPropagation()}
-            className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+            className="font-semibold text-gray-700 hover:text-[#3F76ED] hover:underline"
           >
             {part.name}
           </Link>
@@ -64,19 +64,19 @@ export const productColumns = (
         product.brand?.[0]?.name ?? "-",
     },
 
-   {
-  key: "condition",
-  label: "Condition",
-  render: (product) => {
-    const condition = product.condition?.[0]?.name;
+    {
+      key: "condition",
+      label: "Condition",
+      render: (product) => {
+        const condition = product.condition?.[0]?.name;
 
-    if (!condition) {
-      return "-";
-    }
+        if (!condition) {
+          return "-";
+        }
 
-    return <ConditionPill condition={condition} />;
-  },
-},
+        return <ConditionPill condition={condition} />;
+      },
+    },
 
     {
       key: "inventory_status",

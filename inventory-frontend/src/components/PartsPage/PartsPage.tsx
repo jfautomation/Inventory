@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
 import PageContainer from "../UI/PageContainer";
-import PageHeader from "../UI/PageHeader";
 import Button from "../UI/Button/Button";
 import InventoryFilters from "../ProductsPage/Inventory/InventoryFilters";
 import DataTable from "../UI/DataTable/DataTable";
@@ -14,8 +12,6 @@ import { filterParts } from "./filterParts";
 import { exportPartsCSV } from "../../utils/exportPartsCSV";
 
 const PartsPage = () => {
-  const navigate = useNavigate();
-
   const {
     openPart,
     openEditPart,
@@ -38,7 +34,6 @@ const PartsPage = () => {
     setCategory("");
     setBrand("");
   };
-
 
   const handleDeletePart = async (part: Part) => {
     const confirmed = window.confirm(
@@ -70,53 +65,46 @@ const PartsPage = () => {
     }
   );
 
-
-
   return (
     <PageContainer>
 
-      {/* =====================================================
-          PAGE HEADER
-      ===================================================== */}
-
-      <PageHeader title="Parts Inventory">
-
-        <div className="flex items-center gap-3">
-
-          <Button onClick={openPart}>
-            Add Part
-          </Button>
-
-          <Button
-            onClick={() => exportPartsCSV(filteredParts)}
-            variant="secondary"
-          >
-            Export
-          </Button>
-
-        </div>
-
-      </PageHeader>
-
-
-      {/* =====================================================
-          CONTENT
-      ===================================================== */}
-
-      <div className="p-6">
-
-        {/* ===================================================
-            FILTERS
+      {/* ===================================================
+            TABLE
         =================================================== */}
 
-        <div className="
-          rounded-xl
-          border
-          border-gray-200
-          bg-white
-          p-4
-          shadow-sm
-        ">
+
+
+      <DataTable
+        columns={partColumns(
+          brands,
+          categories,
+          openEditPart,
+          handleDeletePart
+        )}
+        data={filteredParts}
+        getRowKey={(part) => part.id}
+        headerTitle="Parts Inventory"
+        breadcrumbs={[
+          {
+            label: "Parts",
+            path: "/parts",
+          },
+        ]}
+        headerActions={
+          <div className="flex items-center gap-3">
+            <Button onClick={openPart}>
+              Add Part
+            </Button>
+
+            <Button
+              onClick={() => exportPartsCSV(filteredParts)}
+              variant="secondary"
+            >
+              Export
+            </Button>
+          </div>
+        }
+        toolbar={
           <InventoryFilters
             entityName="Parts"
             searchValue={search}
@@ -126,94 +114,16 @@ const PartsPage = () => {
             brandValue={brand}
             onBrandChange={setBrand}
             onClearFilters={handleClearFilters}
-
           />
-        </div>
+        }
+      />
 
 
-        {/* ===================================================
-            TABLE
-        =================================================== */}
-
-        <div className="
-          mt-6
-          rounded-xl
-          border
-          border-gray-200
-          bg-white
-          shadow-sm
-          overflow-hidden
-        ">
-
-          {/* TABLE HEADER */}
-
-          <div className="
-            px-5
-            py-4
-            border-b
-            border-gray-200
-          ">
-
-            <div className="flex items-center justify-between">
-
-              <div>
-                <h3 className="
-                  text-lg
-                  font-semibold
-                  text-gray-900
-                ">
-                  Parts Inventory
-                </h3>
-
-                <p className="
-                  mt-1
-                  text-sm
-                  text-gray-500
-                ">
-                  Manage and review your parts library.
-                </p>
-              </div>
-
-              <div className="
-  text-sm
-  text-gray-500
-">
-                {filteredParts.length}{" "}
-                {filteredParts.length === 1 ? "part" : "parts"}
-              </div>
-
-            </div>
-
-          </div>
 
 
-          {/* TABLE */}
-
-          <div className="overflow-x-auto">
-
-            <DataTable
-              columns={partColumns(
-                brands,
-                categories,
-                openEditPart,
-                handleDeletePart
-              )}
-              data={filteredParts}
-              getRowKey={(part) => part.id}
-              onRowClick={(part) =>
-                navigate(`/part/${part.id}`)
-              }
-            />
-
-          </div>
-
-        </div>
-
-      </div>
 
     </PageContainer>
   );
 };
 
 export default PartsPage;
-

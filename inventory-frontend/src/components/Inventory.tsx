@@ -119,20 +119,15 @@ const Inventory: React.FC = () => {
 
   return (
     <PageContainer>
-      <PageHeader title="Dashboard: Inventory">
-
-        <Button onClick={openProduct}>
-          Add Product
-        </Button>
-
-        <Button
-          onClick={() => exportProductsCSV(products)}
-          variant="secondary"
-        >
-          Export
-        </Button>
-
-      </PageHeader>
+      <PageHeader
+        title="Dashboard: Inventory"
+        breadcrumbs={[
+          {
+            label: "Inventory",
+            path: "/inventory",
+          },
+        ]}
+      ></PageHeader>
 
       <div className="p-4">
 

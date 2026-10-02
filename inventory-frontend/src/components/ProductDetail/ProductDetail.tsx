@@ -57,7 +57,6 @@ const ProductDetail = () => {
     fetchProduct();
   }, [id, products]);
 
-
   // =========================================================
   // LOADING
   // =========================================================
@@ -65,7 +64,6 @@ const ProductDetail = () => {
   if (!product) {
     return <div>Loading product...</div>;
   }
-
 
   // =========================================================
   // DELETE
@@ -88,7 +86,6 @@ const ProductDetail = () => {
       await fetchProducts();
 
       navigate("/products");
-
     } catch (err) {
       console.error(
         "Delete failed:",
@@ -98,12 +95,10 @@ const ProductDetail = () => {
       alert(
         "Failed to delete product."
       );
-
     } finally {
       setDeleting(false);
     }
   };
-
 
   // =========================================================
   // EDIT
@@ -113,31 +108,35 @@ const ProductDetail = () => {
     openEditProduct(product);
   };
 
-
   // =========================================================
   // UI
   // =========================================================
 
-
-
   return (
     <InventoryDetail
       title="Product Details"
+
+      breadcrumbs={[
+        {
+          label: "Products",
+          path: "/products",
+        },
+        {
+          label: product.title,
+        },
+      ]}
+
       deleteLabel="Delete Product"
       deleting={deleting}
-      addLabel="Add New Product"
-      editLabel="Edit Product Details"
-      statsColumns={5}
-      image={product.image}
-      additionalImages={
-        product.additional_image_urls || []
-      }
-      imageAlt={product.title}
+
       onDelete={handleDeleteProduct}
       onEdit={handleEditProduct}
       onAdd={() => {
         console.log("Add new product");
       }}
+
+      addLabel="Add New Product"
+      editLabel="Edit Product Details"
 
       stats={
         <>
@@ -182,22 +181,11 @@ const ProductDetail = () => {
         />
       }
     >
-
       <DetailCard
         product={product}
       />
-
     </InventoryDetail>
   );
 };
 
 export default ProductDetail;
-
-
-
-
-
-
-
-
-

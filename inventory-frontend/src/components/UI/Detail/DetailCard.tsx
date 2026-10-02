@@ -135,7 +135,7 @@ export default function DetailCard({
               Title
             </div>
 
-            <div className="text-xl font-semibold">
+            <div className="text-2xl font-semibold">
               {product.title || "-"}
             </div>
 

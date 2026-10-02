@@ -13,8 +13,7 @@ import { exportProductsCSV } from "../../utils/exportCSV";
 
 const ProductsPage = () => {
 
-
-  const {
+const {
     openProduct,
     openEditProduct,
   } = useModal();
@@ -86,25 +85,26 @@ const ProductsPage = () => {
   return (
     <PageContainer>
 
-      <PageHeader title="Products Inventory">
+      <PageHeader
+        title="Products Inventory"
+        breadcrumbs={[
+          {
+            label: "Products",
+            path: "/products",
+          },
+        ]}
+      >
+        <Button onClick={openProduct}>
+          Add Product
+        </Button>
 
-        <div className="flex items-center gap-3">
-
-          <Button onClick={openProduct}>
-            Add Product
-          </Button>
-
-          <Button
-            onClick={() => exportProductsCSV(filteredProducts)}
-            variant="secondary"
-          >
-            Export
-          </Button>
-
-        </div>
-
+        <Button
+          onClick={() => exportProductsCSV(filteredProducts)}
+          variant="secondary"
+        >
+          Export
+        </Button>
       </PageHeader>
-
       <div className="p-4">
 
         <InventoryFilters
