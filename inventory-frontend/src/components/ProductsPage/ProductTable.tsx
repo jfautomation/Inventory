@@ -1,51 +1,47 @@
-import { useNavigate } from "react-router-dom";
 import DataTable from "../UI/DataTable/DataTable";
 import { productColumns } from "./productColumns";
 import { useInventory } from "../../context/InventoryContext";
 import type { Product } from "../../types";
+import type { BreadcrumbItem } from "../UI/Breadcrumbs";
 
 type ProductTableProps = {
-    products: Product[];
-    onEdit: (product: Product) => void;
-    onDelete: (product: Product) => void;
+  products: Product[];
+  onEdit: (product: Product) => void;
+  onDelete: (product: Product) => void;
+
+  headerTitle?: string;
+  breadcrumbs?: BreadcrumbItem[];
+  headerActions?: React.ReactNode;
+  toolbar?: React.ReactNode;
 };
 
 const ProductTable = ({
-    products,
-    onEdit,
-    onDelete,
+  products,
+  onEdit,
+  onDelete,
+  headerTitle,
+  breadcrumbs,
+  headerActions,
+  toolbar,
 }: ProductTableProps) => {
-    const navigate = useNavigate();
+  const { parts, categories } = useInventory();
 
-    const { parts, categories } = useInventory();
-
-    return (
-        <div>
-            <h3
-                className="
-          text-lg
-          font-semibold
-          text-gray-900
-          mb-4
-        "
-            >
-                Recently Added Products
-            </h3>
-            <DataTable
-                columns={productColumns(
-                    parts,
-                    categories,
-                    onEdit,
-                    onDelete
-                )}
-                data={products}
-                getRowKey={(product) => product.id}
-                onRowClick={(product) =>
-                    navigate(`/product/${product.id}`)
-                }
-            />
-        </div>
-    );
+  return (
+    <DataTable
+      columns={productColumns(
+        parts,
+        categories,
+        onEdit,
+        onDelete
+      )}
+      data={products}
+      getRowKey={(product) => product.id}
+      headerTitle={headerTitle}
+      breadcrumbs={breadcrumbs}
+      headerActions={headerActions}
+      toolbar={toolbar}
+    />
+  );
 };
 
 export default ProductTable;

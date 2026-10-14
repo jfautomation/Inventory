@@ -1,28 +1,28 @@
+
+import type {
+  ButtonHTMLAttributes,
+  ReactNode,
+} from "react";
+
 export type ButtonVariant =
   | "primary"
   | "secondary"
   | "danger"
-  | "ghost";
+  | "ghost"
+  | "grey";
 
+export type ButtonSize = "sm" | "md" | "lg";
 
-export type ButtonSize =
-  | "sm"
-  | "md"
-  | "lg";
+export type ButtonShape = "default" | "square";
 
-
-export type ButtonProps = {
-  children: React.ReactNode;
-
+export type ButtonProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> & {
+  children?: ReactNode;
+  icon?: ReactNode;
+  label?: string;
   variant?: ButtonVariant;
-
   size?: ButtonSize;
-
-  type?: "button" | "submit" | "reset";
-
-  disabled?: boolean;
-
-  onClick?: () => void;
-
-  className?: string;
+  shape?: ButtonShape;
 };

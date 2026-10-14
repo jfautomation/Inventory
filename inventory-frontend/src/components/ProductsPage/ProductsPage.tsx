@@ -10,10 +10,12 @@ import ProductTable from "./ProductTable";
 import type { Product } from "../../types";
 import { filterProducts } from "./productFilters";
 import { exportProductsCSV } from "../../utils/exportCSV";
+import { Plus, Download } from "lucide-react";
+
 
 const ProductsPage = () => {
 
-const {
+  const {
     openProduct,
     openEditProduct,
   } = useModal();
@@ -85,26 +87,39 @@ const {
   return (
     <PageContainer>
 
+
+
+
+
       <PageHeader
-        title="Products Inventory"
         breadcrumbs={[
           {
             label: "Products",
             path: "/products",
           },
         ]}
+        sectionTitle="Inventory"
       >
-        <Button onClick={openProduct}>
+        <Button
+          icon={<Plus size={18} />}
+          label="Add Product"
+          variant="primary"
+          onClick={openProduct}
+        >
           Add Product
         </Button>
 
         <Button
+          icon={<Download size={18} />}
+          label="Export Products"
+          variant="grey"
           onClick={() => exportProductsCSV(filteredProducts)}
-          variant="secondary"
         >
           Export
         </Button>
       </PageHeader>
+
+
       <div className="p-4">
 
         <InventoryFilters

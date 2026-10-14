@@ -49,26 +49,7 @@ export default function AppLayout() {
   "
         >
 
-          {/* <PageHeader
-            title="Dashboard: Inventory"
-            breadcrumbs={[
-              {
-                label: "Inventory",
-                path: "/inventory",
-              },
-            ]}
-          >
-            <Button onClick={openProduct}>
-              Add Product
-            </Button>
 
-            <Button
-              onClick={() => exportProductsCSV(products)}
-              variant="secondary"
-            >
-              Export
-            </Button>
-          </PageHeader> */}
 
           <Outlet />
 

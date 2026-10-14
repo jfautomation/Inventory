@@ -1,85 +1,62 @@
-import type { ButtonProps } from "./Button.types";
 
+import type { ButtonProps } from "./Button.types";
 
 export default function Button({
   children,
+  icon,
+  label,
   variant = "primary",
   size = "md",
+  shape = "default",
   type = "button",
   disabled = false,
   onClick,
   className = "",
+  ...props
 }: ButtonProps) {
-
-
   const baseStyles = `
-    rounded
+    inline-flex
+    items-center
+    justify-center
     font-medium
+    gap-1
     transition
     duration-200
     disabled:opacity-50
     disabled:cursor-not-allowed
   `;
 
-
   const variantStyles = {
-    primary: `
-      bg-primary
-      text-white
-      hover:bg-blue-700
-    `,
-
-    secondary: `
-      bg-gray-200
-      text-gray-800
-      hover:bg-gray-300
-    `,
-
-    danger: `
-      bg-red-600
-      text-white
-      hover:bg-red-700
-    `,
-
-    ghost: `
-      bg-transparent
-      hover:bg-gray-100
-    `,
+    primary: "bg-primary text-white hover:bg-blue-700",
+    secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300",
+    grey: "bg-gray-200 text-gray-800 hover:bg-gray-300",
+    danger: "bg-red-600 text-white hover:bg-red-700",
+    ghost: "bg-transparent text-gray-700 hover:bg-gray-100",
   };
-
 
   const sizeStyles = {
-    sm: `
-      px-3
-      py-1
-      text-sm
-    `,
-
-    md: `
-      px-4
-      py-2
-    `,
-
-    lg: `
-      px-6
-      py-3
-      text-lg
-    `,
+    sm: shape === "square" ? "h-8 w-8" : "px-3 py-1 text-sm",
+    md: shape === "square" ? "h-9 w-9" : "px-4 py-2",
+    lg: shape === "square" ? "h-11 w-11" : "px-6 py-3 text-lg",
   };
-
 
   return (
     <button
       type={type}
       disabled={disabled}
       onClick={onClick}
+      aria-label={label}
+      title={label}
       className={`
         ${baseStyles}
         ${variantStyles[variant]}
         ${sizeStyles[size]}
+        ${shape === "square" ? "rounded-lg shrink-0" : "rounded"}
         ${className}
       `}
+      {...props}
     >
+      {icon}
       {children}
     </button>
   );

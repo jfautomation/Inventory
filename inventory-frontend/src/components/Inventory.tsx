@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { exportProductsCSV } from "../utils/exportCSV";
 import PageContainer from "./UI/PageContainer";
-import PageHeader from "./UI/PageHeader";
 import { useModal } from "../context/ModalContext";
 import { useInventory } from "../context/InventoryContext";
 import Login from "./Login/Login";
@@ -21,17 +20,6 @@ const Inventory: React.FC = () => {
     openEditProduct,
   } = useModal();
 
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [brand, setBrand] = useState("");
-
-
-  const handleClearFilters = () => {
-    setSearch("");
-    setCategory("");
-    setBrand("");
-  };
-
   const {
     products,
     parts,
@@ -39,12 +27,19 @@ const Inventory: React.FC = () => {
     isLoading,
   } = useInventory();
 
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [brand, setBrand] = useState("");
 
+  const handleClearFilters = () => {
+    setSearch("");
+    setCategory("");
+    setBrand("");
+  };
 
-
-  // =========================
+  // =========================================================
   // AUTH CHECK
-  // =========================
+  // =========================================================
 
   useEffect(() => {
     const token = getToken();
@@ -55,25 +50,25 @@ const Inventory: React.FC = () => {
     setIsLoggedIn(true);
   };
 
-  // =========================
+  // =========================================================
   // LOGIN GATE
-  // =========================
+  // =========================================================
 
   if (!isLoggedIn) {
     return <Login onSuccess={handleLoginSuccess} />;
   }
 
-  // =========================
+  // =========================================================
   // INVENTORY LOADING
-  // =========================
+  // =========================================================
 
   if (isLoading) {
     return <div>Loading inventory...</div>;
   }
 
-  // =========================
+  // =========================================================
   // DELETE PRODUCT
-  // =========================
+  // =========================================================
 
   const handleDeleteProduct = async (product: Product) => {
     const confirmed = window.confirm(
@@ -87,7 +82,6 @@ const Inventory: React.FC = () => {
     try {
       await ProductService.delete(product.id);
 
-      // Refresh products only
       await fetchProducts();
     } catch (err) {
       console.error("Delete failed:", err);
@@ -95,9 +89,9 @@ const Inventory: React.FC = () => {
     }
   };
 
-  // =========================
+  // =========================================================
   // RECENT PRODUCTS
-  // =========================
+  // =========================================================
 
   const recentProducts = [...products]
     .sort((a, b) => b.id - a.id)
@@ -113,47 +107,58 @@ const Inventory: React.FC = () => {
     }
   );
 
-  // =========================
+  // =========================================================
   // UI
-  // =========================
+  // =========================================================
 
   return (
     <PageContainer>
-      <PageHeader
-        title="Dashboard: Inventory"
+
+      <ProductTable
+        products={filteredRecentProducts}
+        onEdit={openEditProduct}
+        onDelete={handleDeleteProduct}
+
+        headerTitle="Dashboard: Inventory"
+
         breadcrumbs={[
           {
             label: "Inventory",
             path: "/inventory",
           },
         ]}
-      ></PageHeader>
 
-      <div className="p-4">
+        headerActions={
+          <div className="flex items-center gap-3">
+            <Button onClick={openProduct}>
+              Add Product
+            </Button>
 
-        <InventoryFilters
-          entityName="Products"
-          searchValue={search}
-          onSearchChange={setSearch}
-          categoryValue={category}
-          onCategoryChange={setCategory}
-          brandValue={brand}
-          onBrandChange={setBrand}
-          onClearFilters={handleClearFilters}
-        />
+            <Button
+              onClick={() =>
+                exportProductsCSV(filteredRecentProducts)
+              }
+              variant="secondary"
+            >
+              Export
+            </Button>
+          </div>
+        }
 
-        <div className="mt-6">
-
-
-
-          <ProductTable
-            products={filteredRecentProducts}
-            onEdit={openEditProduct}
-            onDelete={handleDeleteProduct}
+        toolbar={
+          <InventoryFilters
+            entityName="Products"
+            searchValue={search}
+            onSearchChange={setSearch}
+            categoryValue={category}
+            onCategoryChange={setCategory}
+            brandValue={brand}
+            onBrandChange={setBrand}
+            onClearFilters={handleClearFilters}
           />
-        </div>
+        }
+      />
 
-      </div>
     </PageContainer>
   );
 };
