@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import type { BreadcrumbItem } from "../Breadcrumbs";
 
-
-
 export type Column<T> = {
   key: keyof T | string;
   label: string;
@@ -22,9 +20,15 @@ export type DataTableProps<T> = {
 
   getRowKey?: (row: T) => string | number;
 
-  // Table header
+  // Page header
   headerTitle?: string;
   breadcrumbs?: BreadcrumbItem[];
   headerActions?: ReactNode;
+
+  // Table section header
+  tableHeader?: string;
+  tableHeaderIcon?: ReactNode;
+
+  // Toolbar / filters
   toolbar?: ReactNode;
 };

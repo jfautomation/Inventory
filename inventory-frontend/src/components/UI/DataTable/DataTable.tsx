@@ -1,5 +1,7 @@
 import type { DataTableProps } from "./DataTable.types";
 import PageHeader from "../PageHeader";
+import TableHeader from "./TableHeader";
+import { Package } from "lucide-react";
 
 export default function DataTable<T>({
   columns,
@@ -10,8 +12,9 @@ export default function DataTable<T>({
   breadcrumbs,
   headerActions,
   toolbar,
+  tableHeader,
+  tableHeaderIcon,
 }: DataTableProps<T>) {
-
   if (loading) {
     return (
       <div className="p-6 text-gray-500">
@@ -30,11 +33,7 @@ export default function DataTable<T>({
         bg-white
       "
     >
-
-      {/* =====================================================
-          TABLE HEADER
-      ===================================================== */}
-
+      {/* PAGE HEADER */}
       {headerTitle && (
         <PageHeader
           title={headerTitle}
@@ -44,103 +43,71 @@ export default function DataTable<T>({
         </PageHeader>
       )}
 
-      {/* =====================================================
-          TOOLBAR / FILTERS
-      ===================================================== */}
-
+      {/* TOOLBAR / FILTERS */}
       {toolbar && (
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4">
           {toolbar}
         </div>
       )}
 
-      {/* =====================================================
-          TABLE
-      ===================================================== */}
 
-      <div className="overflow-x-auto">
 
-        <table
-          className="
-            w-full
-            text-sm
-          "
-        >
+      {/* TABLE SECTION */}
+      <div className="py-1 px-4">
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          {/* TABLE SECTION HEADER */}
+          {tableHeader && (
+            <>
+              <TableHeader
+                icon={tableHeaderIcon ?? <Package size={20} />}
+                header={tableHeader}
+              />
 
-          <thead
-            className="
-              bg-gray-50
-              border-b
-            "
-          >
-            <tr>
+              <div className="border-t border-gray-200" />
+            </>
+          )}
 
-              {columns.map((column) => (
+          {/* TABLE */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b bg-gray-50">
+                <tr>
+                  {columns.map((column) => (
+                    <th
+                      key={String(column.key)}
+                      className="px-4 py-3 text-left font-semibold text-gray-500"
+                    >
+                      {column.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
 
-                <th
-                  key={String(column.key)}
-                  className="
-                    px-4
-                    py-3
-                    text-left
-                    font-semibold
-                    text-gray-700
-                  "
-                >
-                  {column.label}
-                </th>
-
-              ))}
-
-            </tr>
-          </thead>
-
-          <tbody>
-
-            {data.map((row, index) => (
-
-              <tr
-                key={
-                  getRowKey
-                    ? getRowKey(row)
-                    : index
-                }
-                className="
-                  border-b
-                  hover:bg-gray-50
-                  transition
-                "
-              >
-
-                {columns.map((column) => (
-
-                  <td
-                    key={String(column.key)}
-                    className="
-                      px-4
-                      py-3
-                    "
+              <tbody>
+                {data.map((row, index) => (
+                  <tr
+                    key={getRowKey ? getRowKey(row) : index}
+                    className="border-b transition hover:bg-gray-50"
                   >
-                    {column.render
-                      ? column.render(row)
-                      : String(
-                          row[column.key as keyof T] ?? "-"
-                        )
-                    }
-                  </td>
-
+                    {columns.map((column) => (
+                      <td
+                        key={String(column.key)}
+                        className="px-4 py-3 text-black"
+                      >
+                        {column.render
+                          ? column.render(row)
+                          : String(
+                            row[column.key as keyof T] ?? "-"
+                          )}
+                      </td>
+                    ))}
+                  </tr>
                 ))}
-
-              </tr>
-
-            ))}
-
-          </tbody>
-
-        </table>
-
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-
     </div>
   );
 }

@@ -11,6 +11,7 @@ import ProductTable from "./ProductsPage/ProductTable";
 import { ProductService } from "../services/productService";
 import type { Product } from "../types";
 import { filterProducts } from "./ProductsPage/productFilters";
+import { Plus, Download, Package } from "lucide-react";
 
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -118,6 +119,9 @@ const Inventory: React.FC = () => {
         products={filteredRecentProducts}
         onEdit={openEditProduct}
         onDelete={handleDeleteProduct}
+        tableHeader="Products Inventory"
+        tableHeaderIcon={<Package size={20} />}
+
 
         headerTitle="Dashboard: Inventory"
 
@@ -130,15 +134,21 @@ const Inventory: React.FC = () => {
 
         headerActions={
           <div className="flex items-center gap-3">
-            <Button onClick={openProduct}>
+            <Button
+              icon={<Plus size={18} />}
+              label="Add Product"
+              onClick={openProduct}
+            >
               Add Product
             </Button>
 
             <Button
+              icon={<Download size={18} />}
+              label="Export Products"
+              variant="grey"
               onClick={() =>
                 exportProductsCSV(filteredRecentProducts)
               }
-              variant="secondary"
             >
               Export
             </Button>

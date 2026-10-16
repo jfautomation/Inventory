@@ -53,7 +53,7 @@ export default function InventoryFilters({
                 flex
                 items-center
                 gap-4
-                mb-6
+                
             "
         >
 
@@ -69,8 +69,8 @@ export default function InventoryFilters({
                         onSearchChange(e.target.value)
                     }
                     placeholder={`Search ${entityName || "inventory"}...`}
-                    icon={<Search size={18} />}
-                    className="w-full"
+                    icon={<Search size={16}/>}
+                    className="w-full text-sm"
                 />
 
             </div>
@@ -93,7 +93,8 @@ export default function InventoryFilters({
                     px-4
                     py-2
                     bg-white
-                "
+                    text-sm
+                    "
             >
 
                 <option value="">
@@ -132,6 +133,7 @@ export default function InventoryFilters({
                     px-4
                     py-2
                     bg-white
+                    text-sm
                 "
             >
 
@@ -155,23 +157,22 @@ export default function InventoryFilters({
 
 
 
-
             <button
                 type="button"
                 onClick={onClearFilters}
                 className="
-        px-4
-        py-2
-        border
-        border-gray-300
-        rounded-lg
-        bg-white
-        text-sm
-        font-medium
-        text-gray-700
-        hover:bg-gray-50
-        transition
-    "
+    px-4
+    py-2
+    border
+    border-[#3F76ED]
+    rounded-lg
+    bg-white
+    text-sm
+    font-medium
+    text-[#3F76ED]
+    hover:bg-blue-50
+    transition
+  "
             >
                 Clear Filters
             </button>

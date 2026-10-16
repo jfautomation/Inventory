@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import DataTable from "../UI/DataTable/DataTable";
 import { productColumns } from "./productColumns";
 import { useInventory } from "../../context/InventoryContext";
@@ -11,8 +12,11 @@ type ProductTableProps = {
 
   headerTitle?: string;
   breadcrumbs?: BreadcrumbItem[];
-  headerActions?: React.ReactNode;
-  toolbar?: React.ReactNode;
+  headerActions?: ReactNode;
+  toolbar?: ReactNode;
+
+  tableHeader?: string;
+  tableHeaderIcon?: ReactNode;
 };
 
 const ProductTable = ({
@@ -23,6 +27,8 @@ const ProductTable = ({
   breadcrumbs,
   headerActions,
   toolbar,
+  tableHeader,
+  tableHeaderIcon,
 }: ProductTableProps) => {
   const { parts, categories } = useInventory();
 
@@ -40,6 +46,8 @@ const ProductTable = ({
       breadcrumbs={breadcrumbs}
       headerActions={headerActions}
       toolbar={toolbar}
+      tableHeader={tableHeader}
+      tableHeaderIcon={tableHeaderIcon}
     />
   );
 };

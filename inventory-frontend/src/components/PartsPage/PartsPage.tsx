@@ -10,6 +10,7 @@ import { TaxonomyService } from "../../services/taxonomyService";
 import { Part } from "../../types";
 import { filterParts } from "./filterParts";
 import { exportPartsCSV } from "../../utils/exportPartsCSV";
+import { Plus, Download } from "lucide-react";
 
 const PartsPage = () => {
   const {
@@ -83,7 +84,7 @@ const PartsPage = () => {
         )}
         data={filteredParts}
         getRowKey={(part) => part.id}
-        headerTitle="Parts Inventory"
+        headerTitle="Parts"
         breadcrumbs={[
           {
             label: "Parts",
@@ -91,19 +92,25 @@ const PartsPage = () => {
           },
         ]}
         headerActions={
-          <div className="flex items-center gap-3">
-            <Button onClick={openPart}>
-              Add Part
-            </Button>
+  <div className="flex items-center gap-3">
+    <Button
+      icon={<Plus size={18} />}
+      label="Add Part"
+      onClick={openPart}
+    >
+      Add Part
+    </Button>
 
-            <Button
-              onClick={() => exportPartsCSV(filteredParts)}
-              variant="secondary"
-            >
-              Export
-            </Button>
-          </div>
-        }
+    <Button
+      icon={<Download size={18} />}
+      label="Export Parts"
+      variant="grey"
+      onClick={() => exportPartsCSV(filteredParts)}
+    >
+      Export
+    </Button>
+  </div>
+}
         toolbar={
           <InventoryFilters
             entityName="Parts"

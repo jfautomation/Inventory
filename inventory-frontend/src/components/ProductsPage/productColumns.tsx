@@ -1,10 +1,8 @@
+
 import { Link } from "react-router-dom";
 import type { Column } from "../UI/DataTable/DataTable.types";
 import type { Product, Part } from "../../types";
 import ConditionPill from "../UI/ConditionPill";
-
-
-
 
 export const productColumns = (
   parts: Part[],
@@ -13,8 +11,31 @@ export const productColumns = (
   onDelete: (product: Product) => void
 ): Column<Product>[] => [
     {
+      key: "title",
+      label: "Product Title",
+      render: (product) => (
+        <Link
+          to={`/product/${product.id}`}
+          onClick={(e) => e.stopPropagation()}
+          title={product.title || ""}
+          className="
+        block
+        max-w-[240px]
+        truncate
+        font-semibold
+        text-black
+        hover:text-[#3F76ED]
+        hover:underline
+      "
+        >
+          {product.title || "-"}
+        </Link>
+      ),
+    },
+
+    {
       key: "part",
-      label: "Part",
+      label: "Part Name / Number",
       render: (product) => {
         const part = product.part?.[0];
 
@@ -23,13 +44,16 @@ export const productColumns = (
         }
 
         return (
-          <Link
-            to={`/product/${product.id}`}
-            onClick={(e) => e.stopPropagation()}
-            className="font-semibold text-gray-700 hover:text-[#3F76ED] hover:underline"
-          >
-            {part.name}
-          </Link>
+          <div className="text-black">
+            <div>{part.name}</div>
+            {"part_number" in part &&
+              typeof part.part_number === "string" &&
+              part.part_number && (
+                <div className="text-sm">
+                  {part.part_number}
+                </div>
+              )}
+          </div>
         );
       },
     },
@@ -79,11 +103,6 @@ export const productColumns = (
     },
 
     {
-      key: "inventory_status",
-      label: "Status",
-    },
-
-    {
       key: "list_price",
       label: "Price",
       render: (product) =>
@@ -93,24 +112,27 @@ export const productColumns = (
     },
 
     {
-      key: "test_status",
-      label: "Test Status",
-      render: (product) =>
-        product.test_status ? "Passed" : "-",
-    },
-
-    {
       key: "actions",
       label: "Actions",
       render: (product) => (
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onEdit(product);
             }}
-            className="text-sm font-medium"
+            className="
+          rounded-md
+          border border-gray-300
+          bg-gray-100
+          px-3 py-1
+          text-sm font-medium
+          text-gray-700
+          transition
+          hover:bg-gray-200
+          hover:text-gray-900
+        "
           >
             Edit
           </button>
@@ -121,7 +143,18 @@ export const productColumns = (
               e.stopPropagation();
               onDelete(product);
             }}
-            className="text-sm font-medium"
+            className="
+          rounded-md
+          border border-gray-300
+          bg-gray-100
+          px-3 py-1
+          text-sm font-medium
+          text-gray-700
+          transition
+          hover:border-red-200
+          hover:bg-red-50
+          hover:text-red-600
+        "
           >
             Delete
           </button>
