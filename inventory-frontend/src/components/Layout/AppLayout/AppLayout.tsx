@@ -37,7 +37,7 @@ export default function AppLayout() {
 
 
 
-      <div className="flex">
+      <div className="flex pt-14">
 
 
         <Sidebar />
@@ -45,7 +45,7 @@ export default function AppLayout() {
 
         <main
           className="
-    flex-1
+    min-w-0 flex-1
   "
         >
 

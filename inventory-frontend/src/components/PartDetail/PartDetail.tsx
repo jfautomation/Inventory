@@ -151,6 +151,15 @@ const PartDetail = () => {
   return (
     <InventoryDetail
       title="Part Details"
+      breadcrumbs={[
+        {
+          label: "Parts",
+          path: "/parts",
+        },
+        {
+          label: part.name,
+        },
+      ]}
       deleteLabel="Delete Part"
       deleting={deleting}
       addLabel="Add New Part"

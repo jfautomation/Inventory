@@ -53,7 +53,7 @@ export default function DataTable<T>({
 
 
       {/* TABLE SECTION */}
-      <div className="py-1 px-4">
+      <div className="px-4 pb-4">
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           {/* TABLE SECTION HEADER */}
           {tableHeader && (

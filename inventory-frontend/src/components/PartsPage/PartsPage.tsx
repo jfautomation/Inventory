@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
@@ -7,16 +8,13 @@ import InventoryFilters from "../ProductsPage/Inventory/InventoryFilters";
 import DataTable from "../UI/DataTable/DataTable";
 import { partColumns } from "./partColumns";
 import { TaxonomyService } from "../../services/taxonomyService";
-import { Part } from "../../types";
+import type { Part } from "../../types";
 import { filterParts } from "./filterParts";
 import { exportPartsCSV } from "../../utils/exportPartsCSV";
-import { Plus, Download } from "lucide-react";
+import { Plus, Download, Package } from "lucide-react";
 
 const PartsPage = () => {
-  const {
-    openPart,
-    openEditPart,
-  } = useModal();
+  const { openPart, openEditPart } = useModal();
 
   const {
     parts,
@@ -41,9 +39,7 @@ const PartsPage = () => {
       `Are you sure you want to delete "${part.name}"?\n\nThis action cannot be undone.`
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       await TaxonomyService.deletePart(part.id);
@@ -68,13 +64,6 @@ const PartsPage = () => {
 
   return (
     <PageContainer>
-
-      {/* ===================================================
-            TABLE
-        =================================================== */}
-
-
-
       <DataTable
         columns={partColumns(
           brands,
@@ -92,25 +81,27 @@ const PartsPage = () => {
           },
         ]}
         headerActions={
-  <div className="flex items-center gap-3">
-    <Button
-      icon={<Plus size={18} />}
-      label="Add Part"
-      onClick={openPart}
-    >
-      Add Part
-    </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              icon={<Plus size={18} />}
+              label="Add Part"
+              onClick={openPart}
+            >
+              Add Part
+            </Button>
 
-    <Button
-      icon={<Download size={18} />}
-      label="Export Parts"
-      variant="grey"
-      onClick={() => exportPartsCSV(filteredParts)}
-    >
-      Export
-    </Button>
-  </div>
-}
+            <Button
+              icon={<Download size={18} />}
+              label="Export Parts"
+              variant="grey"
+              onClick={() => exportPartsCSV(filteredParts)}
+            >
+              Export
+            </Button>
+          </div>
+        }
+        tableHeader="Parts Inventory"
+        tableHeaderIcon={<Package size={20} />}
         toolbar={
           <InventoryFilters
             entityName="Parts"
@@ -124,11 +115,6 @@ const PartsPage = () => {
           />
         }
       />
-
-
-
-
-
     </PageContainer>
   );
 };

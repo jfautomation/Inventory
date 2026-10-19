@@ -22,7 +22,7 @@ export default function PageHeader({
 
   return (
     <>
-      <div className="p-4">
+      <div className="px-4 pb-4 pt-2">
         {/* Top row: breadcrumbs and action buttons */}
         <div className="flex items-center justify-between gap-4">
           <div>
