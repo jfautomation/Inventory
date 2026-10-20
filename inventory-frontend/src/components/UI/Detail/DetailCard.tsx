@@ -1,5 +1,5 @@
-import DetailRow from "./DetailRow";
 import { Link } from "react-router-dom";
+import DetailRow from "./DetailRow";
 
 type DetailCardProps = {
   product?: any;
@@ -8,302 +8,146 @@ type DetailCardProps = {
   category?: any;
 };
 
+function Field({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0 border-b border-gray-100 py-3">
+      <div className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">
+        {label}
+      </div>
+      <div className="break-words text-sm font-medium text-gray-900">
+        {value || "-"}
+      </div>
+    </div>
+  );
+}
+
+function TextSection({
+  title,
+  value,
+}: {
+  title: string;
+  value?: string | null;
+}) {
+  return (
+    <div className="min-w-0">
+      <h3 className="mb-2 text-sm font-semibold text-gray-800">
+        {title}
+      </h3>
+      {value ? (
+        <p className="whitespace-pre-wrap break-words text-sm leading-6 text-gray-600">
+          {value}
+        </p>
+      ) : (
+        <p className="text-sm italic text-gray-400">
+          No {title.toLowerCase()} added.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function DetailCard({
   product,
   part,
   brand,
   category,
 }: DetailCardProps) {
-
   const isPart = !!part;
 
+  const fields = isPart
+    ? [
+      { label: "Part Number", value: part.part_number || "-" },
+      { label: "Brand", value: brand?.name || "-" },
+      { label: "Category", value: category?.name || "-" },
+      {
+        label: "Base Price",
+        value:
+          part.base_price != null
+            ? `$${Number(part.base_price).toLocaleString()}`
+            : "-",
+      },
+    ]
+    : [
+      { label: "Brand", value: product.brand?.[0]?.name || "-" },
+      {
+        label: "Part",
+        value: product.part?.[0] ? (
+          <Link
+            to={`/part/${product.part[0].id}`}
+            className="font-medium text-blue-600 hover:underline"
+          >
+            {product.part[0].name}
+          </Link>
+        ) : "-",
+      },
+      {
+        label: "Category",
+        value: product.inventory_category?.[0]?.name || "-",
+      },
+      { label: "Serial Number", value: product.serial_number || "-" },
+      {
+        label: "Condition",
+        value: product.condition?.[0]?.name || "-",
+      },
+      {
+        label: "List Price",
+        value:
+          product.list_price != null
+            ? `$${Number(product.list_price).toLocaleString()}`
+            : "-",
+      },
+      { label: "Work Order", value: product.work_order || "-" },
+    ];
+
   return (
-    <div
-      className="
-        border
-        border-gray-200
-        rounded-xl
-        p-5
-        bg-white
-      "
-    >
+    <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+      {/* Title */}
+      <div className="mb-3">
+        <div className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">
+          {isPart ? "Part name" : "Title"}
+        </div>
+        <h2 className="break-words text-lg font-semibold leading-snug text-gray-900 sm:text-xl">
+          {isPart ? part.name || "-" : product.title || "-"}
+        </h2>
+      </div>
 
-      {isPart ? (
-
-        <>
-          {/* Part Name */}
-          <div className="mb-6">
-
-            <div className="text-sm text-gray-500">
-              Part Name
-            </div>
-
-            <div className="text-xl font-semibold">
-              {part.name || "-"}
-            </div>
-
-          </div>
-
-
-          <DetailRow
-            label="Part Number"
-            value={part.part_number || "-"}
+      {/* Main fields */}
+      <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+        {fields.map((field) => (
+          <Field
+            key={field.label}
+            label={field.label}
+            value={field.value}
           />
+        ))}
+      </div>
 
+      {/* Description and notes */}
+      <div className="mt-5 grid grid-cols-1 gap-5 border-t border-gray-200 pt-5 sm:grid-cols-2">
+        <TextSection
+          title="Short description"
+          value={isPart ? part.short_description : product.short_description}
+        />
 
-          <DetailRow
-            label="Brand"
-            value={brand?.name || "-"}
+        {!isPart && (
+          <TextSection
+            title="Notes"
+            value={product.notes}
           />
-
-
-          <DetailRow
-            label="Category"
-            value={category?.name || "-"}
-          />
-
-
-
-          <DetailRow
-            label="Base Price"
-            value={
-              part.base_price != null
-                ? `$${Number(
-                  part.base_price
-                ).toLocaleString()}`
-                : "-"
-            }
-          />
-
-
-          {/* Short Description */}
-          <div
-            className="
-              mt-6
-              pt-5
-              border-t
-              border-gray-200
-            "
-          >
-
-            <div
-              className="
-                text-sm
-                text-gray-500
-                mb-2
-              "
-            >
-              Short Description
-            </div>
-
-            {part.short_description ? (
-              <p
-                className="
-                  text-sm
-                  leading-6
-                  text-gray-700
-                  whitespace-pre-wrap
-                "
-              >
-                {part.short_description}
-              </p>
-            ) : (
-              <p
-                className="
-                  text-sm
-                  italic
-                  text-gray-400
-                "
-              >
-                No short description added.
-              </p>
-            )}
-
-          </div>
-
-
-
-        </>
-
-      ) : (
-
-        <>
-          {/* Product Title */}
-          <div className="mb-6">
-
-            <div className="text-sm text-gray-500">
-              Title
-            </div>
-
-            <div className="text-2xl font-semibold">
-              {product.title || "-"}
-            </div>
-
-          </div>
-
-
-          <DetailRow
-            label="Brand"
-            value={product.brand?.[0]?.name}
-          />
-
-
-          <DetailRow
-            label="Part"
-            value={
-              product.part?.[0] ? (
-                <Link
-                  to={`/part/${product.part[0].id}`}
-                  className="
-                    text-blue-600
-                    hover:underline
-                    font-medium
-                  "
-                >
-                  {product.part[0].name}
-                </Link>
-              ) : (
-                "-"
-              )
-            }
-          />
-
-
-          <DetailRow
-            label="Category"
-            value={
-              product.inventory_category?.[0]?.name
-            }
-          />
-
-
-          <DetailRow
-            label="Serial Number"
-            value={product.serial_number}
-          />
-
-
-          <DetailRow
-            label="Condition"
-            value={product.condition?.[0]?.name}
-          />
-
-
-          <DetailRow
-            label="List Price"
-            value={
-              product.list_price != null
-                ? `$${Number(
-                  product.list_price
-                ).toLocaleString()}`
-                : "-"
-            }
-          />
-
-
-          <DetailRow
-            label="Work Order"
-            value={product.work_order}
-          />
-
-
-          {/* Short Description */}
-          <div
-            className="
-              mt-6
-              pt-5
-              border-t
-              border-gray-200
-            "
-          >
-
-            <div
-              className="
-                text-sm
-                text-gray-500
-                mb-2
-              "
-            >
-              Short Description
-            </div>
-
-            {product.short_description ? (
-              <p
-                className="
-                  text-sm
-                  leading-6
-                  text-gray-700
-                  whitespace-pre-wrap
-                "
-              >
-                {product.short_description}
-              </p>
-            ) : (
-              <p
-                className="
-                  text-sm
-                  italic
-                  text-gray-400
-                "
-              >
-                No short description added.
-              </p>
-            )}
-
-          </div>
-
-
-          {/* Notes */}
-          <div
-            className="
-              mt-6
-              pt-5
-              border-t
-              border-gray-200
-            "
-          >
-
-            <div
-              className="
-                text-sm
-                text-gray-500
-                mb-2
-              "
-            >
-              Notes
-            </div>
-
-            {product.notes ? (
-              <p
-                className="
-                  text-sm
-                  leading-6
-                  text-gray-700
-                  whitespace-pre-wrap
-                "
-              >
-                {product.notes}
-              </p>
-            ) : (
-              <p
-                className="
-                  text-sm
-                  italic
-                  text-gray-400
-                "
-              >
-                No notes added.
-              </p>
-            )}
-
-
-
-          </div>
-
-        </>
-
-      )}
-
+        )}
+      </div>
+      <div className="mt-5 border-t border-gray-200 pt-5">
+        <TextSection
+          title="Long description"
+          value={isPart ? part.long_description : product.long_description}
+        />
+      </div>
     </div>
   );
 }

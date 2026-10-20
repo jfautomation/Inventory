@@ -24,76 +24,46 @@ const PartDetail = () => {
     fetchParts,
   } = useInventory();
 
-  const {
-    openEditPart,
-  } = useModal();
+  const { openEditPart } = useModal();
 
   const [part, setPart] = useState<Part | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // =========================================================
   // LOAD PART
-  // =========================================================
-
   useEffect(() => {
     if (!id) {
+      setPart(null);
       return;
     }
 
     const partId = Number(id);
 
     const existingPart =
-      parts.find(
-        (p) => p.id === partId
-      ) || null;
+      parts.find((p) => p.id === partId) || null;
 
     setPart(existingPart);
-
   }, [id, parts]);
 
-
-  // =========================================================
   // LOADING
-  // =========================================================
-
   if (!part) {
-    return (
-      <div>
-        Loading part...
-      </div>
-    );
+    return <div>Loading part...</div>;
   }
 
-
-  // =========================================================
   // RELATED TAXONOMIES
-  // =========================================================
+  const brand = brands.find(
+    (b) => b.id === Number(part.brand_id)
+  );
 
-  const brand =
-    brands.find(
-      (b) =>
-        b.id === Number(part.brand_id)
-    );
+  const category = categories.find(
+    (c) => c.id === Number(part.category_id)
+  );
 
-  const category =
-    categories.find(
-      (c) =>
-        c.id === Number(part.category_id)
-    );
+  const partSeries = series.find(
+    (s) => s.id === Number(part.series_id)
+  );
 
-  const partSeries =
-    series.find(
-      (s) =>
-        s.id === Number(part.series_id)
-    );
-
-
-  // =========================================================
   // DELETE
-  // =========================================================
-
   const handleDeletePart = async () => {
-
     const confirmed = window.confirm(
       `Are you sure you want to delete "${part.name}"?\n\nThis action cannot be undone.`
     );
@@ -103,54 +73,30 @@ const PartDetail = () => {
     }
 
     try {
-
       setDeleting(true);
 
-      await TaxonomyService.deletePart(
-        part.id
-      );
-
+      await TaxonomyService.deletePart(part.id);
       await fetchParts();
 
       navigate("/parts");
-
     } catch (err) {
-
-      console.error(
-        "Delete part failed:",
-        err
-      );
-
-      alert(
-        "Failed to delete part."
-      );
-
+      console.error("Delete part failed:", err);
+      alert("Failed to delete part.");
     } finally {
-
       setDeleting(false);
-
     }
   };
 
-
-  // =========================================================
   // EDIT
-  // =========================================================
-
   const handleEditPart = () => {
     openEditPart(part);
   };
 
-
-  // =========================================================
   // UI
-  // =========================================================
-
-
-
   return (
     <InventoryDetail
       title="Part Details"
+      addButtonLabel="Add Part"
       breadcrumbs={[
         {
           label: "Parts",
@@ -160,23 +106,14 @@ const PartDetail = () => {
           label: part.name,
         },
       ]}
-      deleteLabel="Delete Part"
       deleting={deleting}
-      addLabel="Add New Part"
-      editLabel="Edit Part Details"
       image={part.image_url}
       statsColumns={4}
-      additionalImages={
-        part.additional_image_urls || []
-      }
+      additionalImages={part.additional_image_urls || []}
       imageAlt={part.name}
-
       onDelete={handleDeletePart}
       onEdit={handleEditPart}
-      onAdd={() => {
-        navigate("/parts");
-      }}
-
+      onAdd={() => navigate("/products/new")}
       stats={
         <>
           <StatCard
@@ -193,20 +130,8 @@ const PartDetail = () => {
             label="Series"
             value={partSeries?.name || "-"}
           />
-
-          <StatCard
-            label="Base Price"
-            value={
-              part.base_price != null
-                ? `$${Number(
-                  part.base_price
-                ).toLocaleString()}`
-                : "-"
-            }
-          />
         </>
       }
-
       bottomContent={
         <SEOCard
           seoTitle={part.seo_title}
@@ -215,13 +140,11 @@ const PartDetail = () => {
         />
       }
     >
-
       <DetailCard
         part={part}
         brand={brand}
         category={category}
       />
-
     </InventoryDetail>
   );
 };

@@ -5,9 +5,7 @@ import Sidebar from "../Sidebar/Sidebar";
 import MobileMenu from "../MobileMenu/MobileMenu";
 import { useModal } from "../../../context/ModalContext";
 import { useInventory } from "../../../context/InventoryContext";
-import PageHeader from "../../UI/PageHeader";
-import Button from "../../UI/Button/Button";
-import { exportProductsCSV } from "../../../utils/exportCSV";
+
 
 
 export default function AppLayout() {
@@ -45,8 +43,7 @@ export default function AppLayout() {
 
         <main
           className="
-    min-w-0 flex-1
-  "
+          min-w-0 flex-1 md:ml-64"
         >
 
 

@@ -112,10 +112,10 @@ const ProductDetail = () => {
   // UI
   // =========================================================
 
+
   return (
     <InventoryDetail
       title="Product Details"
-
       breadcrumbs={[
         {
           label: "Products",
@@ -125,19 +125,11 @@ const ProductDetail = () => {
           label: product.title,
         },
       ]}
-
-      deleteLabel="Delete Product"
       deleting={deleting}
-
       onDelete={handleDeleteProduct}
       onEdit={handleEditProduct}
-      onAdd={() => {
-        console.log("Add new product");
-      }}
-
-      addLabel="Add New Product"
-      editLabel="Edit Product Details"
-
+      addButtonLabel="Add"
+      onAdd={() => navigate("/products/new")}
       stats={
         <>
           <StatCard
@@ -172,7 +164,6 @@ const ProductDetail = () => {
           />
         </>
       }
-
       bottomContent={
         <SEOCard
           seoTitle={product.seo_title}
@@ -181,11 +172,10 @@ const ProductDetail = () => {
         />
       }
     >
-      <DetailCard
-        product={product}
-      />
+      <DetailCard product={product} />
     </InventoryDetail>
   );
+
 };
 
 export default ProductDetail;

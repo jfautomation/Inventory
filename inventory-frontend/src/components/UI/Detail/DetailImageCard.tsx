@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Image as ImageIcon } from "lucide-react";
 
 type DetailImageCardProps = {
   image?: string | null;
@@ -9,159 +10,80 @@ type DetailImageCardProps = {
 export default function DetailImageCard({
   image,
   additionalImages = [],
-  alt = "Part image",
+  alt = "Product image",
 }: DetailImageCardProps) {
-  const [selectedImage, setSelectedImage] =
-    useState<string | null>(image || null);
+  const allImages = [
+    ...new Set(
+      [image, ...additionalImages].filter(
+        (url): url is string => Boolean(url)
+      )
+    ),
+  ];
 
-  useEffect(() => {
-    setSelectedImage(image || null);
-  }, [image]);
+  const [selectedImage, setSelectedImage] =
+    useState<string | null>(image || allImages[0] || null);
 
   const [failedImages, setFailedImages] =
     useState<string[]>([]);
 
-  /*
-   * All real images.
-   * The primary image stays first.
-   */
-  const allImages = [
-    ...(image ? [image] : []),
-    ...additionalImages.filter(Boolean),
-  ];
+  useEffect(() => {
+    setSelectedImage(image || allImages[0] || null);
+  }, [image, additionalImages]);
 
-  /*
-   * If the currently selected image fails,
-   * show the placeholder.
-   */
   const isImageAvailable =
     !!selectedImage &&
     !failedImages.includes(selectedImage);
 
   const handleImageError = (imageUrl: string) => {
-    setFailedImages((current) => {
-      if (current.includes(imageUrl)) {
-        return current;
-      }
-
-      return [...current, imageUrl];
-    });
-  };
-
-  const handleThumbnailClick = (imageUrl: string) => {
-    setSelectedImage(imageUrl);
+    setFailedImages((current) =>
+      current.includes(imageUrl)
+        ? current
+        : [...current, imageUrl]
+    );
   };
 
   return (
-    <div
-      className="
-        w-full
-        h-full
-        border
-        border-gray-200
-        rounded-xl
-        bg-white
-        p-4
-        flex
-        flex-col
-        items-center
-        justify-center
-        overflow-hidden
-      "
-    >
-
-      {/* =====================================================
-          MAIN IMAGE
-      ===================================================== */}
-
-      <div
+    <div className="flex w-full flex-col gap-3">
+      {/* Main image */}
+      <button
+        type="button"
+        onClick={() => {
+          if (isImageAvailable && selectedImage) {
+            window.open(
+              selectedImage,
+              "_blank",
+              "noopener,noreferrer"
+            );
+          }
+        }}
         className="
-          flex
-          flex-1
-          min-h-0
-          w-full
-          items-center
-          justify-center
-          overflow-hidden
+          flex aspect-square w-full max-w-[180px]
+          items-center justify-center self-center
+          overflow-hidden rounded-lg border border-gray-200
+          bg-gray-50
         "
+        aria-label="Open full-size image"
       >
         {isImageAvailable ? (
           <img
             src={selectedImage}
             alt={alt}
-            className="
-                max-h-[260px]
-    max-w-full
-    object-contain
-            "
-            onError={() =>
-              handleImageError(selectedImage)
-            }
+            className="h-full w-full object-contain p-2"
+            onError={() => handleImageError(selectedImage)}
           />
         ) : (
-          <div
-            className="
-              flex
-              flex-col
-              items-center
-              justify-center
-              text-gray-400
-            "
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-16 w-16 mb-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 16.5V7.5A2.5 2.5 0 015.5 5h13A2.5 2.5 0 0121 7.5v9a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 16.5z"
-              />
-
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 15l4.5-4.5a2 2 0 012.8 0L14 14l2-2a2 2 0 012.8 0L21 14.2"
-              />
-
-              <circle
-                cx="15.5"
-                cy="9"
-                r="1.25"
-              />
-            </svg>
-
-            <span className="text-sm">
-              No Image Available
-            </span>
+          <div className="flex flex-col items-center gap-2 text-gray-400">
+            <ImageIcon size={32} strokeWidth={1.5} />
+            <span className="text-xs">No image</span>
           </div>
         )}
-      </div>
+      </button>
 
-
-      {/* =====================================================
-          THUMBNAILS
-      ===================================================== */}
-
-      {allImages.length > 0 && (
-        <div
-          className="
-            mt-3
-            flex
-            w-full
-            shrink-0
-            items-center
-            justify-center
-            gap-2
-            overflow-x-auto
-            pb-1
-          "
-        >
+      {/* Thumbnail gallery */}
+      {allImages.length > 1 && (
+        <div className="flex max-w-full flex-wrap justify-center gap-2">
           {allImages.map((imageUrl, index) => {
+            const isSelected = selectedImage === imageUrl;
             const thumbnailAvailable =
               !failedImages.includes(imageUrl);
 
@@ -169,20 +91,16 @@ export default function DetailImageCard({
               <button
                 key={`${imageUrl}-${index}`}
                 type="button"
-                onClick={() =>
-                  handleThumbnailClick(imageUrl)
-                }
+                onClick={() => setSelectedImage(imageUrl)}
+                aria-label={`Show image ${index + 1}`}
+                aria-pressed={isSelected}
                 className={`
-                  h-14
-                  w-14
-                  shrink-0
-                  overflow-hidden
-                  rounded-md
-                  border
-                  bg-gray-50
-                  ${selectedImage === imageUrl
-                    ? "border-blue-500 ring-2 ring-blue-100"
-                    : "border-gray-200"
+                  h-11 w-11 shrink-0 overflow-hidden
+                  rounded-md border bg-white
+                  ${
+                    isSelected
+                      ? "border-[#3F76ED] ring-2 ring-blue-100"
+                      : "border-gray-200 hover:border-gray-400"
                   }
                 `}
               >
@@ -190,47 +108,14 @@ export default function DetailImageCard({
                   <img
                     src={imageUrl}
                     alt={`${alt} thumbnail ${index + 1}`}
-                    className="
-                      h-full
-                      w-full
-                      object-contain
-                    "
-                    onError={() =>
-                      handleImageError(imageUrl)
-                    }
+                    className="h-full w-full object-contain p-1"
+                    onError={() => handleImageError(imageUrl)}
                   />
                 ) : (
-                  <div
-                    className="
-                      flex
-                      h-full
-                      w-full
-                      items-center
-                      justify-center
-                      text-gray-300
-                    "
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3 16.5V7.5A2.5 2.5 0 015.5 5h13A2.5 2.5 0 0121 7.5v9a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 16.5z"
-                      />
-
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3 15l4.5-4.5a2 2 0 012.8 0L14 14l2-2a2 2 0 012.8 0L21 14.2"
-                      />
-                    </svg>
-                  </div>
+                  <ImageIcon
+                    size={18}
+                    className="mx-auto text-gray-300"
+                  />
                 )}
               </button>
             );
@@ -238,6 +123,11 @@ export default function DetailImageCard({
         </div>
       )}
 
+      {allImages.length > 1 && (
+        <p className="text-center text-xs text-gray-400">
+          {allImages.length} images
+        </p>
+      )}
     </div>
   );
 }

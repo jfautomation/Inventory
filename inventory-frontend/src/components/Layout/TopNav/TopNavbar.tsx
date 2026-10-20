@@ -8,18 +8,20 @@ export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
   return (
     <header
       className="
-        fixed
-        top-0
-        left-0
-        right-0
-        z-50
-        h-14
-        bg-white
-        border-b
-        flex
-        items-center
-        justify-between
-        px-4
+      fixed
+  top-0
+  left-0
+  right-0
+  md:left-64
+  z-30
+  h-14
+  bg-gray-100
+  border-b
+  border-gray-200
+  flex
+  items-center
+  justify-between
+  px-4
       "
     >
       {/* Left side */}
@@ -34,10 +36,7 @@ export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
           <span className="text-2xl">☰</span>
         </button>
 
-        {/* App title */}
-        <h1 className="font-bold text-lg text-gray-900">
-          JF Inventory
-        </h1>
+
       </div>
 
       {/* Right side: notifications, settings, user */}
