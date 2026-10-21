@@ -8,9 +8,6 @@ export default function DataTable<T>({
   data,
   loading = false,
   getRowKey,
-  headerTitle,
-  breadcrumbs,
-  headerActions,
   toolbar,
   tableHeader,
   tableHeaderIcon,
@@ -33,15 +30,7 @@ export default function DataTable<T>({
         bg-white
       "
     >
-      {/* PAGE HEADER */}
-      {headerTitle && (
-        <PageHeader
-          title={headerTitle}
-          breadcrumbs={breadcrumbs}
-        >
-          {headerActions}
-        </PageHeader>
-      )}
+
 
       {/* TOOLBAR / FILTERS */}
       {toolbar && (

@@ -15,7 +15,7 @@ export default function PageContainer({
         min-h-screen
         bg-cover
         bg-center
-        p-6
+        p-4
       "
             style={{
                 backgroundImage: `url(${netImage})`,
