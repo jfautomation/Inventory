@@ -117,6 +117,7 @@ export default function Sidebar() {
               <NavLink
                 key={item.path}
                 to={item.path}
+                end={item.path === "/"}
                 className={({ isActive }) => itemClass(isActive)}
               >
                 <span className="shrink-0">
