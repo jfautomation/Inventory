@@ -13,6 +13,10 @@ const navigation = [
     name: "Parts",
     path: "/parts",
   },
+  {
+    name: "Stock Summary",
+    path: "/stock-summary"
+  },
 
   {
     name: "Add Product",

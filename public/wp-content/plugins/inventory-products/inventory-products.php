@@ -43,6 +43,8 @@ $inventory_step_start = microtime(true);
 
 require_once __DIR__ . '/core/product-cpt.php';
 
+require_once __DIR__ . '/core/product-variant-cpt.php';
+
 inventory_profile_log(
     'INVENTORY TIMING | product-cpt.php: ' .
         round((microtime(true) - $inventory_step_start) * 1000, 2) .
@@ -156,6 +158,8 @@ inventory_profile_log(
 $inventory_step_start = microtime(true);
 
 require_once __DIR__ . '/api/product-endpoints.php';
+
+require_once __DIR__ . '/api/product-variant-endpoints.php';
 
 inventory_profile_log(
     'INVENTORY TIMING | product-endpoints.php: ' .

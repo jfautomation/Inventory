@@ -3,37 +3,74 @@ import { useState } from "react";
 import TopNavbar from "../TopNav/TopNavbar";
 import Sidebar from "../Sidebar/Sidebar";
 import MobileMenu from "../MobileMenu/MobileMenu";
+import { useInventory } from "../../../context/InventoryContext";
+
+type BreadcrumbItem = {
+  label: string;
+  path?: string;
+};
+
+const formatSlug = (slug?: string) => {
+  if (!slug) return "";
+
+  return decodeURIComponent(slug)
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
 
 export default function AppLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
+  const { products, parts } = useInventory();
+
   const segments = location.pathname.split("/").filter(Boolean);
 
-  const breadcrumbs = segments.map((segment, index) => {
-    const path = `/${segments.slice(0, index + 1).join("/")}`;
+  let breadcrumbs: BreadcrumbItem[] = [];
 
-    const label =
-      segment === "products" || segment === "product"
-        ? "Products"
-        : segment === "parts" || segment === "part"
-        ? "Parts"
-        : segment === "new"
-        ? "New"
-        : segment;
+  if (segments[0] === "products") {
+    if (segments.length === 1) {
+      breadcrumbs = [{ label: "Products" }];
+    } else {
+      const id = segments[1];
 
-    const linkPath =
-      segment === "product"
-        ? "/products"
-        : segment === "part"
-        ? "/parts"
-        : path;
+      const product = products.find(
+        (item) => String(item.id) === id
+      );
 
-    return {
-      label: label.charAt(0).toUpperCase() + label.slice(1),
-      path: index < segments.length - 1 ? linkPath : undefined,
-    };
-  });
+      breadcrumbs = [
+        { label: "Products", path: "/products" },
+        {
+          label:
+            product?.title ||
+            formatSlug(segments[2]) ||
+            `Product ${id}`,
+        },
+      ];
+    }
+  } else if (segments[0] === "parts") {
+    if (segments.length === 1) {
+      breadcrumbs = [{ label: "Parts" }];
+    } else {
+      const id = segments[1];
+
+      const part = parts.find(
+        (item) => String(item.id) === id
+      );
+
+      breadcrumbs = [
+        { label: "Parts", path: "/parts" },
+        {
+          label:
+            part?.name ||
+            formatSlug(segments[2]) ||
+            `Part ${id}`,
+        },
+      ];
+    }
+  } else {
+    breadcrumbs = [{ label: "Dashboard" }];
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">

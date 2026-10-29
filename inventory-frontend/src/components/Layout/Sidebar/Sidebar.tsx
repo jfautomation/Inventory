@@ -4,6 +4,7 @@ import {
   House,
   List,
   Layers,
+  Boxes,
   Plus,
   CirclePlus,
   Bell,
@@ -29,6 +30,10 @@ function getNavIcon(name: string) {
 
   if (normalized.includes("part") && normalized.includes("add")) {
     return <CirclePlus size={18} />;
+  }
+
+  if (normalized.includes("stock") || normalized.includes("summary")) {
+    return <Boxes size={18} />;
   }
 
   if (normalized.includes("product")) {
