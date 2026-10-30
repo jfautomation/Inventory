@@ -3,32 +3,24 @@ import DataTable from "../UI/DataTable/DataTable";
 import { productColumns } from "./productColumns";
 import { useInventory } from "../../context/InventoryContext";
 import type { Product } from "../../types";
-import type { BreadcrumbItem } from "../UI/Breadcrumbs";
 
 type ProductTableProps = {
   products: Product[];
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
 
-  headerTitle?: string;
-  breadcrumbs?: BreadcrumbItem[];
-  headerActions?: ReactNode;
-  toolbar?: ReactNode;
-
   tableHeader?: string;
   tableHeaderIcon?: ReactNode;
+  toolbar?: ReactNode;
 };
 
 const ProductTable = ({
   products,
   onEdit,
   onDelete,
-  headerTitle,
-  breadcrumbs,
-  headerActions,
-  toolbar,
   tableHeader,
   tableHeaderIcon,
+  toolbar,
 }: ProductTableProps) => {
   const { parts, categories } = useInventory();
 
@@ -42,9 +34,6 @@ const ProductTable = ({
       )}
       data={products}
       getRowKey={(product) => product.id}
-      headerTitle={headerTitle}
-      breadcrumbs={breadcrumbs}
-      headerActions={headerActions}
       toolbar={toolbar}
       tableHeader={tableHeader}
       tableHeaderIcon={tableHeaderIcon}

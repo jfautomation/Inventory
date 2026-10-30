@@ -12,6 +12,7 @@ import { ProductService } from "../services/productService";
 import type { Product } from "../types";
 import { filterProducts } from "./ProductsPage/productFilters";
 import { Plus, Download, Package } from "lucide-react";
+import PageHeader from "./UI/PageHeader";
 
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -112,27 +113,13 @@ const Inventory: React.FC = () => {
   // UI
   // =========================================================
 
+
+
   return (
     <PageContainer>
-
-      <ProductTable
-        products={filteredRecentProducts}
-        onEdit={openEditProduct}
-        onDelete={handleDeleteProduct}
-        tableHeader="Products Inventory"
-        tableHeaderIcon={<Package size={20} />}
-
-
-        headerTitle="Dashboard: Inventory"
-
-        breadcrumbs={[
-          {
-            label: "Inventory",
-            path: "/inventory",
-          },
-        ]}
-
-        headerActions={
+      <PageHeader
+        title="Dashboard: Inventory"
+        actions={
           <div className="flex items-center gap-3">
             <Button
               icon={<Plus size={18} />}
@@ -146,15 +133,20 @@ const Inventory: React.FC = () => {
               icon={<Download size={18} />}
               label="Export Products"
               variant="grey"
-              onClick={() =>
-                exportProductsCSV(filteredRecentProducts)
-              }
+              onClick={() => exportProductsCSV(filteredRecentProducts)}
             >
               Export
             </Button>
           </div>
         }
+      />
 
+      <ProductTable
+        products={filteredRecentProducts}
+        onEdit={openEditProduct}
+        onDelete={handleDeleteProduct}
+        tableHeader="Products Inventory"
+        tableHeaderIcon={<Package size={20} />}
         toolbar={
           <InventoryFilters
             entityName="Products"
@@ -168,7 +160,6 @@ const Inventory: React.FC = () => {
           />
         }
       />
-
     </PageContainer>
   );
 };

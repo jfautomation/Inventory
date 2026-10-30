@@ -1,44 +1,43 @@
-import netImage from "../../assets/images/net.jpg"
+
+import type { ReactNode } from "react";
+import netImage from "../../assets/images/net.jpg";
 
 type PageContainerProps = {
-    children: React.ReactNode;
+  children: ReactNode;
+  className?: string;
+  contentClassName?: string;
 };
 
 export default function PageContainer({
-    children,
+  children,
+  className = "",
+  contentClassName = "",
 }: PageContainerProps) {
-
-    return (
-        <div
-            className="
-        relative
+  return (
+    <div
+      className={`
         min-h-screen
         bg-cover
         bg-center
         p-4
-      "
-            style={{
-                backgroundImage: `url(${netImage})`,
-            }}
-        >
-
-            {/* Tech background goes here later */}
-
-            <div
-                className="
-          relative
-          bg-white
+        ${className}
+      `}
+      style={{
+        backgroundImage: `url(${netImage})`,
+      }}
+    >
+      <main
+        className={`
+          min-h-[calc(100vh-2rem)]
+          overflow-hidden
           rounded-xl
+          bg-white
           shadow-lg
-
-          min-h-screen
-        "
-            >
-
-                {children}
-
-            </div>
-
-        </div>
-    );
+          ${contentClassName}
+        `}
+      >
+        {children}
+      </main>
+    </div>
+  );
 }

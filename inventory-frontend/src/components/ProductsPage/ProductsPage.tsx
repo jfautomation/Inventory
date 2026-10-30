@@ -1,20 +1,23 @@
-
 import { useState } from "react";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
 import { ProductService } from "../../services/productService";
+
 import PageContainer from "../UI/PageContainer";
+import PageHeader from "../UI/PageHeader";
 import Button from "../UI/Button/Button";
+
 import InventoryFilters from "./Inventory/InventoryFilters";
 import ProductTable from "./ProductTable";
+
 import type { Product } from "../../types";
 import { filterProducts } from "./productFilters";
 import { exportProductsCSV } from "../../utils/exportCSV";
+
 import { Plus, Download, Package } from "lucide-react";
 
 const ProductsPage = () => {
   const { openProduct, openEditProduct } = useModal();
-
   const { products, parts, fetchProducts } = useInventory();
 
   // Filter state
@@ -54,21 +57,11 @@ const ProductsPage = () => {
 
   return (
     <PageContainer>
-      <ProductTable
-        products={filteredProducts}
-        onEdit={openEditProduct}
-        onDelete={handleDeleteProduct}
-        headerTitle="Products"
-        breadcrumbs={[
-          {
-            label: "Products",
-            path: "/products",
-          },
-        ]}
-        tableHeader="Products Inventory"
-        tableHeaderIcon={<Package size={20} />}
-        headerActions={
-          <div className="flex items-center gap-3">
+      {/* PAGE HEADER */}
+      <PageHeader
+        title="Products"
+        actions={
+          <>
             <Button
               icon={<Plus size={18} />}
               label="Add Product"
@@ -85,8 +78,17 @@ const ProductsPage = () => {
             >
               Export
             </Button>
-          </div>
+          </>
         }
+      />
+
+      {/* PRODUCT TABLE */}
+      <ProductTable
+        products={filteredProducts}
+        onEdit={openEditProduct}
+        onDelete={handleDeleteProduct}
+        tableHeader="Products Inventory"
+        tableHeaderIcon={<Package size={20} />}
         toolbar={
           <InventoryFilters
             entityName="Products"

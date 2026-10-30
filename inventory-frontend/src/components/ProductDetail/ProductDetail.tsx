@@ -116,15 +116,6 @@ const ProductDetail = () => {
   return (
     <InventoryDetail
       title="Product Details"
-      breadcrumbs={[
-        {
-          label: "Products",
-          path: "/products",
-        },
-        {
-          label: product.title,
-        },
-      ]}
       deleting={deleting}
       onDelete={handleDeleteProduct}
       onEdit={handleEditProduct}

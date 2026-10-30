@@ -24,10 +24,6 @@ type InventoryDetailProps = {
     statsColumns?: 4 | 5;
     bottomContent?: React.ReactNode;
 
-    breadcrumbs?: {
-        label: string;
-        path?: string;
-    }[];
 };
 
 export default function InventoryDetail({
@@ -39,7 +35,6 @@ export default function InventoryDetail({
     onDelete,
     onEdit,
     onAdd,
-    breadcrumbs,
     children,
     bottomContent,
     statsColumns = 4,
@@ -49,37 +44,39 @@ export default function InventoryDetail({
     return (
         <PageContainer>
             {/* PAGE HEADER AND ACTIONS */}
+
             <PageHeader
                 title={title}
-                breadcrumbs={breadcrumbs}
-            >
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                    <Button
-                        variant="primary"
-                        onClick={onAdd}
-                    >
-                        <Plus size={16} className="mr-2" />
-                        {addButtonLabel ?? "Add"}
-                    </Button>
+                actions={
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                        <Button
+                            variant="primary"
+                            onClick={onAdd}
+                        >
+                            <Plus size={16} className="mr-2" />
+                            {addButtonLabel}
+                        </Button>
 
-                    <Button
-                        variant="secondary"
-                        onClick={onEdit}
-                    >
-                        <Pencil size={16} className="mr-2" />
-                        Edit
-                    </Button>
+                        <Button
+                            variant="secondary"
+                            onClick={onEdit}
+                        >
+                            <Pencil size={16} className="mr-2" />
+                            Edit
+                        </Button>
 
-                    <Button
-                        variant="danger"
-                        onClick={onDelete}
-                        disabled={deleting}
-                    >
-                        <Trash2 size={16} className="mr-2" />
-                        {deleting ? "Deleting..." : "Delete"}
-                    </Button>
-                </div>
-            </PageHeader>
+                        <Button
+                            variant="danger"
+                            onClick={onDelete}
+                            disabled={deleting}
+                        >
+                            <Trash2 size={16} className="mr-2" />
+                            {deleting ? "Deleting..." : "Delete"}
+                        </Button>
+                    </div>
+                }
+            />
+
 
             {/* TOP SECTION: IMAGE GALLERY AND DETAILS */}
             <section className="mx-6 mt-4 rounded-xl border border-gray-200 bg-white p-5">

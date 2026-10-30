@@ -1,15 +1,11 @@
 import type { ReactNode } from "react";
-import type { BreadcrumbItem } from "../Breadcrumbs";
 
 export type Column<T> = {
   key: keyof T | string;
   label: string;
-
-  // Optional custom rendering
   render?: (row: T) => ReactNode;
-
-  // Future-ready
   sortable?: boolean;
+  align?: "left" | "center" | "right";
 };
 
 export type DataTableProps<T> = {
@@ -17,13 +13,9 @@ export type DataTableProps<T> = {
   data: T[];
 
   loading?: boolean;
+  emptyMessage?: string;
 
   getRowKey?: (row: T) => string | number;
-
-  // Page header
-  headerTitle?: string;
-  breadcrumbs?: BreadcrumbItem[];
-  headerActions?: ReactNode;
 
   // Table section header
   tableHeader?: string;
@@ -31,4 +23,7 @@ export type DataTableProps<T> = {
 
   // Toolbar / filters
   toolbar?: ReactNode;
+
+  // Optional footer
+  footer?: ReactNode;
 };

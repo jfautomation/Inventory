@@ -1,16 +1,22 @@
 
 import { useState } from "react";
+
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
-import PageContainer from "../UI/PageContainer";
-import Button from "../UI/Button/Button";
-import InventoryFilters from "../ProductsPage/Inventory/InventoryFilters";
-import DataTable from "../UI/DataTable/DataTable";
-import { partColumns } from "./partColumns";
 import { TaxonomyService } from "../../services/taxonomyService";
+
+import PageContainer from "../UI/PageContainer";
+import PageHeader from "../UI/PageHeader";
+import Button from "../UI/Button/Button";
+import DataTable from "../UI/DataTable/DataTable";
+
+import InventoryFilters from "../ProductsPage/Inventory/InventoryFilters";
+import { partColumns } from "./partColumns";
+
 import type { Part } from "../../types";
 import { filterParts } from "./filterParts";
 import { exportPartsCSV } from "../../utils/exportPartsCSV";
+
 import { Plus, Download, Package } from "lucide-react";
 
 const PartsPage = () => {
@@ -24,6 +30,7 @@ const PartsPage = () => {
     series,
   } = useInventory();
 
+  // Filter state
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
@@ -34,6 +41,7 @@ const PartsPage = () => {
     setBrand("");
   };
 
+  // Delete part
   const handleDeletePart = async (part: Part) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${part.name}"?\n\nThis action cannot be undone.`
@@ -50,6 +58,7 @@ const PartsPage = () => {
     }
   };
 
+  // Filter parts
   const filteredParts = filterParts(
     parts,
     brands,
@@ -64,24 +73,11 @@ const PartsPage = () => {
 
   return (
     <PageContainer>
-      <DataTable
-        columns={partColumns(
-          brands,
-          categories,
-          openEditPart,
-          handleDeletePart
-        )}
-        data={filteredParts}
-        getRowKey={(part) => part.id}
-        headerTitle="Parts"
-        breadcrumbs={[
-          {
-            label: "Parts",
-            path: "/parts",
-          },
-        ]}
-        headerActions={
-          <div className="flex items-center gap-3">
+      {/* PAGE HEADER */}
+      <PageHeader
+        title="Parts"
+        actions={
+          <>
             <Button
               icon={<Plus size={18} />}
               label="Add Part"
@@ -98,8 +94,20 @@ const PartsPage = () => {
             >
               Export
             </Button>
-          </div>
+          </>
         }
+      />
+
+      {/* PARTS TABLE */}
+      <DataTable
+        columns={partColumns(
+          brands,
+          categories,
+          openEditPart,
+          handleDeletePart
+        )}
+        data={filteredParts}
+        getRowKey={(part) => part.id}
         tableHeader="Parts Inventory"
         tableHeaderIcon={<Package size={20} />}
         toolbar={
