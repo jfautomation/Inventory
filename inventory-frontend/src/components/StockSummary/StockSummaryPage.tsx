@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect, useState } from "react";
-import { Package, RefreshCw } from "lucide-react";
+import { Package, RefreshCw, Search, X } from "lucide-react";
 
 import { StockSummaryService } from "../../services/StockSummaryService";
 import type { StockSummaryRow } from "../../services/StockSummaryService";
@@ -10,11 +10,14 @@ import PageHeader from "../UI/PageHeader";
 import DataTable from "../UI/DataTable/DataTable";
 
 import { stockSummaryColumns } from "./stockSummaryColumns";
+import StockSummaryPreviewCard from "./StockSummaryPreviewCard";
 
 export default function StockSummaryPage() {
   const [rows, setRows] = useState<StockSummaryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [search, setSearch] = useState("");
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftSku, setDraftSku] = useState("");
@@ -107,6 +110,23 @@ export default function StockSummaryPage() {
   };
 
   // =========================================================
+  // SEARCH FILTER
+  // =========================================================
+
+  const filteredRows = rows.filter((row) => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) return true;
+
+    return (
+      row.part_name?.toLowerCase().includes(query) ||
+      row.condition_name?.toLowerCase().includes(query) ||
+      row.sku?.toLowerCase().includes(query) ||
+      String(row.available_qty).includes(query)
+    );
+  });
+
+  // =========================================================
   // TABLE COLUMNS
   // =========================================================
 
@@ -116,9 +136,9 @@ export default function StockSummaryPage() {
     savingId,
     onStartEditing: startEditing,
     onDraftChange: setDraftSku,
-    onSave: (variantId) => {
-      void saveSku(variantId);
-    },
+    onSave: (variantId: number) => {
+  void saveSku(variantId);
+},
     onCancel: cancelEditing,
   });
 
@@ -161,17 +181,64 @@ export default function StockSummaryPage() {
 
       <DataTable
         columns={columns}
-        data={rows}
+        data={filteredRows}
         getRowKey={(row) => row.id}
         loading={loading && rows.length === 0}
-        emptyMessage="No stock variants found."
+        emptyMessage={
+          search
+            ? "No matching stock variants found."
+            : "No stock variants found."
+        }
         tableHeader="Stock Summary Inventory"
         tableHeaderIcon={<Package size={20} />}
+        toolbar={
+          <div className="flex items-center gap-3">
+            <div className="relative min-w-0 flex-1">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search part name, condition, SKU..."
+                className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  title="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-700"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+        }
         footer={
           loading && rows.length === 0
             ? undefined
-            : `${rows.length} variant${rows.length === 1 ? "" : "s"}`
+            : `${filteredRows.length} variant${filteredRows.length === 1 ? "" : "s"}`
         }
+        renderMobileCard={(row) => (
+          <StockSummaryPreviewCard
+            row={row}
+            editingId={editingId}
+            draftSku={draftSku}
+            savingId={savingId}
+            onStartEditing={startEditing}
+            onDraftChange={setDraftSku}
+            onSave={(variantId) => {
+              void saveSku(variantId);
+            }}
+            onCancel={cancelEditing}
+          />
+        )}
       />
     </PageContainer>
   );

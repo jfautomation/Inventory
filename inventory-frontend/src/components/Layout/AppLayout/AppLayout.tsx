@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TopNavbar from "../TopNav/TopNavbar";
 import Sidebar from "../Sidebar/Sidebar";
 import MobileMenu from "../MobileMenu/MobileMenu";
@@ -9,6 +9,8 @@ type BreadcrumbItem = {
   label: string;
   path?: string;
 };
+
+
 
 const formatSlug = (slug?: string) => {
   if (!slug) return "";
@@ -21,6 +23,10 @@ const formatSlug = (slug?: string) => {
 export default function AppLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const { products, parts } = useInventory();
 
@@ -87,7 +93,7 @@ export default function AppLayout() {
       <div className="flex pt-14">
         <Sidebar />
 
-        <main className="min-w-0 flex-1 md:ml-64">
+        <main className="min-w-0 flex-1 min-[890px]:ml-64">
           <Outlet />
         </main>
       </div>

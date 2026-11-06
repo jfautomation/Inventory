@@ -1,6 +1,10 @@
+
 import type { ReactNode } from "react";
+
 import DataTable from "../UI/DataTable/DataTable";
 import { productColumns } from "./productColumns";
+import ProductPreviewCard from "./ProductPreviewCard";
+
 import { useInventory } from "../../context/InventoryContext";
 import type { Product } from "../../types";
 
@@ -37,6 +41,15 @@ const ProductTable = ({
       toolbar={toolbar}
       tableHeader={tableHeader}
       tableHeaderIcon={tableHeaderIcon}
+      renderMobileCard={(product) => (
+        <ProductPreviewCard
+          product={product}
+          parts={parts}
+          categories={categories}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      )}
     />
   );
 };

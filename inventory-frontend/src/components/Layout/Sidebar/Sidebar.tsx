@@ -16,6 +16,7 @@ import {
 
 import navigation from "../navigation";
 import { useModal } from "../../../context/ModalContext";
+import { clearToken } from "../../../api/client";
 
 function getNavIcon(name: string) {
   const normalized = name.toLowerCase();
@@ -81,8 +82,8 @@ export default function Sidebar() {
     `;
 
   const handleLogout = () => {
-    // TODO: Clear the authentication token using your auth service.
-    navigate("/login");
+    clearToken();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -90,7 +91,7 @@ export default function Sidebar() {
       className="
         fixed inset-y-0 left-0 z-40
         hidden w-64 border-r border-gray-200 bg-white
-        md:flex md:flex-col
+        min-[890px]:flex min-[890px]:flex-col
       "
     >
       {/* SCROLLABLE NAVIGATION */}

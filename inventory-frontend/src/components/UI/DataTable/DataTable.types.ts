@@ -1,3 +1,4 @@
+
 import type { ReactNode } from "react";
 
 export type Column<T> = {
@@ -23,6 +24,9 @@ export type DataTableProps<T> = {
 
   // Toolbar / filters
   toolbar?: ReactNode;
+
+  // Mobile card renderer
+  renderMobileCard?: (row: T) => ReactNode;
 
   // Optional footer
   footer?: ReactNode;

@@ -16,16 +16,19 @@ export default function PageContainer({
   return (
     <div
       className={`
-        min-h-screen
-        bg-cover
-        bg-center
-        p-4
-        ${className}
-      `}
+    min-h-screen
+    bg-cover
+    bg-center
+    p-2
+    md:p-3
+    lg:p-4
+    ${className}
+  `}
       style={{
         backgroundImage: `url(${netImage})`,
       }}
     >
+
       <main
         className={`
           min-h-[calc(100vh-2rem)]

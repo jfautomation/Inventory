@@ -12,6 +12,7 @@ import DataTable from "../UI/DataTable/DataTable";
 
 import InventoryFilters from "../ProductsPage/Inventory/InventoryFilters";
 import { partColumns } from "./partColumns";
+import PartPreviewCard from "./PartPreviewCard";
 
 import type { Part } from "../../types";
 import { filterParts } from "./filterParts";
@@ -122,6 +123,15 @@ const PartsPage = () => {
             onClearFilters={handleClearFilters}
           />
         }
+        renderMobileCard={(part) => (
+          <PartPreviewCard
+            part={part}
+            brands={brands}
+            categories={categories}
+            onEdit={openEditPart}
+            onDelete={handleDeletePart}
+          />
+        )}
       />
     </PageContainer>
   );

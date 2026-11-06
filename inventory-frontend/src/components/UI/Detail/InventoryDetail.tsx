@@ -79,7 +79,13 @@ export default function InventoryDetail({
 
 
             {/* TOP SECTION: IMAGE GALLERY AND DETAILS */}
-            <section className="mx-6 mt-4 rounded-xl border border-gray-200 bg-white p-5">
+            <section className="
+  mx-2 mt-2 rounded-xl border border-gray-200 bg-white p-2
+  sm:mx-3 sm:mt-3 sm:p-3
+  md:mx-4 md:mt-3 md:p-4
+  lg:mx-5 lg:mt-4 lg:p-4
+  xl:mx-6 xl:mt-4 xl:p-5
+">
                 <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[180px_minmax(0,1fr)]">
                     <div className="min-w-0">
                         <DetailImageCard
