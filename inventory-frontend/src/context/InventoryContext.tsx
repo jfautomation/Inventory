@@ -1,3 +1,4 @@
+
 import React, {
     createContext,
     useContext,
@@ -7,9 +8,11 @@ import React, {
 } from "react";
 
 import { api } from "../api/client";
+import { ProductListingService } from "../services/productListingService";
 
 import type {
     Product,
+    ProductListing,
     Part,
     Term,
 } from "../types";
@@ -23,6 +26,7 @@ type InventoryContextType = {
     isLoading: boolean;
 
     products: Product[];
+    productListings: ProductListing[];
     parts: Part[];
 
     brands: Term[];
@@ -36,6 +40,7 @@ type InventoryContextType = {
 
     // Individual inventory refreshes
     fetchProducts: () => Promise<void>;
+    fetchProductListings: () => Promise<void>;
     fetchParts: () => Promise<void>;
 
     // Taxonomies
@@ -53,6 +58,7 @@ type InventoryContextType = {
 
 type BootstrapResponse = {
     products: Product[];
+    product_listings: ProductListing[];
     parts: Part[];
 
     brands: Term[];
@@ -83,6 +89,7 @@ export const InventoryProvider = ({
 }) => {
 
     const [products, setProducts] = useState<Product[]>([]);
+    const [productListings, setProductListings] = useState<ProductListing[]>([]);
     const [parts, setParts] = useState<Part[]>([]);
 
     const [brands, setBrands] = useState<Term[]>([]);
@@ -113,6 +120,7 @@ export const InventoryProvider = ({
             const data = response.data;
 
             setProducts(data?.products ?? []);
+            setProductListings(data?.product_listings ?? []);
             setParts(data?.parts ?? []);
 
             setBrands(data?.brands ?? []);
@@ -123,6 +131,7 @@ export const InventoryProvider = ({
 
             console.log("BOOTSTRAP: COMPLETE");
             console.log("PRODUCTS:", data?.products?.length ?? 0);
+            console.log("PRODUCT LISTINGS:", data?.product_listings?.length ?? 0);
             console.log("PARTS:", data?.parts?.length ?? 0);
 
         } catch (err: any) {
@@ -164,6 +173,29 @@ export const InventoryProvider = ({
 
 
     // ========================================================
+    // PRODUCT LISTINGS ONLY
+    // ========================================================
+
+    const fetchProductListings = useCallback(async () => {
+        try {
+            const listings = await ProductListingService.getAll();
+
+            setProductListings(listings ?? []);
+
+        } catch (err: any) {
+            console.error(
+                "fetchProductListings failed:",
+                err?.response?.data ||
+                err?.message ||
+                err
+            );
+
+            throw err;
+        }
+    }, []);
+
+
+    // ========================================================
     // PARTS ONLY
     // ========================================================
 
@@ -193,9 +225,6 @@ export const InventoryProvider = ({
 
     // ========================================================
     // TAXONOMIES
-    // These are loaded by bootstrap initially.
-    // Individual functions remain available when specifically
-    // needed by the application.
     // ========================================================
 
     const fetchBrands = useCallback(async () => {
@@ -285,6 +314,7 @@ export const InventoryProvider = ({
                 isLoading,
 
                 products,
+                productListings,
                 parts,
 
                 brands,
@@ -296,6 +326,7 @@ export const InventoryProvider = ({
                 fetchBootstrap,
 
                 fetchProducts,
+                fetchProductListings,
                 fetchParts,
 
                 fetchBrands,

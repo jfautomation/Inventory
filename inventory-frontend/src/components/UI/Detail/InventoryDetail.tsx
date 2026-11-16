@@ -23,6 +23,7 @@ type InventoryDetailProps = {
     stats: React.ReactNode;
     statsColumns?: 4 | 5;
     bottomContent?: React.ReactNode;
+    productsContent?: React.ReactNode;
 
 };
 
@@ -39,6 +40,7 @@ export default function InventoryDetail({
     bottomContent,
     statsColumns = 4,
     stats,
+    productsContent,
     addButtonLabel = "Add",
 }: InventoryDetailProps) {
     return (
@@ -110,6 +112,13 @@ export default function InventoryDetail({
             >
                 {stats}
             </section>
+
+            {/* ASSOCIATED SERIALIZED PRODUCTS */}
+            {productsContent && (
+                <section className="mx-6 mt-4">
+                    {productsContent}
+                </section>
+            )}
 
             {/* ADDITIONAL CONTENT, INCLUDING SEO */}
             {bottomContent && (

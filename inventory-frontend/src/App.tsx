@@ -15,7 +15,6 @@ import PartDetail from "./components/PartDetail/PartDetail";
 import PartsPage from "./components/PartsPage/PartsPage";
 import Login from "./components/Login/Login";
 import ProductsPage from "./components/ProductsPage/ProductsPage";
-import StockSummaryPage from "./components/StockSummary/StockSummaryPage";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
 
 import { ModalProvider } from "./context/ModalContext";
@@ -57,16 +56,21 @@ function App() {
 
                 {/* Products */}
                 <Route path="/products" element={<ProductsPage />} />
-                <Route path="/products/:id" element={<ProductDetail />} />
-                <Route path="/products/:id/:slug" element={<ProductDetail />} />
+
+                {/* Product Listing Detail */}
+                <Route
+                  path="/product-listings/:id/:slug"
+                  element={<ProductDetail />}
+                />
+                <Route
+                  path="/product-listings/:id"
+                  element={<ProductDetail />}
+                />
 
                 {/* Parts */}
                 <Route path="/parts" element={<PartsPage />} />
                 <Route path="/parts/:id" element={<PartDetail />} />
                 <Route path="/parts/:id/:slug" element={<PartDetail />} />
-
-                {/* Stock Summary */}
-                <Route path="/stock-summary" element={<StockSummaryPage />} />
 
                 {/* Backward compatibility */}
                 <Route

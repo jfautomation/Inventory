@@ -12,12 +12,20 @@ export const ProductService = {
   },
 
   create: async (data: ProductPayload): Promise<Product> => {
-    const res = await api.post("/wp/v2/product", data);
+    const res = await api.post("/wp/v2/product", {
+      ...data,
+      product_listing_id: data.product_listing_id,
+    });
+
     return normalizeProduct(res.data);
   },
 
   update: async (id: number, data: ProductPayload): Promise<Product> => {
-    const res = await api.put(`/wp/v2/product/${id}`, data);
+    const res = await api.put(`/wp/v2/product/${id}`, {
+      ...data,
+      product_listing_id: data.product_listing_id,
+    });
+
     return normalizeProduct(res.data);
   },
 
@@ -26,3 +34,4 @@ export const ProductService = {
     return res.data;
   },
 };
+

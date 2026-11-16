@@ -1,172 +1,272 @@
+
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useInventory } from "../../context/InventoryContext";
-import { useModal } from "../../context/ModalContext";
-import { ProductService } from "../../services/productService";
-import { api } from "../../api/client";
+import { ProductListingService } from "../../services/productListingService";
 
 import InventoryDetail from "../UI/Detail/InventoryDetail";
 import DetailCard from "../UI/Detail/DetailCard";
 import StatCard from "../UI/Detail/StatCard";
 import SEOCard from "../UI/Detail/SEOCard";
+import ConditionPill from "../UI/ConditionPill";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { products, fetchProducts } = useInventory();
-  const { openEditProduct } = useModal();
-
-  const [product, setProduct] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
-  // =========================================================
-  // LOAD PRODUCT
-  // =========================================================
+  const {
+    productListings,
+    products,
+    parts,
+    brands,
+    categories,
+    conditions,
+    isLoading,
+    fetchProductListings,
+  } = useInventory();
 
-  useEffect(() => {
-    if (!id) return;
+  const listing = productListings.find(
+    (item) => Number(item.id) === Number(id)
+  );
 
-    const existingProduct = products.find(
-      (p) => p.id === Number(id)
-    );
-
-    if (existingProduct) {
-      setProduct(existingProduct);
-      return;
-    }
-
-    const fetchProduct = async () => {
-      try {
-        const res = await api.get(
-          `/wp/v2/product/${id}`
-        );
-
-        setProduct(res.data);
-      } catch (err) {
-        console.error(
-          "Failed to load product:",
-          err
-        );
-
-        setProduct(null);
-      }
-    };
-
-    fetchProduct();
-  }, [id, products]);
-
-  // =========================================================
-  // LOADING
-  // =========================================================
-
-  if (!product) {
-    return <div>Loading product...</div>;
+  if (isLoading) {
+    return <div>Loading inventory...</div>;
   }
 
-  // =========================================================
-  // DELETE
-  // =========================================================
+  if (!listing) {
+    return (
+      <div className="p-6">
+        <p>Product Listing not found.</p>
+        <button onClick={() => navigate("/")}>
+          Back to Inventory
+        </button>
+      </div>
+    );
+  }
 
-  const handleDeleteProduct = async () => {
+  const handleDelete = async () => {
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${product.title}"?\n\nThis action cannot be undone.`
+      `Are you sure you want to delete "${listing.title}"? This cannot be undone.`
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setDeleteError("");
 
     try {
-      setDeleting(true);
+      await ProductListingService.delete(Number(listing.id));
 
-      await ProductService.delete(product.id);
+      await fetchProductListings();
 
-      await fetchProducts();
+      navigate("/");
+    } catch (error: unknown) {
+      const apiMessage = (
+        error as {
+          response?: {
+            data?: {
+              message?: string;
+            };
+          };
+        }
+      )?.response?.data?.message;
 
-      navigate("/products");
-    } catch (err) {
-      console.error(
-        "Delete failed:",
-        err
-      );
-
-      alert(
-        "Failed to delete product."
+      setDeleteError(
+        apiMessage || "Unable to delete this Product Listing."
       );
     } finally {
       setDeleting(false);
     }
   };
 
-  // =========================================================
-  // EDIT
-  // =========================================================
+  const part = parts.find(
+    (item) => Number(item.id) === Number(listing.part_id)
+  );
 
-  const handleEditProduct = () => {
-    openEditProduct(product);
-  };
+  const brand = brands.find(
+    (item) => Number(item.id) === Number(part?.brand_id)
+  );
 
-  // =========================================================
-  // UI
-  // =========================================================
+  const category = categories.find(
+    (item) => Number(item.id) === Number(part?.category_id)
+  );
 
+  const condition = conditions.find(
+    (item) => Number(item.id) === Number(listing.condition_id)
+  );
+
+  const listingProducts = products.filter(
+    (product) =>
+      Number(product.product_listing_id) === Number(listing.id)
+  );
 
   return (
     <InventoryDetail
-      title="Product Details"
+      title="Product Listing Details"
+      onEdit={() => {
+        console.log("Product Listing edit not implemented yet.");
+      }}
+      onDelete={handleDelete}
       deleting={deleting}
-      onDelete={handleDeleteProduct}
-      onEdit={handleEditProduct}
-      addButtonLabel="Add"
-      onAdd={() => navigate("/products/new")}
+      onAdd={() => {
+        navigate("/products/new");
+      }}
+      addButtonLabel="Add Serialized Product"
       stats={
         <>
           <StatCard
-            label="Shelf"
-            value={product.shelf?.[0]?.name}
+            label="SKU"
+            value={listing.sku}
           />
-
           <StatCard
-            label="Status"
-            value={product.inventory_status}
-            type="status"
+            label="Condition"
+            value={condition?.name ?? "-"}
           />
-
           <StatCard
-            label="Tested"
+            label="Price"
             value={
-              product.test_status
-                ? "Yes"
-                : "No"
+              listing.list_price != null
+                ? `$${Number(listing.list_price).toLocaleString()}`
+                : "-"
             }
           />
-
           <StatCard
-            label="Test Date"
-            value={product.test_date}
-          />
-
-          <StatCard
-            label="Stock Level"
-            value={product.quantity}
+            label="Quantity"
+            value={listing.quantity ?? listingProducts.length}
             type="stock"
           />
         </>
       }
       bottomContent={
         <SEOCard
-          seoTitle={product.seo_title}
-          metaDescription={product.meta_description}
-          searchTerms={product.search_terms}
+          seoTitle={listing.seo_title}
+          metaDescription={listing.meta_description}
+          searchTerms={listing.search_terms}
         />
       }
     >
-      <DetailCard product={product} />
+      <div className="space-y-6">
+        {deleteError && (
+          <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+            {deleteError}
+          </div>
+        )}
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <h2 className="mb-4 text-xl font-semibold">
+            {listing.title}
+          </h2>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-medium uppercase text-gray-500">
+                Part
+              </p>
+              <p>{part?.name ?? "-"}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase text-gray-500">
+                Part Number
+              </p>
+              <p>{part?.part_number ?? "-"}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase text-gray-500">
+                Brand
+              </p>
+              <p>{brand?.name ?? "-"}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase text-gray-500">
+                Category
+              </p>
+              <p>{category?.name ?? "-"}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase text-gray-500">
+                Condition
+              </p>
+              {condition ? (
+                <ConditionPill condition={condition.name} />
+              ) : "-"}
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase text-gray-500">
+                Price Mode
+              </p>
+              <p>{listing.price_mode ?? "-"}</p>
+            </div>
+          </div>
+
+          <div className="mt-6 border-t pt-5">
+            <h3 className="mb-2 font-semibold">Short Description</h3>
+            <p className="whitespace-pre-wrap text-sm text-gray-600">
+              {listing.short_description || "No short description added."}
+            </p>
+          </div>
+
+          <div className="mt-5 border-t pt-5">
+            <h3 className="mb-2 font-semibold">Long Description</h3>
+            <p className="whitespace-pre-wrap text-sm text-gray-600">
+              {listing.long_description || "No long description added."}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <h3 className="mb-4 text-lg font-semibold">
+            Serialized Products ({listingProducts.length})
+          </h3>
+
+          {listingProducts.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No serialized products have been added to this listing yet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b text-xs uppercase text-gray-500">
+                    <th className="p-3">Serial Number</th>
+                    <th className="p-3">Work Order</th>
+                    <th className="p-3">Shelf</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Tested</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {listingProducts.map((product) => (
+                    <tr key={product.id} className="border-b">
+                      <td className="p-3">{product.serial_number || "-"}</td>
+                      <td className="p-3">{product.work_order || "-"}</td>
+                      <td className="p-3">
+                        {product.shelf?.[0]?.name || "-"}
+                      </td>
+                      <td className="p-3">
+                        {product.inventory_status || "-"}
+                      </td>
+                      <td className="p-3">
+                        {product.test_status ? "Yes" : "No"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </InventoryDetail>
   );
-
 };
 
 export default ProductDetail;

@@ -5,7 +5,148 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Check whether a SKU is already assigned to a variant.
+ * Generate the official Product Listing title from its Part and Condition.
+ *
+ * The Part name is the master name.
+ * The Condition is appended automatically.
+ */
+function inventory_variant_build_listing_title($part_id, $condition_id)
+{
+    $part = get_term((int) $part_id, 'part');
+    $condition = get_term((int) $condition_id, 'condition');
+
+    if (
+        !$part ||
+        is_wp_error($part) ||
+        !$condition ||
+        is_wp_error($condition)
+    ) {
+        return new WP_Error(
+            'inventory_variant_title_terms_not_found',
+            'The Part or Condition required to generate the Product Listing title could not be found.',
+            ['status' => 400]
+        );
+    }
+
+    return $part->name . ' - ' . $condition->name;
+}
+
+/**
+ * Synchronize a Product Listing title with its Part and Condition.
+ */
+function inventory_variant_sync_listing_title($variant_id)
+{
+    $variant_id = (int) $variant_id;
+    $variant = get_post($variant_id);
+
+    if (!$variant || $variant->post_type !== 'product_variant') {
+        return false;
+    }
+
+    $part_id = (int) get_post_meta(
+        $variant_id,
+        '_inventory_variant_part_id',
+        true
+    );
+
+    $condition_id = (int) get_post_meta(
+        $variant_id,
+        '_inventory_variant_condition_id',
+        true
+    );
+
+    $title = inventory_variant_build_listing_title(
+        $part_id,
+        $condition_id
+    );
+
+    if (is_wp_error($title)) {
+        return $title;
+    }
+
+    if ($variant->post_title !== $title) {
+        $updated = wp_update_post(
+            [
+                'ID'         => $variant_id,
+                'post_title' => $title,
+            ],
+            true
+        );
+
+        if (is_wp_error($updated)) {
+            return $updated;
+        }
+    }
+
+    return $title;
+}
+
+/**
+ * Update all Product Listing titles associated with a renamed Part.
+ */
+function inventory_variant_after_part_edited($term_id, $tt_id, $args)
+{
+    $query = new WP_Query([
+        'post_type'      => 'product_variant',
+        'post_status'    => 'any',
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+        'meta_query'     => [
+            [
+                'key'     => '_inventory_variant_part_id',
+                'value'   => (string) (int) $term_id,
+                'compare' => '=',
+            ],
+        ],
+    ]);
+
+    foreach ($query->posts as $variant_id) {
+        inventory_variant_sync_listing_title($variant_id);
+    }
+}
+
+add_action(
+    'edited_part',
+    'inventory_variant_after_part_edited',
+    10,
+    3
+);
+
+/**
+ * Update all Product Listing titles associated with a renamed Condition.
+ */
+function inventory_variant_after_condition_edited($term_id, $tt_id, $args)
+{
+    $query = new WP_Query([
+        'post_type'      => 'product_variant',
+        'post_status'    => 'any',
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+        'meta_query'     => [
+            [
+                'key'     => '_inventory_variant_condition_id',
+                'value'   => (string) (int) $term_id,
+                'compare' => '=',
+            ],
+        ],
+    ]);
+
+    foreach ($query->posts as $variant_id) {
+        inventory_variant_sync_listing_title($variant_id);
+    }
+}
+
+add_action(
+    'edited_condition',
+    'inventory_variant_after_condition_edited',
+    10,
+    3
+);
+
+/**
+ * Check whether a SKU is already assigned to a Product Listing.
  */
 function inventory_variant_sku_exists($sku, $exclude_variant_id = 0)
 {
@@ -33,7 +174,6 @@ function inventory_variant_sku_exists($sku, $exclude_variant_id = 0)
     return !empty($query->posts);
 }
 
-
 /**
  * Generate a unique seven-digit numeric SKU.
  */
@@ -54,9 +194,43 @@ function inventory_variant_generate_sku()
     );
 }
 
+/**
+ * Find an existing Product Listing for a Part + Condition combination.
+ *
+ * Returns the listing ID or zero when none exists.
+ */
+function inventory_variant_find_listing($part_id, $condition_id)
+{
+    $query = new WP_Query([
+        'post_type'      => 'product_variant',
+        'post_status'    => 'any',
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+        'meta_query'     => [
+            'relation' => 'AND',
+            [
+                'key'     => '_inventory_variant_part_id',
+                'value'   => (string) (int) $part_id,
+                'compare' => '=',
+            ],
+            [
+                'key'     => '_inventory_variant_condition_id',
+                'value'   => (string) (int) $condition_id,
+                'compare' => '=',
+            ],
+        ],
+    ]);
+
+    if (!empty($query->posts)) {
+        return (int) $query->posts[0];
+    }
+
+    return 0;
+}
 
 /**
- * Find the variant for a Part + Condition combination,
+ * Find the Product Listing for a Part + Condition combination,
  * or create it if it does not exist.
  */
 function inventory_variant_get_or_create($part_id, $condition_id)
@@ -72,49 +246,28 @@ function inventory_variant_get_or_create($part_id, $condition_id)
         );
     }
 
-    $part = get_term($part_id, 'part');
-    $condition = get_term($condition_id, 'condition');
+    $title = inventory_variant_build_listing_title(
+        $part_id,
+        $condition_id
+    );
 
-    if (
-        !$part ||
-        is_wp_error($part) ||
-        !$condition ||
-        is_wp_error($condition)
-    ) {
-        return new WP_Error(
-            'inventory_variant_terms_not_found',
-            'The selected Part or Condition could not be found.',
-            ['status' => 400]
-        );
+    if (is_wp_error($title)) {
+        return $title;
     }
 
-    // Find an existing variant for this exact combination.
-    $query = new WP_Query([
-        'post_type'      => 'product_variant',
-        'post_status'    => 'any',
-        'posts_per_page' => 1,
-        'fields'         => 'ids',
-        'no_found_rows'  => true,
-        'meta_query'     => [
-            'relation' => 'AND',
-            [
-                'key'     => '_inventory_variant_part_id',
-                'value'   => (string) $part_id,
-                'compare' => '=',
-            ],
-            [
-                'key'     => '_inventory_variant_condition_id',
-                'value'   => (string) $condition_id,
-                'compare' => '=',
-            ],
-        ],
-    ]);
+    // Reuse the existing listing when the combination already exists.
+    $existing_id = inventory_variant_find_listing(
+        $part_id,
+        $condition_id
+    );
 
-    if (!empty($query->posts)) {
-        return (int) $query->posts[0];
+    if ($existing_id) {
+        inventory_variant_sync_listing_title($existing_id);
+
+        return $existing_id;
     }
 
-    // Generate an SKU only when a new variant is required.
+    // Generate an SKU only when a new listing is required.
     $sku = inventory_variant_generate_sku();
 
     if (is_wp_error($sku)) {
@@ -125,7 +278,7 @@ function inventory_variant_get_or_create($part_id, $condition_id)
         [
             'post_type'   => 'product_variant',
             'post_status' => 'publish',
-            'post_title'  => $part->name . ' - ' . $condition->name,
+            'post_title'  => $title,
         ],
         true
     );
@@ -155,12 +308,251 @@ function inventory_variant_get_or_create($part_id, $condition_id)
     return (int) $variant_id;
 }
 
+/**
+ * Validate Product Listing fields before creating or updating a listing.
+ *
+ * Returns normalized data or a WP_Error.
+ *
+ * Product Listing titles are intentionally not accepted from the request.
+ * They are always generated from the associated Part and Condition.
+ */
+function inventory_variant_validate_listing_data(
+    WP_REST_Request $request,
+    $part_id,
+    $condition_id,
+    $variant_id = 0,
+    $is_new = false
+) {
+    $variant_id = (int) $variant_id;
+
+    /*
+     * Validate SKU.
+     */
+    $sku = null;
+
+    if ($request->has_param('sku')) {
+        $sku = sanitize_text_field(
+            (string) $request->get_param('sku')
+        );
+
+        if (!preg_match('/^[0-9]{7}$/', $sku)) {
+            return new WP_Error(
+                'inventory_variant_invalid_sku',
+                'SKU must contain exactly seven digits.',
+                ['status' => 400]
+            );
+        }
+
+        if (inventory_variant_sku_exists($sku, $variant_id)) {
+            return new WP_Error(
+                'inventory_variant_duplicate_sku',
+                'That SKU is already assigned to another Product Listing.',
+                ['status' => 409]
+            );
+        }
+    }
+
+    /*
+     * Validate pricing mode.
+     */
+    if ($request->has_param('price_mode')) {
+        $price_mode = sanitize_text_field(
+            (string) $request->get_param('price_mode')
+        );
+    } else {
+        $price_mode = $variant_id
+            ? get_post_meta($variant_id, 'price_mode', true)
+            : '';
+    }
+
+    if (!in_array($price_mode, ['automatic', 'manual'], true)) {
+        return new WP_Error(
+            'inventory_variant_invalid_price_mode',
+            'Price mode must be automatic or manual.',
+            ['status' => 400]
+        );
+    }
+
+    /*
+     * Validate and calculate listing price.
+     */
+    if ($price_mode === 'automatic') {
+        $list_price = inventory_calculate_product_price(
+            $part_id,
+            $condition_id
+        );
+
+        if (is_wp_error($list_price)) {
+            return $list_price;
+        }
+
+        if ($list_price === null || $list_price <= 0) {
+            return new WP_Error(
+                'inventory_variant_price_unavailable',
+                'Automatic pricing is unavailable. Please enter a manual listing price.',
+                ['status' => 400]
+            );
+        }
+    } else {
+        if ($request->has_param('list_price')) {
+            $submitted_price = $request->get_param('list_price');
+
+            if (
+                !is_numeric($submitted_price) ||
+                (float) $submitted_price <= 0
+            ) {
+                return new WP_Error(
+                    'inventory_variant_invalid_price',
+                    'Enter a valid listing price greater than zero.',
+                    ['status' => 400]
+                );
+            }
+
+            $list_price = round((float) $submitted_price, 2);
+        } elseif ($variant_id && !$is_new) {
+            $existing_price = get_post_meta(
+                $variant_id,
+                'list_price',
+                true
+            );
+
+            if (
+                !is_numeric($existing_price) ||
+                (float) $existing_price <= 0
+            ) {
+                return new WP_Error(
+                    'inventory_variant_missing_price',
+                    'A listing price is required when using manual pricing.',
+                    ['status' => 400]
+                );
+            }
+
+            $list_price = (float) $existing_price;
+        } else {
+            return new WP_Error(
+                'inventory_variant_missing_price',
+                'A listing price is required when using manual pricing.',
+                ['status' => 400]
+            );
+        }
+    }
+
+    /*
+     * Validate optional text fields.
+     */
+    $text_fields = [
+        'short_description',
+        'long_description',
+        'seo_title',
+        'meta_description',
+        'search_terms',
+    ];
+
+    $validated_text = [];
+
+    foreach ($text_fields as $field) {
+        if ($request->has_param($field)) {
+            $validated_text[$field] = sanitize_textarea_field(
+                (string) $request->get_param($field)
+            );
+        }
+    }
+
+    /*
+     * Validate main image.
+     */
+    $image_id = null;
+
+    if ($request->has_param('image_id')) {
+        $image_id = absint($request->get_param('image_id'));
+
+        if (
+            $image_id &&
+            get_post_type($image_id) !== 'attachment'
+        ) {
+            return new WP_Error(
+                'inventory_variant_invalid_image',
+                'The selected main image is not a valid attachment.',
+                ['status' => 400]
+            );
+        }
+    }
+
+    /*
+     * Validate additional images.
+     */
+    $image_ids = null;
+
+    if ($request->has_param('additional_image_ids')) {
+        $submitted_images = $request->get_param(
+            'additional_image_ids'
+        );
+
+        if (!is_array($submitted_images)) {
+            return new WP_Error(
+                'inventory_variant_invalid_images',
+                'Additional image IDs must be an array.',
+                ['status' => 400]
+            );
+        }
+
+        $image_ids = [];
+
+        foreach ($submitted_images as $submitted_image_id) {
+            $attachment_id = absint($submitted_image_id);
+
+            if (
+                !$attachment_id ||
+                get_post_type($attachment_id) !== 'attachment'
+            ) {
+                return new WP_Error(
+                    'inventory_variant_invalid_images',
+                    'One or more additional image IDs are invalid.',
+                    ['status' => 400]
+                );
+            }
+
+            $image_ids[] = $attachment_id;
+        }
+
+        $image_ids = array_values(array_unique($image_ids));
+    }
+
+    /*
+     * Validate listing status.
+     */
+    $status = null;
+
+    if ($request->has_param('status')) {
+        $status = sanitize_text_field(
+            (string) $request->get_param('status')
+        );
+
+        if (!in_array($status, ['publish', 'draft'], true)) {
+            return new WP_Error(
+                'inventory_variant_invalid_status',
+                'Status must be publish or draft.',
+                ['status' => 400]
+            );
+        }
+    }
+
+    return [
+        'sku'          => $sku,
+        'price_mode'   => $price_mode,
+        'list_price'   => $list_price,
+        'text_fields'  => $validated_text,
+        'image_id'     => $image_id,
+        'image_ids'    => $image_ids,
+        'status'       => $status,
+    ];
+}
 
 /**
- * Associate an inventory product with its Part + Condition variant.
+ * Associate an inventory product with its Part + Condition listing.
  *
  * If the product's Part or Condition changes, its association is
- * changed accordingly. The old variant is intentionally retained.
+ * changed accordingly. The old listing is intentionally retained.
  */
 function inventory_variant_sync_product($product_id)
 {
@@ -190,15 +582,13 @@ function inventory_variant_sync_product($product_id)
         return $condition_ids;
     }
 
-    // This product cannot be assigned to a variant until both
-    // a Part and a Condition have been selected.
     if (empty($part_ids) || empty($condition_ids)) {
         delete_post_meta($product_id, '_inventory_variant_id');
         return false;
     }
 
     // Products are expected to have one Part and one Condition.
-    $part_id      = (int) reset($part_ids);
+    $part_id = (int) reset($part_ids);
     $condition_id = (int) reset($condition_ids);
 
     $variant_id = inventory_variant_get_or_create(
@@ -218,7 +608,6 @@ function inventory_variant_sync_product($product_id)
 
     return $variant_id;
 }
-
 
 /**
  * Run after the existing product REST save logic.
@@ -244,9 +633,8 @@ add_action(
     3
 );
 
-
 /**
- * One-time association pass for inventory products already in WordPress.
+ * One-time association pass for existing inventory products.
  */
 function inventory_variant_backfill_existing_products()
 {
@@ -283,22 +671,26 @@ function inventory_variant_backfill_existing_products()
     }
 
     if (!$had_error) {
-        update_option('inventory_variant_backfill_v1_complete', 1, false);
+        update_option(
+            'inventory_variant_backfill_v1_complete',
+            1,
+            false
+        );
+
         return true;
     }
 
     return new WP_Error(
         'inventory_variant_backfill_incomplete',
-        'Some existing products could not be associated with variants. Please retry the Stock Summary request.',
+        'Some existing products could not be associated with listings. Please retry the Stock Summary request.',
         ['status' => 500]
     );
 }
 
-
 /**
  * Calculate active quantity from associated, published inventory products.
  *
- * Quantity is calculated dynamically rather than stored on the variant.
+ * Quantity is calculated dynamically rather than stored on the listing.
  */
 function inventory_variant_get_available_quantity($variant_id)
 {
@@ -326,6 +718,423 @@ function inventory_variant_get_available_quantity($variant_id)
     return (int) $query->found_posts;
 }
 
+/**
+ * Transform a Product Listing into the frontend API format.
+ *
+ * A Product Listing is an existing product_variant post.
+ * Its WordPress post ID is the product_listing_id used
+ * when associating serialized Products.
+ */
+function inventory_variant_transform_listing($variant)
+{
+    $variant_id = is_object($variant)
+        ? (int) $variant->ID
+        : (int) $variant;
+
+    $post = get_post($variant_id);
+
+    if (!$post || $post->post_type !== 'product_variant') {
+        return null;
+    }
+
+    // Ensure the title always reflects the current Part and Condition.
+    $title = inventory_variant_sync_listing_title($variant_id);
+
+    if (is_wp_error($title)) {
+        $title = $post->post_title;
+    }
+
+    $part_id = (int) get_post_meta(
+        $variant_id,
+        '_inventory_variant_part_id',
+        true
+    );
+
+    $condition_id = (int) get_post_meta(
+        $variant_id,
+        '_inventory_variant_condition_id',
+        true
+    );
+
+    $image_id = (int) get_post_meta(
+        $variant_id,
+        'image_id',
+        true
+    );
+
+    $additional_image_ids = get_post_meta(
+        $variant_id,
+        'additional_image_ids',
+        true
+    );
+
+    if (!is_array($additional_image_ids)) {
+        $additional_image_ids = [];
+    }
+
+    $additional_image_ids = array_values(
+        array_filter(array_map('intval', $additional_image_ids))
+    );
+
+    $additional_image_urls = [];
+
+    foreach ($additional_image_ids as $attachment_id) {
+        $url = wp_get_attachment_image_url($attachment_id, 'full');
+
+        if ($url) {
+            $additional_image_urls[] = $url;
+        }
+    }
+
+    return [
+        'id'                    => $variant_id,
+        'title'                 => $title,
+        'sku'                   => (string) get_post_meta(
+            $variant_id,
+            '_inventory_variant_sku',
+            true
+        ),
+        'part_id'               => $part_id,
+        'condition_id'          => $condition_id,
+        'list_price'            => get_post_meta(
+            $variant_id,
+            'list_price',
+            true
+        ),
+        'price_mode'            => get_post_meta(
+            $variant_id,
+            'price_mode',
+            true
+        ),
+        'short_description'     => get_post_meta(
+            $variant_id,
+            'short_description',
+            true
+        ),
+        'long_description'      => get_post_meta(
+            $variant_id,
+            'long_description',
+            true
+        ),
+        'seo_title'             => get_post_meta(
+            $variant_id,
+            'seo_title',
+            true
+        ),
+        'meta_description'      => get_post_meta(
+            $variant_id,
+            'meta_description',
+            true
+        ),
+        'search_terms'          => get_post_meta(
+            $variant_id,
+            'search_terms',
+            true
+        ),
+        'image_id'              => $image_id ?: null,
+        'image_url'             => $image_id
+            ? wp_get_attachment_image_url($image_id, 'full')
+            : null,
+        'additional_image_ids'  => $additional_image_ids,
+        'additional_image_urls' => $additional_image_urls,
+        'status'                => $post->post_status,
+        'quantity'              => inventory_variant_get_available_quantity(
+            $variant_id
+        ),
+    ];
+}
+
+/**
+ * Save editable fields for a Product Listing.
+ *
+ * All submitted fields are validated before any changes are made.
+ * The title is always generated from the Part and Condition.
+ */
+function inventory_variant_save_listing_fields(
+    $variant_id,
+    WP_REST_Request $request,
+    $is_new = false
+) {
+    $variant_id = (int) $variant_id;
+
+    $variant = get_post($variant_id);
+
+    if (!$variant || $variant->post_type !== 'product_variant') {
+        return new WP_Error(
+            'inventory_variant_not_found',
+            'The requested Product Listing was not found.',
+            ['status' => 404]
+        );
+    }
+
+    $part_id = (int) get_post_meta(
+        $variant_id,
+        '_inventory_variant_part_id',
+        true
+    );
+
+    $condition_id = (int) get_post_meta(
+        $variant_id,
+        '_inventory_variant_condition_id',
+        true
+    );
+
+    $data = inventory_variant_validate_listing_data(
+        $request,
+        $part_id,
+        $condition_id,
+        $variant_id,
+        $is_new
+    );
+
+    if (is_wp_error($data)) {
+        return $data;
+    }
+
+    // Only listing status is editable on the WordPress post itself.
+    if ($data['status'] !== null) {
+        $updated = wp_update_post(
+            [
+                'ID'          => $variant_id,
+                'post_status' => $data['status'],
+            ],
+            true
+        );
+
+        if (is_wp_error($updated)) {
+            return $updated;
+        }
+    }
+
+    // Save SKU when supplied.
+    if ($data['sku'] !== null) {
+        update_post_meta(
+            $variant_id,
+            '_inventory_variant_sku',
+            $data['sku']
+        );
+    }
+
+    // Save pricing.
+    update_post_meta(
+        $variant_id,
+        'price_mode',
+        $data['price_mode']
+    );
+
+    update_post_meta(
+        $variant_id,
+        'list_price',
+        $data['list_price']
+    );
+
+    // Save text fields.
+    foreach ($data['text_fields'] as $field => $value) {
+        update_post_meta($variant_id, $field, $value);
+    }
+
+    // Save main image.
+    if ($data['image_id'] !== null) {
+        if ($data['image_id']) {
+            update_post_meta(
+                $variant_id,
+                'image_id',
+                $data['image_id']
+            );
+        } else {
+            delete_post_meta($variant_id, 'image_id');
+        }
+    }
+
+    // Save additional images.
+    if ($data['image_ids'] !== null) {
+        update_post_meta(
+            $variant_id,
+            'additional_image_ids',
+            $data['image_ids']
+        );
+    }
+
+    return inventory_variant_transform_listing($variant_id);
+}
+
+/**
+ * Retrieve all published and draft Product Listings.
+ */
+function inventory_variant_get_listings(WP_REST_Request $request)
+{
+    $query = new WP_Query([
+        'post_type'      => 'product_variant',
+        'post_status'    => ['publish', 'draft'],
+        'posts_per_page' => -1,
+        'orderby'        => 'ID',
+        'order'          => 'ASC',
+        'no_found_rows'  => true,
+    ]);
+
+    $listings = [];
+
+    foreach ($query->posts as $post) {
+        $listing = inventory_variant_transform_listing($post);
+
+        if ($listing) {
+            $listings[] = $listing;
+        }
+    }
+
+    return rest_ensure_response($listings);
+}
+
+/**
+ * Create or retrieve a Product Listing for a Part + Condition.
+ *
+ * Validate the request before creating a new WordPress post.
+ */
+function inventory_variant_create_listing(WP_REST_Request $request)
+{
+    $part_id = absint($request->get_param('part_id'));
+    $condition_id = absint($request->get_param('condition_id'));
+
+    if (!$part_id || !$condition_id) {
+        return new WP_Error(
+            'inventory_variant_missing_terms',
+            'A Part and Condition are required.',
+            ['status' => 400]
+        );
+    }
+
+    // Confirm that both selected taxonomy terms exist.
+    $part = get_term($part_id, 'part');
+    $condition = get_term($condition_id, 'condition');
+
+    if (
+        !$part ||
+        is_wp_error($part) ||
+        !$condition ||
+        is_wp_error($condition)
+    ) {
+        return new WP_Error(
+            'inventory_variant_terms_not_found',
+            'The selected Part or Condition could not be found.',
+            ['status' => 400]
+        );
+    }
+
+    // Find an existing listing without creating anything.
+    $existing_id = inventory_variant_find_listing(
+        $part_id,
+        $condition_id
+    );
+
+    // Only treat this as a new listing if no matching listing exists.
+    $is_new = !$existing_id;
+
+    // Validate the complete request before creating a new listing.
+    $data = inventory_variant_validate_listing_data(
+        $request,
+        $part_id,
+        $condition_id,
+        $existing_id,
+        $is_new
+    );
+
+    if (is_wp_error($data)) {
+        return $data;
+    }
+
+    // Only create the listing after validation succeeds.
+    $variant_id = inventory_variant_get_or_create(
+        $part_id,
+        $condition_id
+    );
+
+    if (is_wp_error($variant_id)) {
+        return $variant_id;
+    }
+
+    return inventory_variant_save_listing_fields(
+        $variant_id,
+        $request,
+        $is_new
+    );
+}
+
+/**
+ * Update an existing Product Listing.
+ */
+function inventory_variant_update_listing(WP_REST_Request $request)
+{
+    $variant_id = absint($request['variant_id']);
+    $variant = get_post($variant_id);
+
+    if (!$variant || $variant->post_type !== 'product_variant') {
+        return new WP_Error(
+            'inventory_variant_not_found',
+            'The requested Product Listing was not found.',
+            ['status' => 404]
+        );
+    }
+
+    return inventory_variant_save_listing_fields(
+        $variant_id,
+        $request
+    );
+}
+
+function inventory_variant_delete_listing( WP_REST_Request $request ) {
+
+    $variant_id = absint( $request['variant_id'] );
+
+    // Confirm the Product Listing exists.
+    $variant = get_post( $variant_id );
+
+    if ( ! $variant || 'product_variant' !== $variant->post_type ) {
+        return new WP_Error(
+            'inventory_variant_not_found',
+            'Product Listing not found.',
+            [ 'status' => 404 ]
+        );
+    }
+
+    // Check whether serialized Products are still attached.
+    $associated_products = new WP_Query( [
+        'post_type'      => 'product',
+        'post_status'    => 'any',
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+        'meta_query'     => [
+            [
+                'key'     => '_inventory_variant_id',
+                'value'   => $variant_id,
+                'compare' => '=',
+            ],
+        ],
+    ] );
+
+    if ( $associated_products->have_posts() ) {
+        return new WP_Error(
+            'inventory_variant_has_products',
+            'This Product Listing cannot be deleted while serialized products are still associated with it. Remove or reassign those products first.',
+            [ 'status' => 409 ]
+        );
+    }
+
+    // Permanently delete the Product Listing.
+    $deleted = wp_delete_post( $variant_id, true );
+
+    if ( ! $deleted ) {
+        return new WP_Error(
+            'inventory_variant_delete_failed',
+            'Unable to delete the Product Listing.',
+            [ 'status' => 500 ]
+        );
+    }
+
+    return rest_ensure_response( [
+        'deleted' => true,
+        'id'      => $variant_id,
+    ] );
+}
 
 /**
  * Return Stock Summary rows.
@@ -367,7 +1176,7 @@ function inventory_variant_get_stock_summary(WP_REST_Request $request)
         $part = get_term($part_id, 'part');
         $condition = get_term($condition_id, 'condition');
 
-        // Ignore variants whose related taxonomy terms no longer exist.
+        // Ignore listings whose related taxonomy terms no longer exist.
         if (
             !$part ||
             is_wp_error($part) ||
@@ -416,61 +1225,11 @@ function inventory_variant_get_stock_summary(WP_REST_Request $request)
 
 
 /**
- * Update the SKU for a variant.
- * No other variant fields are editable through this endpoint.
- */
-function inventory_variant_update_sku(WP_REST_Request $request)
-{
-    $variant_id = (int) $request['variant_id'];
-    $variant = get_post($variant_id);
-
-    if (!$variant || $variant->post_type !== 'product_variant') {
-        return new WP_Error(
-            'inventory_variant_not_found',
-            'The requested variant was not found.',
-            ['status' => 404]
-        );
-    }
-
-    $sku = sanitize_text_field(
-        (string) $request->get_param('sku')
-    );
-
-    // Keep the seven-digit numeric SKU format consistent.
-    if (!preg_match('/^[0-9]{7}$/', $sku)) {
-        return new WP_Error(
-            'inventory_variant_invalid_sku',
-            'SKU must contain exactly seven digits.',
-            ['status' => 400]
-        );
-    }
-
-    if (inventory_variant_sku_exists($sku, $variant_id)) {
-        return new WP_Error(
-            'inventory_variant_duplicate_sku',
-            'That SKU is already assigned to another variant.',
-            ['status' => 409]
-        );
-    }
-
-    update_post_meta(
-        $variant_id,
-        '_inventory_variant_sku',
-        $sku
-    );
-
-    return rest_ensure_response([
-        'id'  => $variant_id,
-        'sku' => $sku,
-    ]);
-}
-
-
-/**
- * Register Stock Summary API routes.
+ * Register Stock Summary and Product Listing API routes.
  */
 function inventory_register_variant_api_routes()
 {
+    // Stock Summary: retrieve rows.
     register_rest_route('inventory/v1', '/stock-summary', [
         [
             'methods'             => WP_REST_Server::READABLE,
@@ -481,6 +1240,7 @@ function inventory_register_variant_api_routes()
         ],
     ]);
 
+    // Stock Summary: update SKU.
     register_rest_route(
         'inventory/v1',
         '/stock-summary/(?P<variant_id>\d+)/sku',
@@ -497,6 +1257,61 @@ function inventory_register_variant_api_routes()
                         'type'     => 'string',
                     ],
                 ],
+            ],
+        ]
+    );
+
+    // Product Listing: retrieve and create.
+    register_rest_route('inventory/v1', '/product-listings', [
+        [
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => 'inventory_variant_get_listings',
+            'permission_callback' => function () {
+                return current_user_can('edit_posts');
+            },
+        ],
+        [
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => 'inventory_variant_create_listing',
+            'permission_callback' => function () {
+                return current_user_can('edit_posts');
+            },
+            'args' => [
+                'part_id' => [
+                    'required' => true,
+                    'type'     => 'integer',
+                ],
+                'condition_id' => [
+                    'required' => true,
+                    'type'     => 'integer',
+                ],
+                'price_mode' => [
+                    'required' => true,
+                    'type'     => 'string',
+                    'enum'     => ['automatic', 'manual'],
+                ],
+            ],
+        ],
+    ]);
+
+        // Product Listing: update and delete.
+    register_rest_route(
+        'inventory/v1',
+        '/product-listings/(?P<variant_id>\d+)',
+        [
+            [
+                'methods'             => WP_REST_Server::EDITABLE,
+                'callback'            => 'inventory_variant_update_listing',
+                'permission_callback' => function () {
+                    return current_user_can('edit_posts');
+                },
+            ],
+            [
+                'methods'             => WP_REST_Server::DELETABLE,
+                'callback'            => 'inventory_variant_delete_listing',
+                'permission_callback' => function () {
+                    return current_user_can('edit_posts');
+                },
             ],
         ]
     );

@@ -74,6 +74,42 @@ function inventory_bootstrap($request)
 
     /*
     |--------------------------------------------------------------------------
+    | PRODUCT LISTINGS
+    |--------------------------------------------------------------------------
+    */
+
+    $product_listings = [];
+
+    $listing_query = new WP_Query([
+        'post_type'              => 'product_variant',
+        'post_status'            => 'publish',
+        'posts_per_page'         => -1,
+        'orderby'                => 'ID',
+        'order'                  => 'ASC',
+        'no_found_rows'          => true,
+        'update_post_meta_cache' => true,
+        'update_post_term_cache' => false,
+    ]);
+
+    foreach ($listing_query->posts as $listing) {
+
+        $formatted_listing = inventory_variant_transform_listing($listing);
+
+        if ($formatted_listing !== null) {
+            $product_listings[] = $formatted_listing;
+        }
+    }
+
+    error_log(
+        'BOOTSTRAP | PRODUCT LISTINGS: ' .
+            round((microtime(true) - $start) * 1000, 2) .
+            ' ms'
+    );
+
+
+
+    /*
+    |--------------------------------------------------------------------------
     | PARTS
     |--------------------------------------------------------------------------
     */
@@ -176,15 +212,16 @@ function inventory_bootstrap($request)
     */
 
     $response = [
-        'products'   => $products,
-        'parts'      => $parts,
+    'products'         => $products,
+    'product_listings' => $product_listings,
+    'parts'            => $parts,
 
-        'brands'     => $taxonomy_data['brand'] ?? [],
-        'shelves'    => $taxonomy_data['shelf'] ?? [],
-        'conditions' => $taxonomy_data['condition'] ?? [],
-        'categories' => $taxonomy_data['inventory_category'] ?? [],
-        'series'     => $taxonomy_data['series'] ?? [],
-    ];
+    'brands'            => $taxonomy_data['brand'] ?? [],
+    'shelves'            => $taxonomy_data['shelf'] ?? [],
+    'conditions'         => $taxonomy_data['condition'] ?? [],
+    'categories'         => $taxonomy_data['inventory_category'] ?? [],
+    'series'              => $taxonomy_data['series'] ?? [],
+];
 
 
     /*

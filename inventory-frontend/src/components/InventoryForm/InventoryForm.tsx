@@ -1,40 +1,56 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useMemo, useState } from "react";
+
 import { ProductService } from "../../services/productService";
+import { ProductListingService } from "../../services/productListingService";
 import { TaxonomyService } from "../../services/taxonomyService";
 import { uploadImage } from "../../services/mediaService";
+
 import type {
     Product,
     ProductPayload,
     Part,
     Term,
     CreatePartPayload,
+    ProductListing,
+    ProductListingPayload,
 } from "../../types";
+
 import { normalizeProduct } from "../../utils/normalizeProduct";
 import { useInventory } from "../../context/InventoryContext";
 
-type InventoryFormEntity = "product" | "part";
+type InventoryFormEntity = "product" | "part" | "listing";
 
 type InventoryFormProps = {
     entity: InventoryFormEntity;
-
     brands: Term[];
-
     conditions?: Term[];
     shelves?: Term[];
     categories?: Term[];
     series?: Term[];
-
     editingProduct?: Product | null;
     editingPart?: Part | null;
-
+    editingListing?: ProductListing | null;
+    initialListingId?: number | null;
     initialBrand?: Term | null;
-
-    onCreated?: (item: Product | Part) => void;
-    onUpdated?: (item: Product | Part) => void;
-
+    onCreated?: (item: Product | Part | ProductListing) => void;
+    onUpdated?: (item: Product | Part | ProductListing) => void;
     clearEditing?: () => void;
     onClose?: () => void;
 };
+
+const inputClass =
+    "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200";
+
+const labelClass = "mb-1.5 block text-sm font-medium text-gray-700";
+
+const sectionClass = "mt-7 border-t border-gray-200 pt-6";
+
+const buttonClass =
+    "rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60";
+
+const fileInputClass =
+    "block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700";
 
 const InventoryForm: React.FC<InventoryFormProps> = ({
     entity,
@@ -42,210 +58,203 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
     conditions = [],
     shelves = [],
     categories = [],
+    initialBrand = null,
     editingProduct = null,
     editingPart = null,
-    initialBrand = null,
+    editingListing = null,
+    initialListingId = null,
     onCreated,
     onUpdated,
     clearEditing,
     onClose,
 }) => {
-    // =========================================================
-    // GLOBAL INVENTORY DATA
-    // =========================================================
-
-    const { parts: allParts } = useInventory();
-
-    // =========================================================
-    // MODE
-    // =========================================================
+    const {
+        parts: allParts,
+        productListings,
+        fetchBootstrap,
+    } = useInventory();
 
     const isProduct = entity === "product";
     const isPart = entity === "part";
+    const isListing = entity === "listing";
 
-    const isEditing = isProduct
-        ? !!editingProduct
-        : !!editingPart;
+    const isProductEditing = isProduct && !!editingProduct;
+    const isPartEditing = isPart && !!editingPart;
+    const isListingEditing = isListing && !!editingListing;
 
-    // =========================================================
-    // COMMON STATE
-    // =========================================================
+    const isEditing =
+        isProductEditing || isPartEditing || isListingEditing;
 
-    const [selectedBrand, setSelectedBrand] =
-        useState<Term | null>(initialBrand);
+    // ============================================================
+    // GENERAL STATE
+    // ============================================================
 
-    const [imageFile, setImageFile] =
-        useState<File | null>(null);
+    const [loading, setLoading] = useState(false);
 
-    const [existingImageRemoved, setExistingImageRemoved] =
-        useState(false);
+    // ============================================================
+    // SERIALIZED PRODUCT STATE
+    // ============================================================
 
-    const [loading, setLoading] =
-        useState(false);
+    const [selectedPartId, setSelectedPartId] = useState<number | "">("");
+    const [selectedListingId, setSelectedListingId] = useState<number | "">("");
 
-    // =========================================================
-    // PRODUCT STATE
-    // =========================================================
-
+    const [serialNumber, setSerialNumber] = useState("");
+    const [workOrder, setWorkOrder] = useState("");
     const [inventoryStatus, setInventoryStatus] =
         useState<"active" | "sold" | "archived">("active");
 
-    const [title, setTitle] =
-        useState("");
+    const [selectedShelf, setSelectedShelf] = useState<Term | null>(null);
+    const [testStatus, setTestStatus] = useState<boolean | null>(null);
+    const [testDate, setTestDate] = useState("");
+    const [notes, setNotes] = useState("");
 
-    const [serialNumber, setSerialNumber] =
-        useState("");
+    const [productImageFile, setProductImageFile] = useState<File | null>(null);
+    const [productImageRemoved, setProductImageRemoved] = useState(false);
 
-    const [workOrder, setWorkOrder] =
-        useState("");
+    // ============================================================
+    // PART SELECTION
+    // ============================================================
 
-    const [listPrice, setListPrice] =
-        useState("");
+    const selectedPart = useMemo(
+        () =>
+            allParts.find(
+                (part) => Number(part.id) === Number(selectedPartId)
+            ) || null,
+        [allParts, selectedPartId]
+    );
 
-    const [priceMode, setPriceMode] =
+    const listingsForSelectedPart = useMemo(
+        () =>
+            selectedPart
+                ? productListings.filter(
+                    (listing) =>
+                        Number(listing.part_id) === Number(selectedPart.id)
+                )
+                : [],
+        [productListings, selectedPart]
+    );
+
+    const selectedListing = useMemo(
+        () =>
+            productListings.find(
+                (listing) =>
+                    Number(listing.id) === Number(selectedListingId)
+            ) || null,
+        [productListings, selectedListingId]
+    );
+
+    // ============================================================
+    // INLINE PART CREATION STATE
+    // ============================================================
+
+    const [showCreatePart, setShowCreatePart] = useState(false);
+    const [creatingPart, setCreatingPart] = useState(false);
+
+    const [newPartName, setNewPartName] = useState("");
+    const [newPartNumber, setNewPartNumber] = useState("");
+    const [newPartBrandId, setNewPartBrandId] = useState<number | "">("");
+    const [newPartCategoryId, setNewPartCategoryId] = useState<number | "">("");
+    const [newPartSeriesId, setNewPartSeriesId] = useState<number | "">("");
+    const [newPartBasePrice, setNewPartBasePrice] = useState("");
+    const [newPartShortDescription, setNewPartShortDescription] = useState("");
+    const [newPartLongDescription, setNewPartLongDescription] = useState("");
+    const [availablePartSeries, setAvailablePartSeries] = useState<Term[]>([]);
+
+    // ============================================================
+    // INLINE LISTING CREATION STATE
+    // ============================================================
+
+    const [showCreateListing, setShowCreateListing] = useState(false);
+    const [creatingListing, setCreatingListing] = useState(false);
+
+    const [newListingConditionId, setNewListingConditionId] =
+        useState<number | "">("");
+
+    const [newListingPriceMode, setNewListingPriceMode] =
         useState<"automatic" | "manual">("automatic");
 
-    const [notes, setNotes] =
+    const [newListingPrice, setNewListingPrice] = useState("");
+    const [newListingShortDescription, setNewListingShortDescription] =
         useState("");
-
-    const [testStatus, setTestStatus] =
-        useState<boolean | null>(null);
-
-    const [testDate, setTestDate] =
+    const [newListingLongDescription, setNewListingLongDescription] =
         useState("");
-
-    const [selectedCondition, setSelectedCondition] =
-        useState<Term | null>(null);
-
-    const [selectedShelf, setSelectedShelf] =
-        useState<Term | null>(null);
-
-    const [selectedProductPart, setSelectedProductPart] =
-        useState<Part | null>(null);
-
-    const [partName, setPartName] =
+    const [newListingSeoTitle, setNewListingSeoTitle] = useState("");
+    const [newListingMetaDescription, setNewListingMetaDescription] =
         useState("");
+    const [newListingSearchTerms, setNewListingSearchTerms] = useState("");
 
-    const [partNumber, setPartNumber] =
-        useState("");
+    const [newListingImageFile, setNewListingImageFile] =
+        useState<File | null>(null);
 
-    const [selectedCategory, setSelectedCategory] =
-        useState<Term | null>(null);
+    const [newListingAdditionalImageFiles, setNewListingAdditionalImageFiles] =
+        useState<File[]>([]);
 
-    const [selectedSeries, setSelectedSeries] =
-        useState<Term | null>(null);
+    // ============================================================
+    // STANDALONE PART FORM STATE
+    // ============================================================
 
-    const [priceNew, setPriceNew] =
-        useState("");
+    const [selectedBrand, setSelectedBrand] = useState<Term | null>(initialBrand);
+    const [selectedCategory, setSelectedCategory] = useState<Term | null>(null);
+    const [selectedSeries, setSelectedSeries] = useState<Term | null>(null);
 
-    const [shortDescription, setShortDescription] =
-        useState("");
+    const [partName, setPartName] = useState("");
+    const [partNumber, setPartNumber] = useState("");
+    const [partBasePrice, setPartBasePrice] = useState("");
 
-    const [longDescription, setLongDescription] =
-        useState("");
+    const [shortDescription, setShortDescription] = useState("");
+    const [longDescription, setLongDescription] = useState("");
 
     const [seoTitle, setSeoTitle] = useState("");
     const [metaDescription, setMetaDescription] = useState("");
     const [searchTerms, setSearchTerms] = useState("");
 
-    const [availableSeries, setAvailableSeries] =
-        useState<Term[]>([]);
+    const [availableSeries, setAvailableSeries] = useState<Term[]>([]);
 
-    const [additionalImageFiles, setAdditionalImageFiles] =
-        useState<File[]>([]);
+    const [partImageFile, setPartImageFile] = useState<File | null>(null);
+    const [partImageRemoved, setPartImageRemoved] = useState(false);
 
+    const [additionalImageFiles, setAdditionalImageFiles] = useState<File[]>([]);
     const [existingAdditionalImageIds, setExistingAdditionalImageIds] =
         useState<number[]>([]);
 
-    const [productAdditionalImageFiles, setProductAdditionalImageFiles] =
+    // ============================================================
+    // STANDALONE PRODUCT LISTING FORM STATE
+    // ============================================================
+
+    const [listingConditionId, setListingConditionId] =
+        useState<number | "">("");
+
+    const [listingPriceMode, setListingPriceMode] =
+        useState<"automatic" | "manual">("automatic");
+
+    const [listingPrice, setListingPrice] = useState("");
+    const [listingShortDescription, setListingShortDescription] = useState("");
+    const [listingLongDescription, setListingLongDescription] = useState("");
+
+    const [listingSeoTitle, setListingSeoTitle] = useState("");
+    const [listingMetaDescription, setListingMetaDescription] = useState("");
+    const [listingSearchTerms, setListingSearchTerms] = useState("");
+
+    const [listingImageFile, setListingImageFile] = useState<File | null>(null);
+    const [listingImageRemoved, setListingImageRemoved] = useState(false);
+
+    const [listingAdditionalImageFiles, setListingAdditionalImageFiles] =
         useState<File[]>([]);
 
-    const [existingProductAdditionalImageIds, setExistingProductAdditionalImageIds] =
+    const [existingListingAdditionalImageIds, setExistingListingAdditionalImageIds] =
         useState<number[]>([]);
 
-    // =========================================================
-    // PRODUCT PARTS FILTERED BY BRAND
-    // =========================================================
-
-    const productParts = selectedBrand
-        ? allParts.filter(
-            (part) =>
-                Number(part.brand_id) ===
-                Number(selectedBrand.id)
-        )
-        : [];
-
-    // =========================================================
-    // PRODUCT AUTOMATIC PRICE
-    // =========================================================
-
-    const automaticPrice =
-        selectedProductPart?.base_price != null &&
-            selectedCondition?.price_percentage != null
-            ? selectedProductPart.base_price *
-            (selectedCondition.price_percentage / 100)
-            : null;
-
-    // =========================================================
-    // EDIT MODE — PRODUCT
-    // =========================================================
+    // ============================================================
+    // EDIT MODE — SERIALIZED PRODUCT
+    // ============================================================
 
     useEffect(() => {
-        if (!isProduct || !editingProduct) {
-            return;
-        }
+        if (!isProduct || !editingProduct) return;
 
-        setTitle(editingProduct.title || "");
-
-        setSerialNumber(
-            editingProduct.serial_number || ""
-        );
-
-        setWorkOrder(
-            editingProduct.work_order || ""
-        );
-
-        setInventoryStatus(
-            editingProduct.inventory_status || "active"
-        );
-
-        setListPrice(
-            editingProduct.list_price != null
-                ? String(editingProduct.list_price)
-                : ""
-        );
-
-        setPriceMode(
-            editingProduct.price_mode === "manual"
-                ? "manual"
-                : "automatic"
-        );
-
-        setNotes(
-            editingProduct.notes || ""
-        );
-
-        setShortDescription(
-            editingProduct.short_description || ""
-        );
-
-        setLongDescription(
-            editingProduct.long_description || ""
-        );
-
-        setSeoTitle(
-            editingProduct.seo_title || ""
-        );
-
-        setMetaDescription(
-            editingProduct.meta_description || ""
-        );
-
-        setSearchTerms(
-            editingProduct.search_terms || ""
-        );
-
-
+        setSerialNumber(editingProduct.serial_number || "");
+        setWorkOrder(editingProduct.work_order || "");
+        setInventoryStatus(editingProduct.inventory_status || "active");
+        setNotes(editingProduct.notes || "");
 
         setTestStatus(
             typeof editingProduct.test_status === "boolean"
@@ -253,148 +262,154 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 : null
         );
 
-        setTestDate(
-            editingProduct.test_date || ""
-        );
+        setTestDate(editingProduct.test_date || "");
+        setSelectedShelf(editingProduct.shelf?.[0] || null);
 
-        setSelectedBrand(
-            editingProduct.brand?.[0] || null
-        );
+        setProductImageFile(null);
+        setProductImageRemoved(false);
 
-        setSelectedCondition(
-            editingProduct.condition?.[0] || null
-        );
-
-        setSelectedShelf(
-            editingProduct.shelf?.[0] || null
-        );
-
-        setImageFile(null);
-        setExistingImageRemoved(false);
-        setExistingProductAdditionalImageIds(
-            editingProduct.additional_image_ids || []
-        );
-        setProductAdditionalImageFiles([]);
-
+        if (editingProduct.product_listing_id) {
+            setSelectedListingId(Number(editingProduct.product_listing_id));
+        }
     }, [isProduct, editingProduct]);
 
-    // =========================================================
-    // EDIT MODE — PRODUCT PART
-    // =========================================================
-
     useEffect(() => {
-        if (!isProduct || !editingProduct) {
-            if (isProduct && !editingProduct) {
-                setSelectedProductPart(null);
+        if (!isProduct || !editingProduct) return;
+
+        const listing = productListings.find(
+            (item) =>
+                Number(item.id) === Number(editingProduct.product_listing_id)
+        );
+
+        if (listing) {
+            setSelectedListingId(listing.id);
+            setSelectedPartId(listing.part_id);
+            return;
+        }
+
+        // Fallback for older Product records.
+        if (!editingProduct.product_listing_id) {
+            const partId = editingProduct.part?.[0]?.id;
+
+            if (partId) {
+                setSelectedPartId(Number(partId));
+
+                const matchingListing = productListings.find(
+                    (item) =>
+                        Number(item.part_id) === Number(partId) &&
+                        Number(item.condition_id) ===
+                            Number(editingProduct.condition?.[0]?.id)
+                );
+
+                if (matchingListing) {
+                    setSelectedListingId(matchingListing.id);
+                }
             }
-
-            return;
         }
+    }, [isProduct, editingProduct, productListings]);
 
-        const productPartId =
-            editingProduct.part?.[0]?.id;
-
-        if (!productPartId) {
-            setSelectedProductPart(null);
-            return;
-        }
-
-        const fullPart = allParts.find(
-            (part) =>
-                Number(part.id) ===
-                Number(productPartId)
-        );
-
-        setSelectedProductPart(
-            fullPart || null
-        );
-    }, [
-        isProduct,
-        editingProduct,
-        allParts,
-    ]);
-
-    // =========================================================
+    // ============================================================
     // EDIT MODE — PART
-    // =========================================================
+    // ============================================================
 
     useEffect(() => {
-        if (!isPart || !editingPart) {
-            return;
-        }
+        if (!isPart || !editingPart) return;
 
-        setPartName(
-            editingPart.name || ""
+        setPartName(editingPart.name || "");
+        setPartNumber(editingPart.part_number || "");
+
+        setSelectedBrand(
+            brands.find(
+                (brand) =>
+                    Number(brand.id) === Number(editingPart.brand_id)
+            ) || null
         );
 
-        setPartNumber(
-            editingPart.part_number || ""
+        setSelectedCategory(
+            categories.find(
+                (category) =>
+                    Number(category.id) === Number(editingPart.category_id)
+            ) || null
         );
 
-        const brand = editingPart.brand_id
-            ? brands.find(
-                (b) =>
-                    b.id === Number(editingPart.brand_id)
-            ) || null
-            : null;
-
-        setSelectedBrand(brand);
-
-        const category = editingPart.category_id
-            ? categories.find(
-                (c) =>
-                    c.id === Number(editingPart.category_id)
-            ) || null
-            : null;
-
-        setSelectedCategory(category);
-
-        setSelectedSeries(null);
-
-        setPriceNew(
+        setPartBasePrice(
             editingPart.base_price != null
                 ? String(editingPart.base_price)
                 : ""
         );
 
-        setShortDescription(
-            editingPart.short_description || ""
-        );
+        setShortDescription(editingPart.short_description || "");
+        setLongDescription(editingPart.long_description || "");
 
-        setLongDescription(
-            editingPart.long_description || ""
-        );
+        setSeoTitle(editingPart.seo_title || "");
+        setMetaDescription(editingPart.meta_description || "");
+        setSearchTerms(editingPart.search_terms || "");
 
-        setSeoTitle(
-            editingPart.seo_title || ""
-        );
-
-        setMetaDescription(
-            editingPart.meta_description || ""
-        );
-
-        setSearchTerms(
-            editingPart.search_terms || ""
-        );
-
-        setImageFile(null);
-        setExistingImageRemoved(false);
+        setPartImageFile(null);
+        setPartImageRemoved(false);
 
         setExistingAdditionalImageIds(
             editingPart.additional_image_ids || []
         );
 
         setAdditionalImageFiles([]);
-    }, [
-        isPart,
-        editingPart,
-        brands,
-        categories,
-    ]);
+    }, [isPart, editingPart, brands, categories]);
 
-    // =========================================================
-    // LOAD SERIES FOR PART BRAND
-    // =========================================================
+    // ============================================================
+    // EDIT MODE — PRODUCT LISTING
+    // ============================================================
+
+    useEffect(() => {
+        if (!isListing || !editingListing) return;
+
+        setSelectedPartId(editingListing.part_id);
+        setListingConditionId(editingListing.condition_id);
+
+        setListingPriceMode(editingListing.price_mode || "automatic");
+
+        setListingPrice(
+            editingListing.list_price != null
+                ? String(editingListing.list_price)
+                : ""
+        );
+
+        setListingShortDescription(editingListing.short_description || "");
+        setListingLongDescription(editingListing.long_description || "");
+
+        setListingSeoTitle(editingListing.seo_title || "");
+        setListingMetaDescription(editingListing.meta_description || "");
+        setListingSearchTerms(editingListing.search_terms || "");
+
+        setListingImageFile(null);
+        setListingImageRemoved(false);
+
+        setListingAdditionalImageFiles([]);
+
+        setExistingListingAdditionalImageIds(
+            editingListing.additional_image_ids || []
+        );
+    }, [isListing, editingListing]);
+
+    // ============================================================
+    // INITIAL LISTING — ADD SERIALIZED PRODUCT FROM LISTING DETAIL
+    // ============================================================
+
+    useEffect(() => {
+        if (!isProduct || editingProduct || !initialListingId) return;
+
+        const listing = productListings.find(
+            (item) => Number(item.id) === Number(initialListingId)
+        );
+
+        if (listing) {
+            setSelectedListingId(listing.id);
+            setSelectedPartId(listing.part_id);
+        }
+    }, [isProduct, editingProduct, initialListingId, productListings]);
+
+    // ============================================================
+    // LOAD SERIES FOR PART
+    // ============================================================
 
     useEffect(() => {
         if (!isPart || !selectedBrand) {
@@ -403,27 +418,21 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             return;
         }
 
-        TaxonomyService
-            .getSeriesByBrand(selectedBrand.id)
+        let cancelled = false;
+
+        TaxonomyService.getSeriesByBrand(selectedBrand.id)
             .then((data) => {
-                setAvailableSeries(data || []);
+                if (!cancelled) setAvailableSeries(data || []);
             })
-            .catch((err) => {
-                console.error(
-                    "Failed loading series:",
-                    err
-                );
-
-                setAvailableSeries([]);
+            .catch((error) => {
+                console.error("Failed loading Part series:", error);
+                if (!cancelled) setAvailableSeries([]);
             });
-    }, [
-        isPart,
-        selectedBrand,
-    ]);
 
-    // =========================================================
-    // PREFILL PART SERIES
-    // =========================================================
+        return () => {
+            cancelled = true;
+        };
+    }, [isPart, selectedBrand]);
 
     useEffect(() => {
         if (
@@ -434,415 +443,515 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             return;
         }
 
-        const series =
+        setSelectedSeries(
             availableSeries.find(
-                (s) =>
-                    s.id ===
-                    Number(editingPart.series_id)
-            ) || null;
+                (item) =>
+                    Number(item.id) === Number(editingPart.series_id)
+            ) || null
+        );
+    }, [isPart, editingPart, availableSeries]);
 
-        setSelectedSeries(series);
-    }, [
-        isPart,
-        editingPart,
-        availableSeries,
-    ]);
-
-    // =========================================================
-    // CLEAR PRODUCT PART WHEN BRAND CHANGES
-    // =========================================================
+    // ============================================================
+    // LOAD SERIES FOR INLINE PART CREATION
+    // ============================================================
 
     useEffect(() => {
+        if (!showCreatePart || !newPartBrandId) {
+            setAvailablePartSeries([]);
+            setNewPartSeriesId("");
+            return;
+        }
+
+        let cancelled = false;
+
+        TaxonomyService.getSeriesByBrand(Number(newPartBrandId))
+            .then((data) => {
+                if (!cancelled) setAvailablePartSeries(data || []);
+            })
+            .catch((error) => {
+                console.error("Failed loading inline Part series:", error);
+                if (!cancelled) setAvailablePartSeries([]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [showCreatePart, newPartBrandId]);
+
+    // ============================================================
+    // IMAGE HANDLERS
+    // ============================================================
+
+    const handleProductImageChange = (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        setProductImageFile(event.target.files?.[0] || null);
+        setProductImageRemoved(false);
+        event.target.value = "";
+    };
+
+    const handlePartImageChange = (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        setPartImageFile(event.target.files?.[0] || null);
+        setPartImageRemoved(false);
+        event.target.value = "";
+    };
+
+    const handleListingImageChange = (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        setListingImageFile(event.target.files?.[0] || null);
+        setListingImageRemoved(false);
+        event.target.value = "";
+    };
+
+    // ============================================================
+    // INLINE CREATE PART
+    // ============================================================
+
+    const handleCreatePart = async () => {
         if (
-            !isProduct ||
-            !selectedBrand ||
-            !selectedProductPart
+            !newPartName.trim() ||
+            !newPartNumber.trim() ||
+            !newPartBrandId ||
+            !newPartCategoryId
         ) {
+            alert(
+                "Please complete the required Part fields:\n\n" +
+                "Part Name\nPart Number\nBrand\nCategory"
+            );
+            return;
+        }
+
+        try {
+            setCreatingPart(true);
+
+            const payload: CreatePartPayload = {
+                name: newPartName.trim(),
+                part_number: newPartNumber.trim(),
+                brand_id: Number(newPartBrandId),
+                category_id: Number(newPartCategoryId),
+                series_id: newPartSeriesId
+                    ? Number(newPartSeriesId)
+                    : null,
+                base_price: newPartBasePrice.trim()
+                    ? Number(newPartBasePrice)
+                    : null,
+                short_description: newPartShortDescription.trim(),
+                long_description: newPartLongDescription.trim(),
+            };
+
+            const createdPart = await TaxonomyService.createPart(payload);
+
+            await fetchBootstrap();
+
+            setSelectedPartId(createdPart.id);
+            setSelectedListingId("");
+            setShowCreatePart(false);
+
+            setNewPartName("");
+            setNewPartNumber("");
+            setNewPartBrandId("");
+            setNewPartCategoryId("");
+            setNewPartSeriesId("");
+            setNewPartBasePrice("");
+            setNewPartShortDescription("");
+            setNewPartLongDescription("");
+            setAvailablePartSeries([]);
+        } catch (error: any) {
+            console.error("Failed to create Part:", error);
+            console.error("API ERROR:", error?.response?.data);
+
+            alert(
+                JSON.stringify(
+                    error?.response?.data ||
+                    error?.message ||
+                    "Failed to create Part."
+                )
+            );
+        } finally {
+            setCreatingPart(false);
+        }
+    };
+
+    // ============================================================
+    // INLINE CREATE PRODUCT LISTING
+    // ============================================================
+
+    const handleCreateListing = async () => {
+        if (!selectedPart) {
+            alert("Select a Part before creating a Product Listing.");
+            return;
+        }
+
+        if (!newListingConditionId) {
+            alert("Please select a Condition.");
             return;
         }
 
         if (
-            Number(selectedProductPart.brand_id) !==
-            Number(selectedBrand.id)
+            newListingPriceMode === "manual" &&
+            (
+                !newListingPrice.trim() ||
+                !Number.isFinite(Number(newListingPrice)) ||
+                Number(newListingPrice) < 0
+            )
         ) {
-            setSelectedProductPart(null);
+            alert("Enter a valid manual listing price.");
+            return;
         }
-    }, [
-        isProduct,
-        selectedBrand,
-        selectedProductPart,
-    ]);
 
-    // =========================================================
-// PREFILL PRODUCT SEO FROM PART
-// =========================================================
+        try {
+            setCreatingListing(true);
 
-useEffect(() => {
-    if (
-        !isProduct ||
-        isEditing ||
-        !selectedProductPart
-    ) {
-        return;
-    }
+            const condition = conditions.find(
+                (item) =>
+                    Number(item.id) === Number(newListingConditionId)
+            );
 
-    if (
-        !seoTitle.trim() &&
-        selectedProductPart.seo_title
-    ) {
-        setSeoTitle(
-            selectedProductPart.seo_title
-        );
-    }
+            const imageId = newListingImageFile
+                ? await uploadImage(newListingImageFile)
+                : undefined;
 
-    if (
-        !metaDescription.trim() &&
-        selectedProductPart.meta_description
-    ) {
-        setMetaDescription(
-            selectedProductPart.meta_description
-        );
-    }
+            const additionalImageIds =
+                newListingAdditionalImageFiles.length > 0
+                    ? await Promise.all(
+                        newListingAdditionalImageFiles.map(uploadImage)
+                    )
+                    : [];
 
-    if (
-        !searchTerms.trim() &&
-        selectedProductPart.search_terms
-    ) {
-        setSearchTerms(
-            selectedProductPart.search_terms
-        );
-    }
-}, [
-    isProduct,
-    isEditing,
-    selectedProductPart,
-]);
+            const payload: ProductListingPayload = {
+                title: `${selectedPart.name} - ${condition?.name || "Condition"}`,
+                part_id: selectedPart.id,
+                condition_id: Number(newListingConditionId),
+                price_mode: newListingPriceMode,
+                status: "publish",
 
-    // =========================================================
-    // REQUIRED FIELD VALIDATION
-    // =========================================================
+                ...(newListingPriceMode === "manual"
+                    ? { list_price: Number(newListingPrice) }
+                    : {}),
+
+                ...(newListingShortDescription.trim()
+                    ? { short_description: newListingShortDescription.trim() }
+                    : {}),
+
+                ...(newListingLongDescription.trim()
+                    ? { long_description: newListingLongDescription.trim() }
+                    : {}),
+
+                ...(newListingSeoTitle.trim()
+                    ? { seo_title: newListingSeoTitle.trim() }
+                    : {}),
+
+                ...(newListingMetaDescription.trim()
+                    ? { meta_description: newListingMetaDescription.trim() }
+                    : {}),
+
+                ...(newListingSearchTerms.trim()
+                    ? { search_terms: newListingSearchTerms.trim() }
+                    : {}),
+
+                ...(imageId ? { image_id: imageId } : {}),
+
+                ...(additionalImageIds.length > 0
+                    ? { additional_image_ids: additionalImageIds }
+                    : {}),
+            };
+
+            const createdListing =
+                await ProductListingService.create(payload);
+
+            await fetchBootstrap();
+
+            setSelectedListingId(createdListing.id);
+            setShowCreateListing(false);
+
+            setNewListingConditionId("");
+            setNewListingPriceMode("automatic");
+            setNewListingPrice("");
+            setNewListingShortDescription("");
+            setNewListingLongDescription("");
+            setNewListingSeoTitle("");
+            setNewListingMetaDescription("");
+            setNewListingSearchTerms("");
+            setNewListingImageFile(null);
+            setNewListingAdditionalImageFiles([]);
+        } catch (error: any) {
+            console.error("Failed to create Product Listing:", error);
+            console.error("API ERROR:", error?.response?.data);
+
+            alert(
+                JSON.stringify(
+                    error?.response?.data ||
+                    error?.message ||
+                    "Failed to create Product Listing."
+                )
+            );
+        } finally {
+            setCreatingListing(false);
+        }
+    };
+
+    // ============================================================
+    // VALIDATION
+    // ============================================================
 
     const missingFields: string[] = [];
 
     if (isProduct) {
-        if (!selectedBrand) {
-            missingFields.push("Brand");
-        }
-
-        if (!selectedProductPart) {
-            missingFields.push("Part Number");
-        }
-
-        if (!serialNumber.trim()) {
-            missingFields.push("Serial Number");
-        }
-
-        if (!selectedCondition) {
-            missingFields.push("Condition");
-        }
+        if (!selectedPart) missingFields.push("Part");
+        if (!selectedListing) missingFields.push("Product Listing");
+        if (!serialNumber.trim()) missingFields.push("Serial Number");
     }
 
     if (isPart) {
-        if (!selectedBrand) {
-            missingFields.push("Brand");
-        }
+        if (!selectedBrand) missingFields.push("Brand");
+        if (!selectedCategory) missingFields.push("Category");
+        if (!partNumber.trim()) missingFields.push("Part Number");
+        if (!partName.trim()) missingFields.push("Part Name");
+    }
 
-        if (!selectedCategory) {
-            missingFields.push("Category");
-        }
+    if (isListing) {
+        if (!selectedPart) missingFields.push("Part");
+        if (!listingConditionId) missingFields.push("Condition");
 
-        if (!partNumber.trim()) {
-            missingFields.push("Part Number");
-        }
-
-        if (!partName.trim()) {
-            missingFields.push("Part Name");
+        if (
+            listingPriceMode === "manual" &&
+            (
+                !listingPrice.trim() ||
+                !Number.isFinite(Number(listingPrice)) ||
+                Number(listingPrice) < 0
+            )
+        ) {
+            missingFields.push("Valid Listing Price");
         }
     }
 
-    const hasRequiredFields =
-        missingFields.length === 0;
+    // ============================================================
+    // SUBMIT — SERIALIZED PRODUCT
+    // ============================================================
 
-    // =========================================================
-    // PRIMARY IMAGE
-    // =========================================================
-
-    const handlePrimaryImageChange = (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        const file =
-            e.target.files?.[0] || null;
-
-        setImageFile(file);
-
-        if (file) {
-            setExistingImageRemoved(false);
+    const handleProductSubmit = async () => {
+        if (!selectedListing || !serialNumber.trim()) {
+            throw new Error("A Product Listing and Serial Number are required.");
         }
 
-        e.target.value = "";
+        const imageId = productImageFile
+            ? await uploadImage(productImageFile)
+            : productImageRemoved
+                ? null
+                : editingProduct?.image_id;
+
+        const payload: ProductPayload = {
+            product_listing_id: selectedListing.id,
+            serial_number: serialNumber.trim(),
+            status: "publish",
+            inventory_status: inventoryStatus,
+
+            ...(workOrder.trim()
+                ? { work_order: workOrder.trim() }
+                : {}),
+
+            ...(notes.trim()
+                ? { notes: notes.trim() }
+                : {}),
+
+            ...(selectedShelf
+                ? { shelf: [selectedShelf.id] }
+                : {}),
+
+            ...(testStatus !== null
+                ? { test_status: testStatus }
+                : {}),
+
+            ...(testDate.trim()
+                ? { test_date: testDate }
+                : {}),
+
+            ...(imageId !== undefined
+                ? { image_id: imageId }
+                : {}),
+        };
+
+        const response = isProductEditing
+            ? await ProductService.update(editingProduct!.id, payload)
+            : await ProductService.create(payload);
+
+        const normalized = normalizeProduct(response);
+
+        if (isProductEditing) {
+            onUpdated?.(normalized);
+        } else {
+            onCreated?.(normalized);
+        }
     };
 
-    const handleRemoveExistingImage = () => {
-        setExistingImageRemoved(true);
-        setImageFile(null);
+    // ============================================================
+    // SUBMIT — MASTER PART
+    // ============================================================
+
+    const handlePartSubmit = async () => {
+        if (
+            !selectedBrand ||
+            !selectedCategory ||
+            !partName.trim() ||
+            !partNumber.trim()
+        ) {
+            throw new Error("Please complete the required Part fields.");
+        }
+
+        const imageId = partImageFile
+            ? await uploadImage(partImageFile)
+            : partImageRemoved
+                ? null
+                : editingPart?.image_id ?? null;
+
+        const newAdditionalImageIds =
+            additionalImageFiles.length > 0
+                ? await Promise.all(additionalImageFiles.map(uploadImage))
+                : [];
+
+        const payload: CreatePartPayload = {
+            name: partName.trim(),
+            part_number: partNumber.trim(),
+            brand_id: selectedBrand.id,
+            category_id: selectedCategory.id,
+            series_id: selectedSeries?.id ?? null,
+            base_price: partBasePrice.trim()
+                ? Number(partBasePrice)
+                : null,
+            short_description: shortDescription.trim(),
+            long_description: longDescription.trim(),
+            seo_title: seoTitle.trim(),
+            meta_description: metaDescription.trim(),
+            search_terms: searchTerms.trim(),
+            image_id: imageId,
+            additional_image_ids: [
+                ...existingAdditionalImageIds,
+                ...newAdditionalImageIds,
+            ],
+        };
+
+        const response = isPartEditing
+            ? await TaxonomyService.updatePart(editingPart!.id, payload)
+            : await TaxonomyService.createPart(payload);
+
+        if (isPartEditing) {
+            onUpdated?.(response);
+        } else {
+            onCreated?.(response);
+        }
+
+        clearEditing?.();
     };
 
-    // =========================================================
-    // SUBMIT
-    // =========================================================
+    // ============================================================
+    // SUBMIT — PRODUCT LISTING
+    // ============================================================
+
+    const handleListingSubmit = async () => {
+        if (!selectedPart || !listingConditionId) {
+            throw new Error("Please select a Part and Condition.");
+        }
+
+        if (
+            listingPriceMode === "manual" &&
+            (
+                !listingPrice.trim() ||
+                !Number.isFinite(Number(listingPrice)) ||
+                Number(listingPrice) < 0
+            )
+        ) {
+            throw new Error("Enter a valid manual listing price.");
+        }
+
+        const condition = conditions.find(
+            (item) => Number(item.id) === Number(listingConditionId)
+        );
+
+        const imageId = listingImageFile
+            ? await uploadImage(listingImageFile)
+            : listingImageRemoved
+                ? null
+                : editingListing?.image_id ?? null;
+
+        const newAdditionalImageIds =
+            listingAdditionalImageFiles.length > 0
+                ? await Promise.all(
+                    listingAdditionalImageFiles.map(uploadImage)
+                )
+                : [];
+
+        const payload: ProductListingPayload = {
+            title: `${selectedPart.name} - ${condition?.name || "Condition"}`,
+            part_id: selectedPart.id,
+            condition_id: Number(listingConditionId),
+            price_mode: listingPriceMode,
+            status: editingListing?.status || "publish",
+
+            ...(listingPriceMode === "manual"
+                ? { list_price: Number(listingPrice) }
+                : {}),
+
+            short_description: listingShortDescription.trim(),
+            long_description: listingLongDescription.trim(),
+            seo_title: listingSeoTitle.trim(),
+            meta_description: listingMetaDescription.trim(),
+            search_terms: listingSearchTerms.trim(),
+
+            image_id: imageId,
+
+            additional_image_ids: [
+                ...existingListingAdditionalImageIds,
+                ...newAdditionalImageIds,
+            ],
+        };
+
+        const response = isListingEditing
+            ? await ProductListingService.update(editingListing!.id, payload)
+            : await ProductListingService.create(payload);
+
+        if (isListingEditing) {
+            onUpdated?.(response);
+        } else {
+            onCreated?.(response);
+        }
+
+        clearEditing?.();
+    };
+
+    // ============================================================
+    // MAIN SUBMIT
+    // ============================================================
 
     const handleSubmit = async () => {
-        if (!hasRequiredFields) {
+        if (missingFields.length > 0) {
             alert(
-                `Please complete the following required fields:\n\n${missingFields.join(
-                    "\n"
-                )}`
+                "Please complete the following required fields:\n\n" +
+                missingFields.join("\n")
             );
-
             return;
         }
 
         try {
             setLoading(true);
 
-            // =====================================================
-            // PRODUCT
-            // =====================================================
-
             if (isProduct) {
-                const imageId = imageFile
-                    ? await uploadImage(imageFile)
-                    : isEditing && existingImageRemoved
-                        ? null
-                        : editingProduct?.image_id;
-
-                const newProductAdditionalImageIds =
-                    productAdditionalImageFiles.length > 0
-                        ? await Promise.all(
-                            productAdditionalImageFiles.map(
-                                (file) => uploadImage(file)
-                            )
-                        )
-                        : [];
-
-                const productAdditionalImageIds = [
-                    ...existingProductAdditionalImageIds,
-                    ...newProductAdditionalImageIds,
-                ];
-
-                const payload: ProductPayload = {
-                    title: title.trim(),
-
-                    serial_number:
-                        serialNumber.trim(),
-
-                    price_mode: priceMode,
-
-                    ...(priceMode === "manual" &&
-                        listPrice.trim()
-                        ? {
-                            list_price:
-                                Number(listPrice),
-                        }
-                        : {}),
-
-                    part: [
-                        selectedProductPart!.id,
-                    ],
-
-                    condition: [
-                        selectedCondition!.id,
-                    ],
-
-                    status: "publish",
-
-                    additional_image_ids:
-                        productAdditionalImageIds,
-
-                    ...(workOrder.trim()
-                        ? {
-                            work_order:
-                                workOrder.trim(),
-                        }
-                        : {}),
-
-                    ...(notes.trim()
-                        ? { notes: notes.trim() }
-                        : {}),
-                    ...(shortDescription.trim()
-                        ? { short_description: shortDescription.trim() }
-                        : {}),
-                    ...(longDescription.trim()
-                        ? { long_description: longDescription.trim() }
-                        : {}),
-                    ...(seoTitle.trim()
-                        ? { seo_title: seoTitle.trim() }
-                        : {}),
-                    ...(metaDescription.trim()
-                        ? { meta_description: metaDescription.trim() }
-                        : {}),
-                    ...(searchTerms.trim()
-                        ? { search_terms: searchTerms.trim() }
-                        : {}),
-                    ...(selectedShelf
-                        ? { shelf: [selectedShelf.id] }
-                        : {}),
-
-                    ...(testStatus !== null
-                        ? {
-                            test_status:
-                                testStatus,
-                        }
-                        : {}),
-
-                    ...(testDate.trim()
-                        ? {
-                            test_date:
-                                testDate,
-                        }
-                        : {}),
-
-                    ...(inventoryStatus
-                        ? {
-                            inventory_status:
-                                inventoryStatus,
-                        }
-                        : {}),
-
-                    ...(imageId !== undefined
-                        ? {
-                            image_id: imageId,
-                        }
-
-                        : {}),
-                };
-
-                const response = isEditing
-                    ? await ProductService.update(
-                        editingProduct!.id,
-                        payload
-                    )
-                    : await ProductService.create(
-                        payload
-                    );
-
-                const normalized =
-                    normalizeProduct(response);
-
-                if (isEditing) {
-                    onUpdated?.(normalized);
-                } else {
-                    onCreated?.(normalized);
-                }
-
-                setProductAdditionalImageFiles([]);
-                setExistingProductAdditionalImageIds([]);
-
-                return;
-            }
-
-            // =====================================================
-            // PART
-            // =====================================================
-
-            let newImageId: number | null = null;
-
-            if (imageFile) {
-                newImageId =
-                    await uploadImage(imageFile);
-            }
-
-            const newAdditionalImageIds =
-                additionalImageFiles.length > 0
-                    ? await Promise.all(
-                        additionalImageFiles.map(
-                            (file) =>
-                                uploadImage(file)
-                        )
-                    )
-                    : [];
-
-            const additionalImageIds = [
-                ...existingAdditionalImageIds,
-                ...newAdditionalImageIds,
-            ];
-
-            const payload: CreatePartPayload = {
-                name: partName.trim(),
-                part_number: partNumber.trim(),
-                brand_id: selectedBrand!.id,
-                category_id: selectedCategory!.id,
-                series_id: selectedSeries?.id ?? null,
-                base_price:
-                    priceNew === "" ? null : Number(priceNew),
-                short_description: shortDescription.trim(),
-                long_description: longDescription.trim(),
-                seo_title: seoTitle.trim(),
-                meta_description: metaDescription.trim(),
-                search_terms: searchTerms.trim(),
-                image_id: undefined,
-                additional_image_ids: additionalImageIds,
-            };
-
-            if (newImageId !== null) {
-                payload.image_id = newImageId;
-            } else if (isEditing && existingImageRemoved) {
-                payload.image_id = null;
-            }
-
-            const response = isEditing
-                ? await TaxonomyService.updatePart(
-                    editingPart!.id,
-                    payload
-                )
-                : await TaxonomyService.createPart(
-                    payload
-                );
-
-            if (isEditing) {
-                onUpdated?.(response);
+                await handleProductSubmit();
+            } else if (isPart) {
+                await handlePartSubmit();
             } else {
-                onCreated?.(response);
+                await handleListingSubmit();
             }
-
-            // =====================================================
-            // RESET PART STATE
-            // =====================================================
-            setPartName("");
-            setPartNumber("");
-            setSelectedBrand(initialBrand);
-            setSelectedCategory(null);
-            setSelectedSeries(null);
-            setPriceNew("");
-            setShortDescription("");
-            setLongDescription("");
-            setSeoTitle("");
-            setMetaDescription("");
-            setSearchTerms("");
-
-            setImageFile(null);
-            setExistingImageRemoved(false);
-
-            setAdditionalImageFiles([]);
-            setExistingAdditionalImageIds([]);
-
-            clearEditing?.();
-
-        } catch (err: any) {
-            console.error(
-                "Inventory form save failed:",
-                err
-            );
-
-            console.error(
-                "API ERROR:",
-                err?.response?.data
-            );
+        } catch (error: any) {
+            console.error("Inventory form save failed:", error);
+            console.error("API ERROR:", error?.response?.data);
 
             alert(
                 JSON.stringify(
-                    err?.response?.data ||
-                    err?.message ||
+                    error?.response?.data ||
+                    error?.message ||
                     "Failed to save."
                 )
             );
@@ -851,775 +960,593 @@ useEffect(() => {
         }
     };
 
-    // =========================================================
+    // ============================================================
     // CANCEL
-    // =========================================================
+    // ============================================================
 
     const handleCancel = () => {
         clearEditing?.();
         onClose?.();
     };
 
-    // =========================================================
-    // TEMPORARY UI
-    // =========================================================
+    // ============================================================
+    // UI HELPERS
+    // ============================================================
+
+    const renderPartSelector = () => (
+        <div>
+            <label className={labelClass}>
+                Part <span className="text-red-500">*</span>
+            </label>
+
+            <select
+                value={selectedPartId}
+                disabled={isProductEditing}
+                onChange={(event) => {
+                    setSelectedPartId(
+                        event.target.value ? Number(event.target.value) : ""
+                    );
+                    setSelectedListingId("");
+                }}
+                className={inputClass}
+            >
+                <option value="">Select Part</option>
+
+                {allParts.map((part) => (
+                    <option key={part.id} value={part.id}>
+                        {part.part_number
+                            ? `${part.part_number} — ${part.name}`
+                            : part.name}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+
+    const renderConditionSelector = (
+        value: number | "",
+        onChange: (value: number | "") => void
+    ) => (
+        <div>
+            <label className={labelClass}>
+                Condition <span className="text-red-500">*</span>
+            </label>
+
+            <select
+                value={value}
+                onChange={(event) =>
+                    onChange(
+                        event.target.value ? Number(event.target.value) : ""
+                    )
+                }
+                className={inputClass}
+            >
+                <option value="">Select Condition</option>
+
+                {conditions.map((condition) => (
+                    <option key={condition.id} value={condition.id}>
+                        {condition.name}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+
+    const renderListingPricing = (
+        priceMode: "automatic" | "manual",
+        setPriceMode: (value: "automatic" | "manual") => void,
+        price: string,
+        setPrice: (value: string) => void
+    ) => (
+        <>
+            <div>
+                <label className={labelClass}>Pricing Method</label>
+
+                <select
+                    value={priceMode}
+                    onChange={(event) =>
+                        setPriceMode(
+                            event.target.value as "automatic" | "manual"
+                        )
+                    }
+                    className={inputClass}
+                >
+                    <option value="automatic">Automatic</option>
+                    <option value="manual">Manual</option>
+                </select>
+            </div>
+
+            {priceMode === "manual" && (
+                <div>
+                    <label className={labelClass}>
+                        Listing Price <span className="text-red-500">*</span>
+                    </label>
+
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={price}
+                        onChange={(event) => setPrice(event.target.value)}
+                        className={inputClass}
+                        placeholder="0.00"
+                    />
+                </div>
+            )}
+        </>
+    );
+
+    // ============================================================
+    // UI
+    // ============================================================
 
     return (
         <div className="w-full max-w-4xl">
+            {/* HEADER */}
+
             <div className="mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900">
                     {isEditing
-                        ? `Edit ${isProduct ? "Product" : "Part"}`
-                        : `Create ${isProduct ? "Product" : "Part"}`}
+                        ? `Edit ${
+                            isProduct
+                                ? "Serialized Product"
+                                : isPart
+                                    ? "Part"
+                                    : "Product Listing"
+                        }`
+                        : `Create ${
+                            isProduct
+                                ? "Serialized Product"
+                                : isPart
+                                    ? "Part"
+                                    : "Product Listing"
+                        }`}
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-500">
-                    {isEditing
-                        ? `Update the ${isProduct ? "product" : "part"} information below.`
-                        : `Add a new ${isProduct ? "product" : "part"} to your inventory.`}
+                    {isProduct
+                        ? "Add or update an individual serialized inventory unit."
+                        : isPart
+                            ? "Create or update a master Part catalogue record."
+                            : "Create or update a Part and Condition listing."}
                 </p>
             </div>
 
-            {isPart && (
-                <>
-                    {/* ================================================ */}
-                    {/* BASIC INFORMATION */}
-                    {/* ================================================ */}
-
-                    <section>
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                Basic Information
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Identify the part and assign its classification.
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                            {/* Brand */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Brand <span className="text-red-500">*</span>
-                                </label>
-
-                                <select
-                                    value={selectedBrand?.id ?? ""}
-                                    disabled={!!initialBrand}
-                                    onChange={(e) => {
-                                        const brand =
-                                            brands.find(
-                                                (b) => b.id === Number(e.target.value)
-                                            ) || null;
-
-                                        setSelectedBrand(brand);
-                                        setSelectedSeries(null);
-                                    }}
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                >
-                                    <option value="">
-                                        {initialBrand
-                                            ? "Brand (from product)"
-                                            : "Select Brand"}
-                                    </option>
-
-                                    {brands.map((brand) => (
-                                        <option key={brand.id} value={brand.id}>
-                                            {brand.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Category */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Category <span className="text-red-500">*</span>
-                                </label>
-
-                                <select
-                                    value={selectedCategory?.id ?? ""}
-                                    onChange={(e) => {
-                                        const category =
-                                            categories.find(
-                                                (c) => c.id === Number(e.target.value)
-                                            ) || null;
-
-                                        setSelectedCategory(category);
-                                    }}
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                >
-                                    <option value="">Select Category</option>
-
-                                    {categories.map((category) => (
-                                        <option key={category.id} value={category.id}>
-                                            {category.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Part Number */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Part Number <span className="text-red-500">*</span>
-                                </label>
-
-                                <input
-                                    value={partNumber}
-                                    onChange={(e) => setPartNumber(e.target.value)}
-                                    placeholder="Enter part number"
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-
-                            {/* Part Name */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Part Name <span className="text-red-500">*</span>
-                                </label>
-
-                                <input
-                                    value={partName}
-                                    onChange={(e) => setPartName(e.target.value)}
-                                    placeholder="Enter part name"
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-
-                            {/* Series */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Series
-                                </label>
-
-                                <select
-                                    value={selectedSeries?.id ?? ""}
-                                    disabled={
-                                        !selectedBrand ||
-                                        availableSeries.length === 0
-                                    }
-                                    onChange={(e) => {
-                                        const series =
-                                            availableSeries.find(
-                                                (s) => s.id === Number(e.target.value)
-                                            ) || null;
-
-                                        setSelectedSeries(series);
-                                    }}
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                >
-                                    <option value="">
-                                        {!selectedBrand
-                                            ? "Select Brand First"
-                                            : availableSeries.length === 0
-                                                ? "No Series Available"
-                                                : "Select Series"}
-                                    </option>
-
-                                    {availableSeries.map((series) => (
-                                        <option key={series.id} value={series.id}>
-                                            {series.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* ================================================ */}
-                    {/* PRICING */}
-                    {/* ================================================ */}
-
-                    <section className="mt-6">
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                Pricing
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Set the base price for this part.
-                            </p>
-                        </div>
-
-                        <div className="max-w-sm">
-                            <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                Base Price
-                            </label>
-
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                                    $
-                                </span>
-
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={priceNew}
-                                    onChange={(e) => setPriceNew(e.target.value)}
-                                    placeholder="0.00"
-                                    className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-7 pr-3 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-                        </div>
-                    </section>
-
-                    <section className="mt-6">
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                SEO
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Add search and metadata information for this part.
-                            </p>
-                        </div>
-
-                        <div className="space-y-5">
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    SEO Title
-                                </label>
-
-                                <input
-                                    type="text"
-                                    value={seoTitle}
-                                    onChange={(e) =>
-                                        setSeoTitle(e.target.value)
-                                    }
-                                    placeholder="Enter an SEO title..."
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Meta Description
-                                </label>
-
-                                <textarea
-                                    value={metaDescription}
-                                    onChange={(e) =>
-                                        setMetaDescription(e.target.value)
-                                    }
-                                    placeholder="Enter a meta description..."
-                                    rows={3}
-                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Search Terms
-                                </label>
-
-                                <input
-                                    type="text"
-                                    value={searchTerms}
-                                    onChange={(e) =>
-                                        setSearchTerms(e.target.value)
-                                    }
-                                    placeholder="Enter search terms..."
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-                        </div>
-                    </section>
-
-
-                    {/* DESCRIPTIONS */}
-
-                    <section className="mt-6">
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                Descriptions
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Add short and detailed information about this part.
-                            </p>
-                        </div>
-
-                        <div className="space-y-5">
-                            {/* Short Description */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Short Description
-                                </label>
-
-                                <textarea
-                                    value={shortDescription}
-                                    onChange={(e) =>
-                                        setShortDescription(e.target.value)
-                                    }
-                                    placeholder="Enter a short part description..."
-                                    rows={3}
-                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-
-                            {/* Long Description */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Long Description
-                                </label>
-
-                                <textarea
-                                    value={longDescription}
-                                    onChange={(e) =>
-                                        setLongDescription(e.target.value)
-                                    }
-                                    placeholder="Enter detailed part information..."
-                                    rows={6}
-                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* ================================================ */}
-                    {/* PART IMAGE */}
-                    {/* ================================================ */}
-
-                    <section className="mt-6">
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                Part Image
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Upload an image to help identify the part.
-                            </p>
-                        </div>
-
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                Image
-                            </label>
-
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handlePrimaryImageChange}
-                                className="block w-fit max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-600 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700"
-                            />
-
-                            {/* Existing image */}
-
-                            {isEditing &&
-                                !existingImageRemoved &&
-                                !imageFile &&
-                                editingPart?.image_url && (
-                                    <div className="mt-4">
-                                        <p className="mb-2 text-sm font-medium text-gray-700">
-                                            Current Image
-                                        </p>
-
-                                        <div className="h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-                                            <img
-                                                src={editingPart.image_url}
-                                                alt={editingPart.name}
-                                                className="h-full w-full object-contain"
-                                            />
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={handleRemoveExistingImage}
-                                            className="mt-2 text-sm font-medium text-red-600 hover:text-red-700"
-                                        >
-                                            Remove Image
-                                        </button>
-                                    </div>
-                                )}
-
-                            {/* Removed existing image */}
-
-                            {isEditing &&
-                                existingImageRemoved &&
-                                !imageFile && (
-                                    <div className="mt-4 flex h-32 w-32 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-center text-xs text-gray-400">
-                                        No Image
-                                    </div>
-                                )}
-
-                            {/* New image preview */}
-
-                            {imageFile && (
-                                <div className="mt-4">
-                                    <p className="mb-2 text-sm font-medium text-gray-700">
-                                        New Image
-                                    </p>
-
-                                    <div className="h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-                                        <img
-                                            src={URL.createObjectURL(imageFile)}
-                                            alt="New part image preview"
-                                            className="h-full w-full object-contain"
-                                        />
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setImageFile(null);
-                                        }}
-                                        className="mt-2 text-sm font-medium text-red-600 hover:text-red-700"
-                                    >
-                                        Remove Image
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-
-                    {/* ================================================ */}
-                    {/* ADDITIONAL IMAGES */}
-                    {/* ================================================ */}
-
-                    <section className="mt-6">
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                Additional Images
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Upload additional images for this part.
-                            </p>
-                        </div>
-
-                        <div>
-                            <label className="inline-flex cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
-                                + Add Images
-
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const files = Array.from(
-                                            e.target.files || []
-                                        );
-
-                                        setAdditionalImageFiles((current) => [
-                                            ...current,
-                                            ...files,
-                                        ]);
-
-                                        e.target.value = "";
-                                    }}
-                                />
-                            </label>
-
-                            {/* Existing additional images */}
-
-                            {isEditing &&
-                                editingPart?.additional_image_urls &&
-                                editingPart.additional_image_urls.length > 0 && (
-                                    <div className="mt-4">
-                                        <p className="mb-2 text-sm font-medium text-gray-700">
-                                            Existing Images
-                                        </p>
-
-                                        <div className="flex flex-wrap gap-4">
-                                            {editingPart.additional_image_urls.map(
-                                                (url, index) => {
-                                                    const imageId =
-                                                        editingPart.additional_image_ids?.[
-                                                        index
-                                                        ];
-
-                                                    if (
-                                                        !imageId ||
-                                                        !existingAdditionalImageIds.includes(
-                                                            imageId
-                                                        )
-                                                    ) {
-                                                        return null;
-                                                    }
-
-                                                    return (
-                                                        <div
-                                                            key={imageId}
-                                                            className="relative h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                                                        >
-                                                            <img
-                                                                src={url}
-                                                                alt={`${editingPart.name} additional image ${index + 1}`}
-                                                                className="h-full w-full object-contain"
-                                                            />
-
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setExistingAdditionalImageIds(
-                                                                        (current) =>
-                                                                            current.filter(
-                                                                                (id) => id !== imageId
-                                                                            )
-                                                                    );
-                                                                }}
-                                                                className="absolute bottom-2 left-2 right-2 rounded-md bg-black/70 px-2 py-1.5 text-xs font-medium text-white hover:bg-black/90"
-                                                            >
-                                                                Remove Image
-                                                            </button>
-                                                        </div>
-                                                    );
-                                                }
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                            {/* New additional images */}
-
-                            {additionalImageFiles.length > 0 && (
-                                <div className="mt-4">
-                                    <p className="mb-2 text-sm font-medium text-gray-700">
-                                        New Images
-                                    </p>
-
-                                    <div className="flex flex-wrap gap-4">
-                                        {additionalImageFiles.map(
-                                            (file, index) => (
-                                                <div
-                                                    key={`${file.name}-${index}`}
-                                                    className="relative h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                                                >
-                                                    <img
-                                                        src={URL.createObjectURL(file)}
-                                                        alt={`New additional image ${index + 1}`}
-                                                        className="h-full w-full object-contain"
-                                                    />
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setAdditionalImageFiles(
-                                                                (current) =>
-                                                                    current.filter(
-                                                                        (_, i) => i !== index
-                                                                    )
-                                                            );
-                                                        }}
-                                                        className="absolute bottom-2 left-2 right-2 rounded-md bg-black/70 px-2 py-1.5 text-xs font-medium text-white hover:bg-black/90"
-                                                    >
-                                                        Remove Image
-                                                    </button>
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-
-                                    <p className="mt-2 text-sm text-gray-500">
-                                        {additionalImageFiles.length} additional
-                                        image
-                                        {additionalImageFiles.length !== 1
-                                            ? "s"
-                                            : ""}{" "}
-                                        selected
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-
-                    {/* ================================================ */}
-                    {/* SAVE */}
-                    {/* ================================================ */}
-
-                    <div className="mt-8 flex justify-end border-t border-gray-200 pt-5">
-                        <button
-                            type="button"
-                            onClick={handleSubmit}
-                            disabled={loading}
-                            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            {loading
-                                ? "Saving..."
-                                : isEditing
-                                    ? "Update Part"
-                                    : "Create Part"}
-                        </button>
-                    </div>
-                </>
-            )}
+            {/* ====================================================
+                SERIALIZED PRODUCT FORM
+            ==================================================== */}
 
             {isProduct && (
                 <>
-                    {/* ================================================ */}
-                    {/* BASIC INFORMATION */}
-                    {/* ================================================ */}
-
                     <section>
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                Basic Information
-                            </h3>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            1. Part
+                        </h3>
 
-                            <p className="mt-1 text-sm text-gray-500">
-                                Identify the product and assign its part information.
-                            </p>
-                        </div>
+                        {renderPartSelector()}
 
-                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                            {/* Title */}
+                        {!isProductEditing && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowCreatePart((current) => !current);
+                                    setShowCreateListing(false);
+                                }}
+                                className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
+                            >
+                                {showCreatePart
+                                    ? "Cancel Part creation"
+                                    : "+ Create a new Part"}
+                            </button>
+                        )}
 
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Title
-                                </label>
+                        {showCreatePart && (
+                            <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-5">
+                                <h4 className="mb-4 text-sm font-semibold text-gray-900">
+                                    New Part
+                                </h4>
 
-                                <input
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    placeholder="Enter product title"
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label className={labelClass}>Part Name *</label>
+                                        <input
+                                            value={newPartName}
+                                            onChange={(event) => setNewPartName(event.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className={labelClass}>Part Number *</label>
+                                        <input
+                                            value={newPartNumber}
+                                            onChange={(event) => setNewPartNumber(event.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className={labelClass}>Brand *</label>
+                                        <select
+                                            value={newPartBrandId}
+                                            onChange={(event) => {
+                                                setNewPartBrandId(
+                                                    event.target.value ? Number(event.target.value) : ""
+                                                );
+                                                setNewPartSeriesId("");
+                                            }}
+                                            className={inputClass}
+                                        >
+                                            <option value="">Select Brand</option>
+                                            {brands.map((brand) => (
+                                                <option key={brand.id} value={brand.id}>
+                                                    {brand.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className={labelClass}>Category *</label>
+                                        <select
+                                            value={newPartCategoryId}
+                                            onChange={(event) =>
+                                                setNewPartCategoryId(
+                                                    event.target.value ? Number(event.target.value) : ""
+                                                )
+                                            }
+                                            className={inputClass}
+                                        >
+                                            <option value="">Select Category</option>
+                                            {categories.map((category) => (
+                                                <option key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className={labelClass}>Series</label>
+                                        <select
+                                            value={newPartSeriesId}
+                                            disabled={!newPartBrandId}
+                                            onChange={(event) =>
+                                                setNewPartSeriesId(
+                                                    event.target.value ? Number(event.target.value) : ""
+                                                )
+                                            }
+                                            className={inputClass}
+                                        >
+                                            <option value="">Select Series</option>
+                                            {availablePartSeries.map((item) => (
+                                                <option key={item.id} value={item.id}>
+                                                    {item.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className={labelClass}>Base Price</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={newPartBasePrice}
+                                            onChange={(event) => setNewPartBasePrice(event.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className={labelClass}>Short Description</label>
+                                        <textarea
+                                            rows={2}
+                                            value={newPartShortDescription}
+                                            onChange={(event) => setNewPartShortDescription(event.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className={labelClass}>Long Description</label>
+                                        <textarea
+                                            rows={4}
+                                            value={newPartLongDescription}
+                                            onChange={(event) => setNewPartLongDescription(event.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex justify-end">
+                                    <button
+                                        type="button"
+                                        disabled={creatingPart}
+                                        onClick={handleCreatePart}
+                                        className={buttonClass}
+                                    >
+                                        {creatingPart ? "Creating Part..." : "Create Part"}
+                                    </button>
+                                </div>
                             </div>
+                        )}
 
-                            {/* Brand */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Brand <span className="text-red-500">*</span>
-                                </label>
-
-                                <select
-                                    value={selectedBrand?.id ?? ""}
-                                    onChange={(e) => {
-                                        const brand =
-                                            brands.find(
-                                                (b) => b.id === Number(e.target.value)
-                                            ) || null;
-
-                                        setSelectedBrand(brand);
-                                        setSelectedProductPart(null);
-                                    }}
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                >
-                                    <option value="">Select Brand</option>
-
-                                    {brands.map((brand) => (
-                                        <option key={brand.id} value={brand.id}>
-                                            {brand.name}
-                                        </option>
-                                    ))}
-                                </select>
+                        {selectedPart && (
+                            <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+                                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                    Selected Part
+                                </p>
+                                <p className="mt-1 font-semibold text-gray-900">
+                                    {selectedPart.name}
+                                </p>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Part Number: {selectedPart.part_number || "—"}
+                                </p>
                             </div>
-
-                            {/* Part Number */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Part Number <span className="text-red-500">*</span>
-                                </label>
-
-                                <select
-                                    value={selectedProductPart?.id ?? ""}
-                                    disabled={!selectedBrand}
-                                    onChange={(e) => {
-                                        const part =
-                                            productParts.find(
-                                                (item) => item.id === Number(e.target.value)
-                                            ) || null;
-
-                                        setSelectedProductPart(part);
-                                    }}
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                >
-                                    <option value="">
-                                        {!selectedBrand
-                                            ? "Select Brand First"
-                                            : productParts.length === 0
-                                                ? "No Parts Available"
-                                                : "Select Part Number"}
-                                    </option>
-
-                                    {productParts.map((part) => (
-                                        <option key={part.id} value={part.id}>
-                                            {part.part_number || part.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Serial Number */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Serial Number <span className="text-red-500">*</span>
-                                </label>
-
-                                <input
-                                    value={serialNumber}
-                                    onChange={(e) => setSerialNumber(e.target.value)}
-                                    placeholder="Enter serial number"
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-
-                            {/* Work Order */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Work Order
-                                </label>
-
-                                <input
-                                    value={workOrder}
-                                    onChange={(e) => setWorkOrder(e.target.value)}
-                                    placeholder="Enter work order"
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-                        </div>
+                        )}
                     </section>
 
-                    {/* ================================================ */}
-                    {/* INVENTORY INFORMATION */}
-                    {/* ================================================ */}
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            2. Product Listing
+                        </h3>
 
-                    <section className="mt-6">
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                Inventory Information
-                            </h3>
+                        <div>
+                            <label className={labelClass}>
+                                Product Listing <span className="text-red-500">*</span>
+                            </label>
 
-                            <p className="mt-1 text-sm text-gray-500">
-                                Manage the product's inventory status, condition, shelf,
-                                and pricing.
-                            </p>
+                            <select
+                                value={selectedListingId}
+                                disabled={!selectedPart || isProductEditing}
+                                onChange={(event) =>
+                                    setSelectedListingId(
+                                        event.target.value ? Number(event.target.value) : ""
+                                    )
+                                }
+                                className={inputClass}
+                            >
+                                <option value="">
+                                    {!selectedPart
+                                        ? "Select a Part First"
+                                        : listingsForSelectedPart.length === 0
+                                            ? "No Product Listings Available"
+                                            : "Select Product Listing"}
+                                </option>
+
+                                {listingsForSelectedPart.map((listing) => {
+                                    const condition = conditions.find(
+                                        (item) =>
+                                            Number(item.id) === Number(listing.condition_id)
+                                    );
+
+                                    return (
+                                        <option key={listing.id} value={listing.id}>
+                                            {listing.title} — {condition?.name || "Condition"} — SKU: {listing.sku}
+                                        </option>
+                                    );
+                                })}
+                            </select>
                         </div>
 
+                        {selectedListing && (
+                            <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+                                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                    Selected Product Listing
+                                </p>
+                                <p className="mt-1 font-semibold text-gray-900">
+                                    {selectedListing.title}
+                                </p>
+                                <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <span className="text-gray-500">SKU</span>
+                                        <p className="font-medium text-gray-900">
+                                            {selectedListing.sku || "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500">Condition</span>
+                                        <p className="font-medium text-gray-900">
+                                            {conditions.find(
+                                                (item) => Number(item.id) === Number(selectedListing.condition_id)
+                                            )?.name || "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500">Listing Price</span>
+                                        <p className="font-medium text-gray-900">
+                                            {selectedListing.list_price != null
+                                                ? `$${Number(selectedListing.list_price).toFixed(2)}`
+                                                : "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500">Available Quantity</span>
+                                        <p className="font-medium text-gray-900">
+                                            {selectedListing.quantity ?? 0}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isProductEditing && selectedPart && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowCreateListing((current) => !current);
+                                    setShowCreatePart(false);
+                                }}
+                                className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
+                            >
+                                {showCreateListing
+                                    ? "Cancel Product Listing creation"
+                                    : "+ Create a Product Listing"}
+                            </button>
+                        )}
+
+                        {showCreateListing && selectedPart && (
+                            <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-5">
+                                <h4 className="mb-4 text-sm font-semibold text-gray-900">
+                                    New Product Listing
+                                </h4>
+
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    {renderConditionSelector(
+                                        newListingConditionId,
+                                        setNewListingConditionId
+                                    )}
+
+                                    {renderListingPricing(
+                                        newListingPriceMode,
+                                        setNewListingPriceMode,
+                                        newListingPrice,
+                                        setNewListingPrice
+                                    )}
+
+                                    <div className="md:col-span-2">
+                                        <label className={labelClass}>Short Description</label>
+                                        <textarea
+                                            rows={2}
+                                            value={newListingShortDescription}
+                                            onChange={(event) => setNewListingShortDescription(event.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className={labelClass}>Long Description</label>
+                                        <textarea
+                                            rows={4}
+                                            value={newListingLongDescription}
+                                            onChange={(event) => setNewListingLongDescription(event.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className={labelClass}>SEO Title</label>
+                                        <input
+                                            value={newListingSeoTitle}
+                                            onChange={(event) => setNewListingSeoTitle(event.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className={labelClass}>Search Terms</label>
+                                        <input
+                                            value={newListingSearchTerms}
+                                            onChange={(event) => setNewListingSearchTerms(event.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className={labelClass}>Meta Description</label>
+                                        <textarea
+                                            rows={3}
+                                            value={newListingMetaDescription}
+                                            onChange={(event) => setNewListingMetaDescription(event.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className={labelClass}>Listing Image</label>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(event) => {
+                                                setNewListingImageFile(event.target.files?.[0] || null);
+                                                event.target.value = "";
+                                            }}
+                                            className={fileInputClass}
+                                        />
+                                        {newListingImageFile && (
+                                            <p className="mt-1 text-xs text-gray-500">
+                                                {newListingImageFile.name}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className={labelClass}>Additional Images</label>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={(event) => {
+                                                setNewListingAdditionalImageFiles((current) => [
+                                                    ...current,
+                                                    ...Array.from(event.target.files || []),
+                                                ]);
+                                                event.target.value = "";
+                                            }}
+                                            className={fileInputClass}
+                                        />
+                                        {newListingAdditionalImageFiles.length > 0 && (
+                                            <p className="mt-1 text-xs text-gray-500">
+                                                {newListingAdditionalImageFiles.length} image(s) selected
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex justify-end">
+                                    <button
+                                        type="button"
+                                        disabled={creatingListing}
+                                        onClick={handleCreateListing}
+                                        className={buttonClass}
+                                    >
+                                        {creatingListing ? "Creating Listing..." : "Create Product Listing"}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </section>
+
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            3. Serialized Product Details
+                        </h3>
+
                         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                            {/* Status */}
+                            <div>
+                                <label className={labelClass}>
+                                    Serial Number <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    value={serialNumber}
+                                    onChange={(event) => setSerialNumber(event.target.value)}
+                                    className={inputClass}
+                                    placeholder="Enter serial number"
+                                />
+                            </div>
 
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Status
-                                </label>
+                                <label className={labelClass}>Work Order</label>
+                                <input
+                                    value={workOrder}
+                                    onChange={(event) => setWorkOrder(event.target.value)}
+                                    className={inputClass}
+                                    placeholder="Enter work order"
+                                />
+                            </div>
 
+                            <div>
+                                <label className={labelClass}>Inventory Status</label>
                                 <select
                                     value={inventoryStatus}
-                                    onChange={(e) =>
+                                    onChange={(event) =>
                                         setInventoryStatus(
-                                            e.target.value as
-                                            | "active"
-                                            | "sold"
-                                            | "archived"
+                                            event.target.value as "active" | "sold" | "archived"
                                         )
                                     }
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                    className={inputClass}
                                 >
                                     <option value="active">Active</option>
                                     <option value="sold">Sold</option>
@@ -1627,164 +1554,38 @@ useEffect(() => {
                                 </select>
                             </div>
 
-                            {/* Condition */}
-
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Condition <span className="text-red-500">*</span>
-                                </label>
-
-                                <select
-                                    value={selectedCondition?.id ?? ""}
-                                    onChange={(e) => {
-                                        const condition =
-                                            conditions.find(
-                                                (item) =>
-                                                    item.id === Number(e.target.value)
-                                            ) || null;
-
-                                        setSelectedCondition(condition);
-                                    }}
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                >
-                                    <option value="">Select Condition</option>
-
-                                    {conditions.map((condition) => (
-                                        <option
-                                            key={condition.id}
-                                            value={condition.id}
-                                        >
-                                            {condition.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Shelf */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Shelf
-                                </label>
-
+                                <label className={labelClass}>Shelf</label>
                                 <select
                                     value={selectedShelf?.id ?? ""}
-                                    onChange={(e) => {
-                                        const shelf =
+                                    onChange={(event) =>
+                                        setSelectedShelf(
                                             shelves.find(
-                                                (item) =>
-                                                    item.id === Number(e.target.value)
-                                            ) || null;
-
-                                        setSelectedShelf(shelf);
-                                    }}
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                                (item) => item.id === Number(event.target.value)
+                                            ) || null
+                                        )
+                                    }
+                                    className={inputClass}
                                 >
                                     <option value="">Select Shelf</option>
-
                                     {shelves.map((shelf) => (
-                                        <option
-                                            key={shelf.id}
-                                            value={shelf.id}
-                                        >
+                                        <option key={shelf.id} value={shelf.id}>
                                             {shelf.name}
                                         </option>
                                     ))}
                                 </select>
                             </div>
-
-                            {/* Price Mode */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Pricing
-                                </label>
-
-                                <select
-                                    value={priceMode}
-                                    onChange={(e) =>
-                                        setPriceMode(
-                                            e.target.value as
-                                            | "automatic"
-                                            | "manual"
-                                        )
-                                    }
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                >
-                                    <option value="automatic">
-                                        Automatic
-                                    </option>
-
-                                    <option value="manual">
-                                        Manual
-                                    </option>
-                                </select>
-                            </div>
-
-                            {/* Price */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    List Price
-                                </label>
-
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                                        $
-                                    </span>
-
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={
-                                            priceMode === "automatic" &&
-                                                automaticPrice != null
-                                                ? automaticPrice
-                                                : listPrice
-                                        }
-                                        disabled={priceMode === "automatic"}
-                                        onChange={(e) =>
-                                            setListPrice(e.target.value)
-                                        }
-                                        placeholder="0.00"
-                                        className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-7 pr-3 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                    />
-                                </div>
-
-                                {priceMode === "automatic" &&
-                                    automaticPrice != null && (
-                                        <p className="mt-1.5 text-xs text-gray-500">
-                                            Calculated from the selected part and
-                                            condition.
-                                        </p>
-                                    )}
-                            </div>
                         </div>
                     </section>
 
-                    {/* ================================================ */}
-                    {/* TESTING */}
-                    {/* ================================================ */}
-
-                    <section className="mt-6">
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                Testing
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Record the testing status and test date.
-                            </p>
-                        </div>
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            Testing
+                        </h3>
 
                         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                            {/* Test Status */}
-
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Test Status
-                                </label>
-
+                                <label className={labelClass}>Test Status</label>
                                 <select
                                     value={
                                         testStatus === null
@@ -1793,16 +1594,14 @@ useEffect(() => {
                                                 ? "passed"
                                                 : "failed"
                                     }
-                                    onChange={(e) => {
-                                        if (e.target.value === "") {
+                                    onChange={(event) => {
+                                        if (!event.target.value) {
                                             setTestStatus(null);
                                         } else {
-                                            setTestStatus(
-                                                e.target.value === "passed"
-                                            );
+                                            setTestStatus(event.target.value === "passed");
                                         }
                                     }}
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                    className={inputClass}
                                 >
                                     <option value="">Not Tested</option>
                                     <option value="passed">Passed</option>
@@ -1810,196 +1609,52 @@ useEffect(() => {
                                 </select>
                             </div>
 
-                            {/* Test Date */}
-
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Test Date
-                                </label>
-
+                                <label className={labelClass}>Test Date</label>
                                 <input
                                     type="date"
                                     value={testDate}
-                                    onChange={(e) => setTestDate(e.target.value)}
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                    onChange={(event) => setTestDate(event.target.value)}
+                                    className={inputClass}
                                 />
                             </div>
                         </div>
                     </section>
 
-                    {/* DESCRIPTIONS */}
-
-                    <section className="mt-6">
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                Descriptions
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Add short and detailed information about this product.
-                            </p>
-                        </div>
-
-                        <div className="space-y-5">
-                            {/* Short Description */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Short Description
-                                </label>
-
-                                <textarea
-                                    value={shortDescription}
-                                    onChange={(e) =>
-                                        setShortDescription(e.target.value)
-                                    }
-                                    placeholder="Enter a short product description..."
-                                    rows={3}
-                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-
-                            {/* Long Description */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Long Description
-                                </label>
-
-                                <textarea
-                                    value={longDescription}
-                                    onChange={(e) =>
-                                        setLongDescription(e.target.value)
-                                    }
-                                    placeholder="Enter detailed product information..."
-                                    rows={6}
-                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-                        </div>
-                    </section>
-
-                    <section className="mt-6">
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                SEO
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Add search and metadata information for this product.
-                            </p>
-                        </div>
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            Additional Information
+                        </h3>
 
                         <div className="space-y-5">
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    SEO Title
-                                </label>
-
-                                <input
-                                    type="text"
-                                    value={seoTitle}
-                                    onChange={(e) =>
-                                        setSeoTitle(e.target.value)
-                                    }
-                                    placeholder="Enter an SEO title..."
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Meta Description
-                                </label>
-
+                                <label className={labelClass}>Unit Notes</label>
                                 <textarea
-                                    value={metaDescription}
-                                    onChange={(e) =>
-                                        setMetaDescription(e.target.value)
-                                    }
-                                    placeholder="Enter a meta description..."
-                                    rows={3}
-                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Search Terms
-                                </label>
-
-                                <input
-                                    type="text"
-                                    value={searchTerms}
-                                    onChange={(e) =>
-                                        setSearchTerms(e.target.value)
-                                    }
-                                    placeholder="Enter search terms..."
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
-                                />
-                            </div>
-                        </div>
-                    </section>
-
-
-
-
-                    {/* ADDITIONAL INFORMATION */}
-
-
-                    <section className="mt-6">
-                        <div className="mb-4">
-                            <h3 className="text-base font-semibold text-gray-900">
-                                Additional Information
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Add notes and product images.
-                            </p>
-                        </div>
-
-                        <div className="space-y-5">
-                            {/* Notes */}
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Notes
-                                </label>
-
-                                <textarea
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="Enter notes..."
                                     rows={4}
-                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
+                                    value={notes}
+                                    onChange={(event) => setNotes(event.target.value)}
+                                    className={inputClass}
+                                    placeholder="Enter notes about this individual unit..."
                                 />
                             </div>
 
-                            {/* Image */}
-
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Product Image
-                                </label>
-
+                                <label className={labelClass}>Serialized Product Image</label>
                                 <input
                                     type="file"
                                     accept="image/*"
-                                    onChange={handlePrimaryImageChange}
-                                    className="block w-fit max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-600 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700"
+                                    onChange={handleProductImageChange}
+                                    className={fileInputClass}
                                 />
 
-                                {/* Existing image */}
-
-                                {isEditing &&
-                                    !existingImageRemoved &&
-                                    !imageFile &&
+                                {isProductEditing &&
+                                    !productImageRemoved &&
+                                    !productImageFile &&
                                     editingProduct?.image && (
                                         <div className="mt-4">
                                             <p className="mb-2 text-sm font-medium text-gray-700">
                                                 Current Image
                                             </p>
-
                                             <div className="h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
                                                 <img
                                                     src={editingProduct.image}
@@ -2007,232 +1662,687 @@ useEffect(() => {
                                                     className="h-full w-full object-contain"
                                                 />
                                             </div>
-
                                             <button
                                                 type="button"
-                                                onClick={handleRemoveExistingImage}
-                                                className="mt-2 text-sm font-medium text-red-600 hover:text-red-700"
+                                                onClick={() => {
+                                                    setProductImageRemoved(true);
+                                                    setProductImageFile(null);
+                                                }}
+                                                className="mt-2 text-sm font-medium text-red-600"
                                             >
                                                 Remove Image
                                             </button>
                                         </div>
                                     )}
 
-                                {/* Removed existing image */}
-
-                                {isEditing &&
-                                    existingImageRemoved &&
-                                    !imageFile && (
-                                        <div className="mt-4 flex h-32 w-32 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-center text-xs text-gray-400">
-                                            No Image
-                                        </div>
-                                    )}
-
-                                {/* New image */}
-
-                                {imageFile && (
-                                    <div className="mt-4">
-                                        <p className="mb-2 text-sm font-medium text-gray-700">
-                                            New Image
-                                        </p>
-
-                                        <div className="h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-                                            <img
-                                                src={URL.createObjectURL(imageFile)}
-                                                alt="New product image preview"
-                                                className="h-full w-full object-contain"
-                                            />
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setImageFile(null);
-                                            }}
-                                            className="mt-2 text-sm font-medium text-red-600 hover:text-red-700"
-                                        >
-                                            Remove Image
-                                        </button>
-                                    </div>
+                                {productImageFile && (
+                                    <p className="mt-2 text-sm text-gray-500">
+                                        New image: {productImageFile.name}
+                                    </p>
                                 )}
-                            </div>
-                            {/* Additional Images */}
 
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                                    Additional Images
-                                </label>
-
-                                <label className="inline-flex cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
-                                    + Add Images
-
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        multiple
-                                        className="hidden"
-                                        onChange={(e) => {
-                                            const files = Array.from(
-                                                e.target.files || []
-                                            );
-
-                                            setProductAdditionalImageFiles(
-                                                (current) => [
-                                                    ...current,
-                                                    ...files,
-                                                ]
-                                            );
-
-                                            e.target.value = "";
-                                        }}
-                                    />
-                                </label>
-
-                                {/* Existing additional images */}
-
-                                {isEditing &&
-                                    editingProduct?.additional_image_urls &&
-                                    editingProduct.additional_image_urls.length > 0 && (
-                                        <div className="mt-4">
-                                            <p className="mb-2 text-sm font-medium text-gray-700">
-                                                Existing Images
-                                            </p>
-
-                                            <div className="flex flex-wrap gap-4">
-                                                {editingProduct.additional_image_urls.map(
-                                                    (url, index) => {
-                                                        const imageId =
-                                                            editingProduct.additional_image_ids?.[
-                                                            index
-                                                            ];
-
-                                                        if (
-                                                            !imageId ||
-                                                            !existingProductAdditionalImageIds.includes(
-                                                                imageId
-                                                            )
-                                                        ) {
-                                                            return null;
-                                                        }
-
-                                                        return (
-                                                            <div
-                                                                key={imageId}
-                                                                className="relative h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                                                            >
-                                                                <img
-                                                                    src={url}
-                                                                    alt={`${editingProduct.title} additional image ${index + 1}`}
-                                                                    className="h-full w-full object-contain"
-                                                                />
-
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setExistingProductAdditionalImageIds(
-                                                                            (current) =>
-                                                                                current.filter(
-                                                                                    (id) =>
-                                                                                        id !==
-                                                                                        imageId
-                                                                                )
-                                                                        );
-                                                                    }}
-                                                                    className="absolute bottom-2 left-2 right-2 rounded-md bg-black/70 px-2 py-1.5 text-xs font-medium text-white hover:bg-black/90"
-                                                                >
-                                                                    Remove Image
-                                                                </button>
-                                                            </div>
-                                                        );
-                                                    }
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                {/* New additional images */}
-
-                                {productAdditionalImageFiles.length > 0 && (
-                                    <div className="mt-4">
-                                        <p className="mb-2 text-sm font-medium text-gray-700">
-                                            New Images
-                                        </p>
-
-                                        <div className="flex flex-wrap gap-4">
-                                            {productAdditionalImageFiles.map(
-                                                (file, index) => (
-                                                    <div
-                                                        key={`${file.name}-${index}`}
-                                                        className="relative h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                                                    >
-                                                        <img
-                                                            src={URL.createObjectURL(file)}
-                                                            alt={`New product additional image ${index + 1}`}
-                                                            className="h-full w-full object-contain"
-                                                        />
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setProductAdditionalImageFiles(
-                                                                    (current) =>
-                                                                        current.filter(
-                                                                            (_, i) =>
-                                                                                i !== index
-                                                                        )
-                                                                );
-                                                            }}
-                                                            className="absolute bottom-2 left-2 right-2 rounded-md bg-black/70 px-2 py-1.5 text-xs font-medium text-white hover:bg-black/90"
-                                                        >
-                                                            Remove Image
-                                                        </button>
-                                                    </div>
-                                                )
-                                            )}
-                                        </div>
-
-                                        <p className="mt-2 text-sm text-gray-500">
-                                            {productAdditionalImageFiles.length} additional
-                                            image
-                                            {productAdditionalImageFiles.length !== 1
-                                                ? "s"
-                                                : ""}{" "}
-                                            selected
-                                        </p>
-                                    </div>
+                                {productImageRemoved && (
+                                    <p className="mt-2 text-sm text-gray-500">
+                                        Existing image will be removed.
+                                    </p>
                                 )}
                             </div>
                         </div>
                     </section>
-
-                    {/* ================================================ */}
-                    {/* SAVE */}
-                    {/* ================================================ */}
-
-                    <div className="mt-8 flex justify-end border-t border-gray-200 pt-5">
-                        <button
-                            type="button"
-                            onClick={handleSubmit}
-                            disabled={loading}
-                            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            {loading
-                                ? "Saving..."
-                                : isEditing
-                                    ? "Update Product"
-                                    : "Create Product"}
-                        </button>
-                    </div>
                 </>
             )}
 
-            {/* {isProduct && (
-                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6">
-                    <p className="text-sm text-gray-600">
-                        Product form will be added next.
-                    </p>
-                </div>
-            )} */}
+            {/* ====================================================
+                STANDALONE PART FORM
+            ==================================================== */}
+
+            {isPart && (
+                <>
+                    <section>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            Basic Information
+                        </h3>
+
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <div>
+                                <label className={labelClass}>
+                                    Brand <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={selectedBrand?.id ?? ""}
+                                    disabled={!!initialBrand}
+                                    onChange={(event) => {
+                                        setSelectedBrand(
+                                            brands.find(
+                                                (item) => item.id === Number(event.target.value)
+                                            ) || null
+                                        );
+                                        setSelectedSeries(null);
+                                    }}
+                                    className={inputClass}
+                                >
+                                    <option value="">Select Brand</option>
+                                    {brands.map((brand) => (
+                                        <option key={brand.id} value={brand.id}>
+                                            {brand.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>
+                                    Category <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={selectedCategory?.id ?? ""}
+                                    onChange={(event) =>
+                                        setSelectedCategory(
+                                            categories.find(
+                                                (item) => item.id === Number(event.target.value)
+                                            ) || null
+                                        )
+                                    }
+                                    className={inputClass}
+                                >
+                                    <option value="">Select Category</option>
+                                    {categories.map((category) => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>
+                                    Part Number <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    value={partNumber}
+                                    onChange={(event) => setPartNumber(event.target.value)}
+                                    className={inputClass}
+                                    placeholder="Enter Part number"
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>
+                                    Part Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    value={partName}
+                                    onChange={(event) => setPartName(event.target.value)}
+                                    className={inputClass}
+                                    placeholder="Enter Part name"
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Series</label>
+                                <select
+                                    value={selectedSeries?.id ?? ""}
+                                    disabled={!selectedBrand || availableSeries.length === 0}
+                                    onChange={(event) =>
+                                        setSelectedSeries(
+                                            availableSeries.find(
+                                                (item) => item.id === Number(event.target.value)
+                                            ) || null
+                                        )
+                                    }
+                                    className={inputClass}
+                                >
+                                    <option value="">
+                                        {!selectedBrand
+                                            ? "Select Brand First"
+                                            : availableSeries.length === 0
+                                                ? "No Series Available"
+                                                : "Select Series"}
+                                    </option>
+                                    {availableSeries.map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                            {item.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Base Price</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={partBasePrice}
+                                    onChange={(event) => setPartBasePrice(event.target.value)}
+                                    className={inputClass}
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            Descriptions
+                        </h3>
+
+                        <div className="space-y-5">
+                            <div>
+                                <label className={labelClass}>Short Description</label>
+                                <textarea
+                                    rows={3}
+                                    value={shortDescription}
+                                    onChange={(event) => setShortDescription(event.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Long Description</label>
+                                <textarea
+                                    rows={6}
+                                    value={longDescription}
+                                    onChange={(event) => setLongDescription(event.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            SEO
+                        </h3>
+
+                        <div className="space-y-5">
+                            <div>
+                                <label className={labelClass}>SEO Title</label>
+                                <input
+                                    value={seoTitle}
+                                    onChange={(event) => setSeoTitle(event.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Meta Description</label>
+                                <textarea
+                                    rows={3}
+                                    value={metaDescription}
+                                    onChange={(event) => setMetaDescription(event.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Search Terms</label>
+                                <input
+                                    value={searchTerms}
+                                    onChange={(event) => setSearchTerms(event.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            Part Image
+                        </h3>
+
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePartImageChange}
+                            className={fileInputClass}
+                        />
+
+                        {isPartEditing &&
+                            !partImageRemoved &&
+                            !partImageFile &&
+                            editingPart?.image_url && (
+                                <div className="mt-4">
+                                    <p className="mb-2 text-sm font-medium text-gray-700">
+                                        Current Image
+                                    </p>
+                                    <div className="h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                                        <img
+                                            src={editingPart.image_url}
+                                            alt={editingPart.name}
+                                            className="h-full w-full object-contain"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPartImageRemoved(true);
+                                            setPartImageFile(null);
+                                        }}
+                                        className="mt-2 text-sm font-medium text-red-600"
+                                    >
+                                        Remove Image
+                                    </button>
+                                </div>
+                            )}
+
+                        {partImageFile && (
+                            <p className="mt-2 text-sm text-gray-500">
+                                New image: {partImageFile.name}
+                            </p>
+                        )}
+                    </section>
+
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            Additional Images
+                        </h3>
+
+                        <label className="inline-flex cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+                            + Add Images
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={(event) => {
+                                    setAdditionalImageFiles((current) => [
+                                        ...current,
+                                        ...Array.from(event.target.files || []),
+                                    ]);
+                                    event.target.value = "";
+                                }}
+                            />
+                        </label>
+
+                        {isPartEditing &&
+                            editingPart?.additional_image_urls &&
+                            editingPart.additional_image_urls.length > 0 && (
+                                <div className="mt-4">
+                                    <p className="mb-2 text-sm font-medium text-gray-700">
+                                        Existing Images
+                                    </p>
+
+                                    <div className="flex flex-wrap gap-4">
+                                        {editingPart.additional_image_urls.map((url, index) => {
+                                            const imageId =
+                                                editingPart.additional_image_ids?.[index];
+
+                                            if (
+                                                !imageId ||
+                                                !existingAdditionalImageIds.includes(imageId)
+                                            ) {
+                                                return null;
+                                            }
+
+                                            return (
+                                                <div
+                                                    key={imageId}
+                                                    className="relative h-28 w-28 overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
+                                                >
+                                                    <img
+                                                        src={url}
+                                                        alt={`${editingPart.name} additional image ${index + 1}`}
+                                                        className="h-full w-full object-contain"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setExistingAdditionalImageIds((current) =>
+                                                                current.filter((id) => id !== imageId)
+                                                            )
+                                                        }
+                                                        className="absolute right-1 top-1 rounded bg-white px-2 py-1 text-xs font-semibold text-red-600 shadow"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                        {additionalImageFiles.length > 0 && (
+                            <div className="mt-4 space-y-2">
+                                <p className="text-sm font-medium text-gray-700">
+                                    New Images
+                                </p>
+                                {additionalImageFiles.map((file, index) => (
+                                    <div
+                                        key={`${file.name}-${index}`}
+                                        className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2"
+                                    >
+                                        <span className="truncate text-sm text-gray-600">
+                                            {file.name}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setAdditionalImageFiles((current) =>
+                                                    current.filter((_, i) => i !== index)
+                                                )
+                                            }
+                                            className="ml-3 text-sm font-medium text-red-600"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </>
+            )}
+
+            {/* ====================================================
+                STANDALONE PRODUCT LISTING FORM
+            ==================================================== */}
+
+            {isListing && (
+                <>
+                    <section>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            1. Part
+                        </h3>
+
+                        {renderPartSelector()}
+
+                        {selectedPart && (
+                            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                <p className="font-semibold text-gray-900">
+                                    {selectedPart.name}
+                                </p>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Part Number: {selectedPart.part_number || "—"}
+                                </p>
+                            </div>
+                        )}
+                    </section>
+
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            2. Listing Details
+                        </h3>
+
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            {renderConditionSelector(
+                                listingConditionId,
+                                setListingConditionId
+                            )}
+
+                            {renderListingPricing(
+                                listingPriceMode,
+                                setListingPriceMode,
+                                listingPrice,
+                                setListingPrice
+                            )}
+                        </div>
+                    </section>
+
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            Descriptions
+                        </h3>
+
+                        <div className="space-y-5">
+                            <div>
+                                <label className={labelClass}>Short Description</label>
+                                <textarea
+                                    rows={3}
+                                    value={listingShortDescription}
+                                    onChange={(event) => setListingShortDescription(event.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Long Description</label>
+                                <textarea
+                                    rows={6}
+                                    value={listingLongDescription}
+                                    onChange={(event) => setListingLongDescription(event.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            SEO
+                        </h3>
+
+                        <div className="space-y-5">
+                            <div>
+                                <label className={labelClass}>SEO Title</label>
+                                <input
+                                    value={listingSeoTitle}
+                                    onChange={(event) => setListingSeoTitle(event.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Meta Description</label>
+                                <textarea
+                                    rows={3}
+                                    value={listingMetaDescription}
+                                    onChange={(event) => setListingMetaDescription(event.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Search Terms</label>
+                                <input
+                                    value={listingSearchTerms}
+                                    onChange={(event) => setListingSearchTerms(event.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            Product Listing Image
+                        </h3>
+
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleListingImageChange}
+                            className={fileInputClass}
+                        />
+
+                        {isListingEditing &&
+                            !listingImageRemoved &&
+                            !listingImageFile &&
+                            editingListing?.image_url && (
+                                <div className="mt-4">
+                                    <p className="mb-2 text-sm font-medium text-gray-700">
+                                        Current Image
+                                    </p>
+                                    <div className="h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                                        <img
+                                            src={editingListing.image_url}
+                                            alt={editingListing.title}
+                                            className="h-full w-full object-contain"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setListingImageRemoved(true);
+                                            setListingImageFile(null);
+                                        }}
+                                        className="mt-2 text-sm font-medium text-red-600"
+                                    >
+                                        Remove Image
+                                    </button>
+                                </div>
+                            )}
+
+                        {listingImageFile && (
+                            <p className="mt-2 text-sm text-gray-500">
+                                New image: {listingImageFile.name}
+                            </p>
+                        )}
+
+                        {listingImageRemoved && (
+                            <p className="mt-2 text-sm text-gray-500">
+                                Existing image will be removed.
+                            </p>
+                        )}
+                    </section>
+
+                    <section className={sectionClass}>
+                        <h3 className="mb-4 text-base font-semibold text-gray-900">
+                            Additional Images
+                        </h3>
+
+                        <label className="inline-flex cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+                            + Add Images
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={(event) => {
+                                    setListingAdditionalImageFiles((current) => [
+                                        ...current,
+                                        ...Array.from(event.target.files || []),
+                                    ]);
+                                    event.target.value = "";
+                                }}
+                            />
+                        </label>
+
+                        {isListingEditing &&
+                            editingListing?.additional_image_urls &&
+                            editingListing.additional_image_urls.length > 0 && (
+                                <div className="mt-4">
+                                    <p className="mb-2 text-sm font-medium text-gray-700">
+                                        Existing Images
+                                    </p>
+
+                                    <div className="flex flex-wrap gap-4">
+                                        {editingListing.additional_image_urls.map((url, index) => {
+                                            const imageId =
+                                                editingListing.additional_image_ids?.[index];
+
+                                            if (
+                                                !imageId ||
+                                                !existingListingAdditionalImageIds.includes(imageId)
+                                            ) {
+                                                return null;
+                                            }
+
+                                            return (
+                                                <div
+                                                    key={imageId}
+                                                    className="relative h-28 w-28 overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
+                                                >
+                                                    <img
+                                                        src={url}
+                                                        alt={`${editingListing.title} additional image ${index + 1}`}
+                                                        className="h-full w-full object-contain"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setExistingListingAdditionalImageIds((current) =>
+                                                                current.filter((id) => id !== imageId)
+                                                            )
+                                                        }
+                                                        className="absolute right-1 top-1 rounded bg-white px-2 py-1 text-xs font-semibold text-red-600 shadow"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                        {listingAdditionalImageFiles.length > 0 && (
+                            <div className="mt-4 space-y-2">
+                                <p className="text-sm font-medium text-gray-700">
+                                    New Images
+                                </p>
+                                {listingAdditionalImageFiles.map((file, index) => (
+                                    <div
+                                        key={`${file.name}-${index}`}
+                                        className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2"
+                                    >
+                                        <span className="truncate text-sm text-gray-600">
+                                            {file.name}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setListingAdditionalImageFiles((current) =>
+                                                    current.filter((_, i) => i !== index)
+                                                )
+                                            }
+                                            className="ml-3 text-sm font-medium text-red-600"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </>
+            )}
+
+            {/* ====================================================
+                SAVE / CANCEL
+            ==================================================== */}
+
+            <div className="mt-8 flex justify-end gap-3 border-t border-gray-200 pt-5">
+                <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={loading || creatingPart || creatingListing}
+                    className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-60"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={
+                        loading ||
+                        creatingPart ||
+                        creatingListing ||
+                        missingFields.length > 0
+                    }
+                    className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    {loading
+                        ? "Saving..."
+                        : isEditing
+                            ? `Update ${
+                                isProduct
+                                    ? "Serialized Product"
+                                    : isPart
+                                        ? "Part"
+                                        : "Product Listing"
+                            }`
+                            : `Create ${
+                                isProduct
+                                    ? "Serialized Product"
+                                    : isPart
+                                        ? "Part"
+                                        : "Product Listing"
+                            }`}
+                </button>
+            </div>
         </div>
     );
 };

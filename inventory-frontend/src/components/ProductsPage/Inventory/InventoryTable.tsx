@@ -78,9 +78,6 @@ export default function InventoryTable({
         <DataTable
             columns={columns}
             data={products}
-            onRowClick={(product) =>
-                navigate(`/product/${product.id}`)
-            }
         />
     );
 }

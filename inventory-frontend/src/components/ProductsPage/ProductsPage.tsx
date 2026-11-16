@@ -1,24 +1,23 @@
+
 import { useState } from "react";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
-import { ProductService } from "../../services/productService";
 
 import PageContainer from "../UI/PageContainer";
 import PageHeader from "../UI/PageHeader";
 import Button from "../UI/Button/Button";
 
 import InventoryFilters from "./Inventory/InventoryFilters";
-import ProductTable from "./ProductTable";
+import ProductListingTable from "./ProductListingTable";
 
-import type { Product } from "../../types";
-import { filterProducts } from "./productFilters";
-import { exportProductsCSV } from "../../utils/exportCSV";
+import { filterProductListings } from "./Inventory/productListingFilters";
 
-import { Plus, Download, Package } from "lucide-react";
+import { Plus, Package } from "lucide-react";
 
 const ProductsPage = () => {
-  const { openProduct, openEditProduct } = useModal();
-  const { products, parts, fetchProducts } = useInventory();
+  const { openListing } = useModal();
+
+  const { productListings, parts } = useInventory();
 
   // Filter state
   const [search, setSearch] = useState("");
@@ -31,67 +30,44 @@ const ProductsPage = () => {
     setBrand("");
   };
 
-  // Delete product
-  const handleDeleteProduct = async (product: Product) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${product.title}"?\n\nThis action cannot be undone.`
-    );
+  // Only display listings that have stock
+  const inStockListings = productListings.filter(
+    (listing) => Number(listing.quantity ?? 0) > 0
+  );
 
-    if (!confirmed) return;
-
-    try {
-      await ProductService.delete(product.id);
-      await fetchProducts();
-    } catch (err) {
-      console.error("Delete failed:", err);
-      alert("Failed to delete product.");
+  // Apply search and filters
+  const filteredListings = filterProductListings(
+    inStockListings,
+    parts,
+    {
+      search,
+      category,
+      brand,
     }
-  };
-
-  // Filter products
-  const filteredProducts = filterProducts(products, parts, {
-    search,
-    category,
-    brand,
-  });
+  );
 
   return (
     <PageContainer>
-      {/* PAGE HEADER */}
       <PageHeader
         title="Products"
         actions={
-          <>
-            <Button
-              icon={<Plus size={18} />}
-              label="Add Product"
-              onClick={openProduct}
-            >
-              Add Product
-            </Button>
-
-            <Button
-              icon={<Download size={18} />}
-              label="Export Products"
-              variant="grey"
-              onClick={() => exportProductsCSV(filteredProducts)}
-            >
-              Export
-            </Button>
-          </>
+          <Button
+            icon={<Plus size={18} />}
+            label="Add Listing"
+            onClick={openListing}
+          >
+            Add Listing
+          </Button>
         }
       />
 
-      {/* PRODUCT TABLE */}
-      <ProductTable
-        products={filteredProducts}
-        onEdit={openEditProduct}
-        onDelete={handleDeleteProduct}
-        tableHeader="Products Inventory"
+      <ProductListingTable
+        listings={filteredListings}
+        tableHeader="Product Listings Inventory"
         tableHeaderIcon={<Package size={20} />}
         toolbar={
           <InventoryFilters
-            entityName="Products"
+            entityName="Product Listings"
             searchValue={search}
             onSearchChange={setSearch}
             categoryValue={category}
