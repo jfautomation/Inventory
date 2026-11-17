@@ -15,7 +15,7 @@ import { filterProductListings } from "./Inventory/productListingFilters";
 import { Plus, Package } from "lucide-react";
 
 const ProductsPage = () => {
-  const { openListing } = useModal();
+  const { openProduct } = useModal();
 
   const { productListings, parts } = useInventory();
 
@@ -53,10 +53,10 @@ const ProductsPage = () => {
         actions={
           <Button
             icon={<Plus size={18} />}
-            label="Add Listing"
-            onClick={openListing}
+            label="Add Product"
+            onClick={openProduct}
           >
-            Add Listing
+            Add Product
           </Button>
         }
       />

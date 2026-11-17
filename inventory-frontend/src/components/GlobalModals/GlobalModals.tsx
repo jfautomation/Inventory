@@ -10,11 +10,9 @@ const GlobalModals = () => {
     closeProduct,
     editingProduct,
     initialListingId,
-
     isPartOpen,
     closePart,
     editingPart,
-
     isListingOpen,
     closeListing,
     editingListing,
@@ -31,14 +29,31 @@ const GlobalModals = () => {
     fetchProductListings,
   } = useInventory();
 
-  // =====================================
-  // LOCK BACKGROUND SCROLL WHEN MODAL OPEN
-  // =====================================
+  const modalOpen = isProductOpen || isPartOpen || isListingOpen;
+
+  const entity = isProductOpen
+    ? "product"
+    : isPartOpen
+      ? "part"
+      : "listing";
+
+  const closeModal = isProductOpen
+    ? closeProduct
+    : isPartOpen
+      ? closePart
+      : closeListing;
+
+  const handleRefresh = async () => {
+    if (isProductOpen) {
+      await fetchProducts();
+    } else if (isPartOpen) {
+      await fetchParts();
+    } else if (isListingOpen) {
+      await fetchProductListings();
+    }
+  };
 
   useEffect(() => {
-    const modalOpen =
-      isProductOpen || isPartOpen || isListingOpen;
-
     if (!modalOpen) return;
 
     const originalOverflow = document.body.style.overflow;
@@ -47,149 +62,47 @@ const GlobalModals = () => {
     return () => {
       document.body.style.overflow = originalOverflow;
     };
-  }, [isProductOpen, isPartOpen, isListingOpen]);
+  }, [modalOpen]);
 
-  // =====================================
-  // REFRESH AFTER PRODUCT CREATE / UPDATE
-  // =====================================
-
-  const handleProductRefresh = async () => {
-    await fetchProducts();
-  };
-
-  // =====================================
-  // REFRESH AFTER PART CREATE / UPDATE
-  // =====================================
-
-  const handlePartRefresh = async () => {
-    await fetchParts();
-  };
-
-  // =====================================
-  // REFRESH AFTER LISTING CREATE / UPDATE
-  // =====================================
-
-  const handleListingRefresh = async () => {
-    await fetchProductListings();
-  };
+  if (!modalOpen) return null;
 
   return (
-    <>
-      {/* =====================================
-          PRODUCT MODAL - SERIALIZED INVENTORY
-      ===================================== */}
-
-      {isProductOpen && (
-        <div style={overlayStyle}>
-          <div style={modalStyle}>
-            <div style={modalContentStyle}>
-              <InventoryForm
-                entity="product"
-                initialListingId={initialListingId}
-                brands={brands}
-                shelves={shelves}
-                conditions={conditions}
-                categories={categories}
-                series={series}
-                editingProduct={editingProduct}
-                onCreated={async () => {
-                  await handleProductRefresh();
-                  closeProduct();
-                }}
-                onUpdated={async () => {
-                  await handleProductRefresh();
-                  closeProduct();
-                }}
-              />
-            </div>
-
-            <div style={modalFooterStyle}>
-              <button
-                type="button"
-                onClick={closeProduct}
-                style={footerButtonStyle}
-              >
-                Close
-              </button>
-            </div>
-          </div>
+    <div style={overlayStyle}>
+      <div style={modalStyle}>
+        <div style={modalContentStyle}>
+          <InventoryForm
+            entity={entity}
+            brands={brands}
+            shelves={shelves}
+            conditions={conditions}
+            categories={categories}
+            series={series}
+            editingProduct={isProductOpen ? editingProduct : null}
+            editingPart={isPartOpen ? editingPart : null}
+            editingListing={isListingOpen ? editingListing : null}
+            initialListingId={isProductOpen ? initialListingId : null}
+            onCreated={async () => {
+              await handleRefresh();
+              closeModal();
+            }}
+            onUpdated={async () => {
+              await handleRefresh();
+              closeModal();
+            }}
+          />
         </div>
-      )}
 
-      {/* =====================================
-          PART MODAL - MASTER PART
-      ===================================== */}
-
-      {isPartOpen && (
-        <div style={overlayStyle}>
-          <div style={modalStyle}>
-            <div style={modalContentStyle}>
-              <InventoryForm
-                entity="part"
-                brands={brands}
-                categories={categories}
-                editingPart={editingPart}
-                onCreated={async () => {
-                  await handlePartRefresh();
-                  closePart();
-                }}
-                onUpdated={async () => {
-                  await handlePartRefresh();
-                  closePart();
-                }}
-              />
-            </div>
-
-            <div style={modalFooterStyle}>
-              <button
-                type="button"
-                onClick={closePart}
-                style={footerButtonStyle}
-              >
-                Close
-              </button>
-            </div>
-          </div>
+        <div style={modalFooterStyle}>
+          <button
+            type="button"
+            onClick={closeModal}
+            style={footerButtonStyle}
+          >
+            Close
+          </button>
         </div>
-      )}
-
-      {/* =====================================
-          LISTING MODAL - PART + CONDITION
-      ===================================== */}
-
-      {isListingOpen && (
-        <div style={overlayStyle}>
-          <div style={modalStyle}>
-            <div style={modalContentStyle}>
-              <InventoryForm
-                brands={brands}
-                entity="listing"
-                conditions={conditions}
-                editingListing={editingListing}
-                onCreated={async () => {
-                  await handleListingRefresh();
-                  closeListing();
-                }}
-                onUpdated={async () => {
-                  await handleListingRefresh();
-                  closeListing();
-                }}
-              />
-            </div>
-
-            <div style={modalFooterStyle}>
-              <button
-                type="button"
-                onClick={closeListing}
-                style={footerButtonStyle}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 };
 

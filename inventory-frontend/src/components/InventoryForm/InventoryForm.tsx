@@ -298,7 +298,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     (item) =>
                         Number(item.part_id) === Number(partId) &&
                         Number(item.condition_id) ===
-                            Number(editingProduct.condition?.[0]?.id)
+                        Number(editingProduct.condition?.[0]?.id)
                 );
 
                 if (matchingListing) {
@@ -1087,19 +1087,17 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             <div className="mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900">
                     {isEditing
-                        ? `Edit ${
-                            isProduct
-                                ? "Serialized Product"
-                                : isPart
-                                    ? "Part"
-                                    : "Product Listing"
+                        ? `Edit ${isProduct
+                            ? "Product"
+                            : isPart
+                                ? "Part"
+                                : "Product Listing"
                         }`
-                        : `Create ${
-                            isProduct
-                                ? "Serialized Product"
-                                : isPart
-                                    ? "Part"
-                                    : "Product Listing"
+                        : `Add ${isProduct
+                            ? "Product"
+                            : isPart
+                                ? "Part"
+                                : "Product Listing"
                         }`}
                 </h2>
 
@@ -2327,19 +2325,17 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     {loading
                         ? "Saving..."
                         : isEditing
-                            ? `Update ${
-                                isProduct
-                                    ? "Serialized Product"
-                                    : isPart
-                                        ? "Part"
-                                        : "Product Listing"
+                            ? `Update ${isProduct
+                                ? "Serialized Product"
+                                : isPart
+                                    ? "Part"
+                                    : "Product Listing"
                             }`
-                            : `Create ${
-                                isProduct
-                                    ? "Serialized Product"
-                                    : isPart
-                                        ? "Part"
-                                        : "Product Listing"
+                            : `Create ${isProduct
+                                ? "Serialized Product"
+                                : isPart
+                                    ? "Part"
+                                    : "Product Listing"
                             }`}
                 </button>
             </div>

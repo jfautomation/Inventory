@@ -1,3 +1,4 @@
+
 <?php
 
 if (!defined('ABSPATH')) {
@@ -10,22 +11,15 @@ if (!defined('ABSPATH')) {
 
 add_action('rest_api_init', function () {
 
-    // ==================================================
-    // GET + CREATE PARTS
-    // ==================================================
-
     register_rest_route(
         'inventory/v1',
         '/parts',
         [
-            // GET
             [
                 'methods'  => WP_REST_Server::READABLE,
                 'permission_callback' => '__return_true',
                 'callback' => 'inventory_get_parts_by_brand',
             ],
-
-            // POST
             [
                 'methods'  => WP_REST_Server::CREATABLE,
                 'permission_callback' => '__return_true',
@@ -34,26 +28,15 @@ add_action('rest_api_init', function () {
         ]
     );
 
-
-    // ==================================================
-    // UPDATE + DELETE PART
-    //
-    // PUT    /inventory/v1/parts/{id}
-    // DELETE /inventory/v1/parts/{id}
-    // ==================================================
-
     register_rest_route(
         'inventory/v1',
         '/parts/(?P<id>\d+)',
         [
-            // PUT
             [
                 'methods'  => WP_REST_Server::EDITABLE,
                 'permission_callback' => '__return_true',
                 'callback' => 'inventory_update_part',
             ],
-
-            // DELETE
             [
                 'methods'  => WP_REST_Server::DELETABLE,
                 'permission_callback' => '__return_true',
@@ -72,6 +55,9 @@ function inventory_create_part($request)
 {
     $params = $request->get_json_params();
 
+    if (!is_array($params)) {
+        $params = [];
+    }
 
     // NAME
     $name = isset($params['name'])
@@ -86,14 +72,9 @@ function inventory_create_part($request)
         );
     }
 
-
     // PART NUMBER
     $part_number = isset($params['part_number'])
-        ? trim(
-            sanitize_text_field(
-                $params['part_number']
-            )
-        )
+        ? trim(sanitize_text_field($params['part_number']))
         : '';
 
     if ($part_number === '') {
@@ -104,10 +85,19 @@ function inventory_create_part($request)
         );
     }
 
+    // GTIN
+    $gtin = isset($params['gtin'])
+        ? sanitize_text_field($params['gtin'])
+        : '';
+
+    // GOOGLE PRODUCT CATEGORY
+    $google_product_category = isset($params['google_product_category'])
+        ? sanitize_text_field($params['google_product_category'])
+        : '';
 
     // BRAND
     $brand_id = isset($params['brand_id'])
-        ? (int) $params['brand_id']
+        ? absint($params['brand_id'])
         : 0;
 
     if (!$brand_id) {
@@ -118,10 +108,9 @@ function inventory_create_part($request)
         );
     }
 
-
     // CATEGORY
     $category_id = isset($params['category_id'])
-        ? (int) $params['category_id']
+        ? absint($params['category_id'])
         : 0;
 
     if (!$category_id) {
@@ -132,15 +121,13 @@ function inventory_create_part($request)
         );
     }
 
-
     // SERIES
     $series_id = isset($params['series_id']) &&
         $params['series_id'] !== null
-        ? (int) $params['series_id']
+        ? absint($params['series_id'])
         : 0;
 
-
-    // DUPLICATE PART NUMBER CHECK
+    // CHECK DUPLICATE PART NUMBER
     $existing_part_numbers = get_terms([
         'taxonomy'   => 'part',
         'hide_empty' => false,
@@ -153,10 +140,11 @@ function inventory_create_part($request)
         ],
     ]);
 
-    if (
-        !is_wp_error($existing_part_numbers) &&
-        !empty($existing_part_numbers)
-    ) {
+    if (is_wp_error($existing_part_numbers)) {
+        return $existing_part_numbers;
+    }
+
+    if (!empty($existing_part_numbers)) {
         return new WP_Error(
             'duplicate_part_number',
             'A part with this Part Number already exists.',
@@ -164,40 +152,36 @@ function inventory_create_part($request)
         );
     }
 
-
-    // DUPLICATE CHECK
+    // CHECK DUPLICATE NAME FOR SAME BRAND
     $existing_parts = get_terms([
         'taxonomy'   => 'part',
         'hide_empty' => false,
         'name'       => $name,
     ]);
 
-    if (!is_wp_error($existing_parts)) {
+    if (is_wp_error($existing_parts)) {
+        return $existing_parts;
+    }
 
-        foreach ($existing_parts as $existing_part) {
+    foreach ($existing_parts as $existing_part) {
 
-            $existing_brand_id = (int) get_term_meta(
-                $existing_part->term_id,
-                'brand_id',
-                true
+        $existing_brand_id = (int) get_term_meta(
+            $existing_part->term_id,
+            'brand_id',
+            true
+        );
+
+        if ($existing_brand_id === $brand_id) {
+            return new WP_Error(
+                'duplicate_part',
+                'A part with this name already exists for this brand.',
+                ['status' => 400]
             );
-
-            if ($existing_brand_id === $brand_id) {
-                return new WP_Error(
-                    'duplicate_part',
-                    'A part with this name already exists for this brand.',
-                    ['status' => 400]
-                );
-            }
         }
     }
 
-
-    // CREATE TERM
-    $term = wp_insert_term(
-        $name,
-        'part'
-    );
+    // CREATE PART TERM
+    $term = wp_insert_term($name, 'part');
 
     if (is_wp_error($term)) {
         return $term;
@@ -205,39 +189,18 @@ function inventory_create_part($request)
 
     $term_id = (int) $term['term_id'];
 
-
     // BRAND
-    update_term_meta(
-        $term_id,
-        'brand_id',
-        $brand_id
-    );
-
+    update_term_meta($term_id, 'brand_id', $brand_id);
 
     // CATEGORY
-    update_term_meta(
-        $term_id,
-        'category_id',
-        $category_id
-    );
-
+    update_term_meta($term_id, 'category_id', $category_id);
 
     // SERIES
     if ($series_id) {
-
-        update_term_meta(
-            $term_id,
-            'series_id',
-            $series_id
-        );
+        update_term_meta($term_id, 'series_id', $series_id);
     } else {
-
-        delete_term_meta(
-            $term_id,
-            'series_id'
-        );
+        delete_term_meta($term_id, 'series_id');
     }
-
 
     // BASE PRICE
     if (
@@ -245,39 +208,34 @@ function inventory_create_part($request)
         $params['base_price'] !== null &&
         $params['base_price'] !== ''
     ) {
-
         update_term_meta(
             $term_id,
             'base_price',
             (float) $params['base_price']
         );
     } else {
-
-        delete_term_meta(
-            $term_id,
-            'base_price'
-        );
+        delete_term_meta($term_id, 'base_price');
     }
 
-
     // PART NUMBER
+    update_term_meta($term_id, 'part_number', $part_number);
+
+    // GTIN
+    update_term_meta($term_id, 'gtin', $gtin);
+
+    // GOOGLE PRODUCT CATEGORY
     update_term_meta(
         $term_id,
-        'part_number',
-        $part_number
+        'google_product_category',
+        $google_product_category
     );
 
-
     // SHORT DESCRIPTION
-    $short_description =
-        array_key_exists(
-            'short_description',
-            $params
-        ) &&
+    $short_description = (
+        array_key_exists('short_description', $params) &&
         $params['short_description'] !== null
-        ? sanitize_textarea_field(
-            $params['short_description']
-        )
+    )
+        ? sanitize_textarea_field($params['short_description'])
         : '';
 
     update_term_meta(
@@ -286,24 +244,21 @@ function inventory_create_part($request)
         $short_description
     );
 
-
     // LONG DESCRIPTION
-    $long_description =
-        array_key_exists(
-            'long_description',
-            $params
-        ) &&
+    if (
+        array_key_exists('long_description', $params) &&
         $params['long_description'] !== null
-        ? sanitize_textarea_field(
+    ) {
+        $long_description = sanitize_textarea_field(
             $params['long_description']
-        )
-        : (
-            isset($params['description'])
-            ? sanitize_textarea_field(
-                $params['description']
-            )
-            : ''
         );
+    } elseif (isset($params['description'])) {
+        $long_description = sanitize_textarea_field(
+            $params['description']
+        );
+    } else {
+        $long_description = '';
+    }
 
     update_term_meta(
         $term_id,
@@ -312,34 +267,15 @@ function inventory_create_part($request)
     );
 
     // SEO TITLE
-    $seo_title =
-        array_key_exists(
-            'seo_title',
-            $params
-        ) &&
-        $params['seo_title'] !== null
-        ? sanitize_text_field(
-            $params['seo_title']
-        )
+    $seo_title = isset($params['seo_title'])
+        ? sanitize_text_field($params['seo_title'])
         : '';
 
-    update_term_meta(
-        $term_id,
-        'seo_title',
-        $seo_title
-    );
-
+    update_term_meta($term_id, 'seo_title', $seo_title);
 
     // META DESCRIPTION
-    $meta_description =
-        array_key_exists(
-            'meta_description',
-            $params
-        ) &&
-        $params['meta_description'] !== null
-        ? sanitize_textarea_field(
-            $params['meta_description']
-        )
+    $meta_description = isset($params['meta_description'])
+        ? sanitize_textarea_field($params['meta_description'])
         : '';
 
     update_term_meta(
@@ -348,17 +284,9 @@ function inventory_create_part($request)
         $meta_description
     );
 
-
     // SEARCH TERMS
-    $search_terms =
-        array_key_exists(
-            'search_terms',
-            $params
-        ) &&
-        $params['search_terms'] !== null
-        ? sanitize_text_field(
-            $params['search_terms']
-        )
+    $search_terms = isset($params['search_terms'])
+        ? sanitize_text_field($params['search_terms'])
         : '';
 
     update_term_meta(
@@ -367,7 +295,6 @@ function inventory_create_part($request)
         $search_terms
     );
 
-
     // LEGACY DESCRIPTION
     update_term_meta(
         $term_id,
@@ -375,52 +302,30 @@ function inventory_create_part($request)
         $long_description
     );
 
-
-    // IMAGE
+    // MAIN IMAGE
     if (
-        array_key_exists('image_id', $params) &&
-        $params['image_id'] !== null &&
+        isset($params['image_id']) &&
         $params['image_id'] !== ''
     ) {
-
-        $image_id = (int) $params['image_id'];
+        $image_id = absint($params['image_id']);
 
         if ($image_id) {
-
-            update_term_meta(
-                $term_id,
-                'image_id',
-                $image_id
-            );
+            update_term_meta($term_id, 'image_id', $image_id);
         } else {
-
-            delete_term_meta(
-                $term_id,
-                'image_id'
-            );
+            delete_term_meta($term_id, 'image_id');
         }
     } else {
-
-        delete_term_meta(
-            $term_id,
-            'image_id'
-        );
+        delete_term_meta($term_id, 'image_id');
     }
 
-
     // ADDITIONAL IMAGES
-    $additional_image_ids =
-        array_key_exists(
-            'additional_image_ids',
-            $params
-        ) &&
+    $additional_image_ids = (
+        isset($params['additional_image_ids']) &&
         is_array($params['additional_image_ids'])
+    )
         ? array_values(
             array_filter(
-                array_map(
-                    'absint',
-                    $params['additional_image_ids']
-                )
+                array_map('absint', $params['additional_image_ids'])
             )
         )
         : [];
@@ -430,7 +335,6 @@ function inventory_create_part($request)
         'additional_image_ids',
         $additional_image_ids
     );
-
 
     // RESPONSE
     return rest_ensure_response(
@@ -445,7 +349,7 @@ function inventory_create_part($request)
 
 function inventory_update_part($request)
 {
-    $term_id = (int) $request->get_param('id');
+    $term_id = absint($request->get_param('id'));
 
     if (!$term_id) {
         return new WP_Error(
@@ -455,12 +359,8 @@ function inventory_update_part($request)
         );
     }
 
-
     // VERIFY PART EXISTS
-    $term = get_term(
-        $term_id,
-        'part'
-    );
+    $term = get_term($term_id, 'part');
 
     if (!$term || is_wp_error($term)) {
         return new WP_Error(
@@ -470,12 +370,14 @@ function inventory_update_part($request)
         );
     }
 
-
     $params = $request->get_json_params();
 
+    if (!is_array($params)) {
+        $params = [];
+    }
 
     // NAME
-    $name = isset($params['name'])
+    $name = array_key_exists('name', $params)
         ? sanitize_text_field($params['name'])
         : $term->name;
 
@@ -487,24 +389,12 @@ function inventory_update_part($request)
         );
     }
 
-
     // PART NUMBER
-    $part_number = array_key_exists(
-        'part_number',
-        $params
-    )
-        ? trim(
-            sanitize_text_field(
-                $params['part_number']
-            )
-        )
+    $part_number = array_key_exists('part_number', $params)
+        ? trim(sanitize_text_field($params['part_number']))
         : trim(
             sanitize_text_field(
-                get_term_meta(
-                    $term_id,
-                    'part_number',
-                    true
-                )
+                get_term_meta($term_id, 'part_number', true)
             )
         );
 
@@ -516,15 +406,10 @@ function inventory_update_part($request)
         );
     }
 
-
     // BRAND
-    $brand_id = isset($params['brand_id'])
-        ? (int) $params['brand_id']
-        : (int) get_term_meta(
-            $term_id,
-            'brand_id',
-            true
-        );
+    $brand_id = array_key_exists('brand_id', $params)
+        ? absint($params['brand_id'])
+        : (int) get_term_meta($term_id, 'brand_id', true);
 
     if (!$brand_id) {
         return new WP_Error(
@@ -534,15 +419,10 @@ function inventory_update_part($request)
         );
     }
 
-
     // CATEGORY
-    $category_id = isset($params['category_id'])
-        ? (int) $params['category_id']
-        : (int) get_term_meta(
-            $term_id,
-            'category_id',
-            true
-        );
+    $category_id = array_key_exists('category_id', $params)
+        ? absint($params['category_id'])
+        : (int) get_term_meta($term_id, 'category_id', true);
 
     if (!$category_id) {
         return new WP_Error(
@@ -552,8 +432,7 @@ function inventory_update_part($request)
         );
     }
 
-
-    // DUPLICATE PART NUMBER CHECK
+    // CHECK DUPLICATE PART NUMBER
     $existing_part_numbers = get_terms([
         'taxonomy'   => 'part',
         'hide_empty' => false,
@@ -566,60 +445,54 @@ function inventory_update_part($request)
         ],
     ]);
 
-    if (!is_wp_error($existing_part_numbers)) {
-
-        foreach ($existing_part_numbers as $existing_part) {
-
-            if (
-                (int) $existing_part->term_id ===
-                $term_id
-            ) {
-                continue;
-            }
-
-            return new WP_Error(
-                'duplicate_part_number',
-                'A part with this Part Number already exists.',
-                ['status' => 400]
-            );
-        }
+    if (is_wp_error($existing_part_numbers)) {
+        return $existing_part_numbers;
     }
 
+    foreach ($existing_part_numbers as $existing_part) {
 
-    // DUPLICATE CHECK
+        if ((int) $existing_part->term_id === $term_id) {
+            continue;
+        }
+
+        return new WP_Error(
+            'duplicate_part_number',
+            'A part with this Part Number already exists.',
+            ['status' => 400]
+        );
+    }
+
+    // CHECK DUPLICATE NAME FOR SAME BRAND
     $existing_parts = get_terms([
         'taxonomy'   => 'part',
         'hide_empty' => false,
         'name'       => $name,
     ]);
 
-    if (!is_wp_error($existing_parts)) {
-
-        foreach ($existing_parts as $existing_part) {
-
-            if (
-                (int) $existing_part->term_id ===
-                $term_id
-            ) {
-                continue;
-            }
-
-            $existing_brand_id = (int) get_term_meta(
-                $existing_part->term_id,
-                'brand_id',
-                true
-            );
-
-            if ($existing_brand_id === $brand_id) {
-                return new WP_Error(
-                    'duplicate_part',
-                    'A part with this name already exists for this brand.',
-                    ['status' => 400]
-                );
-            }
-        }
+    if (is_wp_error($existing_parts)) {
+        return $existing_parts;
     }
 
+    foreach ($existing_parts as $existing_part) {
+
+        if ((int) $existing_part->term_id === $term_id) {
+            continue;
+        }
+
+        $existing_brand_id = (int) get_term_meta(
+            $existing_part->term_id,
+            'brand_id',
+            true
+        );
+
+        if ($existing_brand_id === $brand_id) {
+            return new WP_Error(
+                'duplicate_part',
+                'A part with this name already exists for this brand.',
+                ['status' => 400]
+            );
+        }
+    }
 
     // UPDATE NAME
     if ($name !== $term->name) {
@@ -627,9 +500,7 @@ function inventory_update_part($request)
         $updated_term = wp_update_term(
             $term_id,
             'part',
-            [
-                'name' => $name,
-            ]
+            ['name' => $name]
         );
 
         if (is_wp_error($updated_term)) {
@@ -637,53 +508,27 @@ function inventory_update_part($request)
         }
     }
 
-
     // BRAND
-    update_term_meta(
-        $term_id,
-        'brand_id',
-        $brand_id
-    );
-
+    update_term_meta($term_id, 'brand_id', $brand_id);
 
     // CATEGORY
-    update_term_meta(
-        $term_id,
-        'category_id',
-        $category_id
-    );
-
+    update_term_meta($term_id, 'category_id', $category_id);
 
     // SERIES
     if (array_key_exists('series_id', $params)) {
 
-        if ($params['series_id'] === null) {
-
-            delete_term_meta(
-                $term_id,
-                'series_id'
-            );
+        if ($params['series_id'] === null || $params['series_id'] === '') {
+            delete_term_meta($term_id, 'series_id');
         } else {
-
-            $series_id = (int) $params['series_id'];
+            $series_id = absint($params['series_id']);
 
             if ($series_id) {
-
-                update_term_meta(
-                    $term_id,
-                    'series_id',
-                    $series_id
-                );
+                update_term_meta($term_id, 'series_id', $series_id);
             } else {
-
-                delete_term_meta(
-                    $term_id,
-                    'series_id'
-                );
+                delete_term_meta($term_id, 'series_id');
             }
         }
     }
-
 
     // BASE PRICE
     if (array_key_exists('base_price', $params)) {
@@ -692,13 +537,8 @@ function inventory_update_part($request)
             $params['base_price'] === null ||
             $params['base_price'] === ''
         ) {
-
-            delete_term_meta(
-                $term_id,
-                'base_price'
-            );
+            delete_term_meta($term_id, 'base_price');
         } else {
-
             update_term_meta(
                 $term_id,
                 'base_price',
@@ -707,26 +547,38 @@ function inventory_update_part($request)
         }
     }
 
-
     // PART NUMBER
-    if (array_key_exists('part_number', $params)) {
+    update_term_meta($term_id, 'part_number', $part_number);
+
+    // GTIN
+    if (array_key_exists('gtin', $params)) {
+
+        $gtin = $params['gtin'] !== null
+            ? sanitize_text_field($params['gtin'])
+            : '';
+
+        update_term_meta($term_id, 'gtin', $gtin);
+    }
+
+    // GOOGLE PRODUCT CATEGORY
+    if (array_key_exists('google_product_category', $params)) {
+
+        $google_product_category = $params['google_product_category'] !== null
+            ? sanitize_text_field($params['google_product_category'])
+            : '';
 
         update_term_meta(
             $term_id,
-            'part_number',
-            $part_number
+            'google_product_category',
+            $google_product_category
         );
     }
-
 
     // SHORT DESCRIPTION
     if (array_key_exists('short_description', $params)) {
 
-        $short_description =
-            $params['short_description'] !== null
-            ? sanitize_textarea_field(
-                $params['short_description']
-            )
+        $short_description = $params['short_description'] !== null
+            ? sanitize_textarea_field($params['short_description'])
             : '';
 
         update_term_meta(
@@ -736,15 +588,11 @@ function inventory_update_part($request)
         );
     }
 
-
     // LONG DESCRIPTION
     if (array_key_exists('long_description', $params)) {
 
-        $long_description =
-            $params['long_description'] !== null
-            ? sanitize_textarea_field(
-                $params['long_description']
-            )
+        $long_description = $params['long_description'] !== null
+            ? sanitize_textarea_field($params['long_description'])
             : '';
 
         update_term_meta(
@@ -758,13 +606,11 @@ function inventory_update_part($request)
             'description',
             $long_description
         );
+
     } elseif (array_key_exists('description', $params)) {
 
-        $description =
-            $params['description'] !== null
-            ? sanitize_textarea_field(
-                $params['description']
-            )
+        $description = $params['description'] !== null
+            ? sanitize_textarea_field($params['description'])
             : '';
 
         update_term_meta(
@@ -783,29 +629,18 @@ function inventory_update_part($request)
     // SEO TITLE
     if (array_key_exists('seo_title', $params)) {
 
-        $seo_title =
-            $params['seo_title'] !== null
-            ? sanitize_text_field(
-                $params['seo_title']
-            )
+        $seo_title = $params['seo_title'] !== null
+            ? sanitize_text_field($params['seo_title'])
             : '';
 
-        update_term_meta(
-            $term_id,
-            'seo_title',
-            $seo_title
-        );
+        update_term_meta($term_id, 'seo_title', $seo_title);
     }
-
 
     // META DESCRIPTION
     if (array_key_exists('meta_description', $params)) {
 
-        $meta_description =
-            $params['meta_description'] !== null
-            ? sanitize_textarea_field(
-                $params['meta_description']
-            )
+        $meta_description = $params['meta_description'] !== null
+            ? sanitize_textarea_field($params['meta_description'])
             : '';
 
         update_term_meta(
@@ -815,15 +650,11 @@ function inventory_update_part($request)
         );
     }
 
-
     // SEARCH TERMS
     if (array_key_exists('search_terms', $params)) {
 
-        $search_terms =
-            $params['search_terms'] !== null
-            ? sanitize_text_field(
-                $params['search_terms']
-            )
+        $search_terms = $params['search_terms'] !== null
+            ? sanitize_text_field($params['search_terms'])
             : '';
 
         update_term_meta(
@@ -833,40 +664,21 @@ function inventory_update_part($request)
         );
     }
 
-
-    // IMAGE
+    // MAIN IMAGE
     if (array_key_exists('image_id', $params)) {
 
-        if (
-            $params['image_id'] === null ||
-            $params['image_id'] === ''
-        ) {
-
-            delete_term_meta(
-                $term_id,
-                'image_id'
-            );
+        if ($params['image_id'] === null || $params['image_id'] === '') {
+            delete_term_meta($term_id, 'image_id');
         } else {
-
-            $image_id = (int) $params['image_id'];
+            $image_id = absint($params['image_id']);
 
             if ($image_id) {
-
-                update_term_meta(
-                    $term_id,
-                    'image_id',
-                    $image_id
-                );
+                update_term_meta($term_id, 'image_id', $image_id);
             } else {
-
-                delete_term_meta(
-                    $term_id,
-                    'image_id'
-                );
+                delete_term_meta($term_id, 'image_id');
             }
         }
     }
-
 
     // ADDITIONAL IMAGES
     if (array_key_exists('additional_image_ids', $params)) {
@@ -875,31 +687,17 @@ function inventory_update_part($request)
             $params['additional_image_ids'] === null ||
             !is_array($params['additional_image_ids'])
         ) {
-
-            delete_term_meta(
-                $term_id,
-                'additional_image_ids'
-            );
+            delete_term_meta($term_id, 'additional_image_ids');
         } else {
-
-            $additional_image_ids =
-                array_values(
-                    array_filter(
-                        array_map(
-                            'absint',
-                            $params['additional_image_ids']
-                        )
-                    )
-                );
+            $additional_image_ids = array_values(
+                array_filter(
+                    array_map('absint', $params['additional_image_ids'])
+                )
+            );
 
             if (empty($additional_image_ids)) {
-
-                delete_term_meta(
-                    $term_id,
-                    'additional_image_ids'
-                );
+                delete_term_meta($term_id, 'additional_image_ids');
             } else {
-
                 update_term_meta(
                     $term_id,
                     'additional_image_ids',
@@ -908,7 +706,6 @@ function inventory_update_part($request)
             }
         }
     }
-
 
     // RESPONSE
     return rest_ensure_response(
@@ -923,7 +720,7 @@ function inventory_update_part($request)
 
 function inventory_delete_part($request)
 {
-    $term_id = (int) $request->get_param('id');
+    $term_id = absint($request->get_param('id'));
 
     if (!$term_id) {
         return new WP_Error(
@@ -933,12 +730,8 @@ function inventory_delete_part($request)
         );
     }
 
-
     // VERIFY PART EXISTS
-    $term = get_term(
-        $term_id,
-        'part'
-    );
+    $term = get_term($term_id, 'part');
 
     if (!$term || is_wp_error($term)) {
         return new WP_Error(
@@ -948,12 +741,8 @@ function inventory_delete_part($request)
         );
     }
 
-
     // DELETE
-    $deleted = wp_delete_term(
-        $term_id,
-        'part'
-    );
+    $deleted = wp_delete_term($term_id, 'part');
 
     if (is_wp_error($deleted)) {
         return $deleted;
@@ -966,7 +755,6 @@ function inventory_delete_part($request)
             ['status' => 500]
         );
     }
-
 
     return rest_ensure_response([
         'success' => true,
@@ -982,7 +770,7 @@ function inventory_delete_part($request)
 
 function inventory_get_parts_by_brand($request)
 {
-    $brand_id = (int) $request->get_param('brand_id');
+    $brand_id = absint($request->get_param('brand_id'));
 
     $parts = get_terms([
         'taxonomy'   => 'part',
@@ -990,7 +778,7 @@ function inventory_get_parts_by_brand($request)
     ]);
 
     if (is_wp_error($parts)) {
-        return rest_ensure_response([]);
+        return $parts;
     }
 
     $result = [];
@@ -1005,21 +793,14 @@ function inventory_get_parts_by_brand($request)
             true
         );
 
-        if (
-            $brand_id &&
-            $part_brand_id !== $brand_id
-        ) {
+        if ($brand_id && $part_brand_id !== $brand_id) {
             continue;
         }
 
-        $result[] = inventory_format_part(
-            $part_id
-        );
+        $result[] = inventory_format_part($part_id);
     }
 
-    return rest_ensure_response(
-        $result
-    );
+    return rest_ensure_response($result);
 }
 
 
@@ -1029,15 +810,11 @@ function inventory_get_parts_by_brand($request)
 
 function inventory_format_part($term_id)
 {
-    $term = get_term(
-        $term_id,
-        'part'
-    );
+    $term = get_term($term_id, 'part');
 
     if (!$term || is_wp_error($term)) {
         return [];
     }
-
 
     $brand_id = (int) get_term_meta(
         $term_id,
@@ -1070,6 +847,18 @@ function inventory_format_part($term_id)
     $part_number = get_term_meta(
         $term_id,
         'part_number',
+        true
+    );
+
+    $gtin = get_term_meta(
+        $term_id,
+        'gtin',
+        true
+    );
+
+    $google_product_category = get_term_meta(
+        $term_id,
+        'google_product_category',
         true
     );
 
@@ -1115,25 +904,22 @@ function inventory_format_part($term_id)
         true
     );
 
-    $additional_image_ids =
-        is_array($additional_image_ids)
-        ? array_map(
-            'absint',
-            $additional_image_ids
-        )
+    $additional_image_ids = is_array($additional_image_ids)
+        ? array_values(array_filter(array_map('absint', $additional_image_ids)))
         : [];
 
-    $image_id = (int) get_term_meta(
-        $term_id,
-        'image_id',
-        true
+    $image_id = absint(
+        get_term_meta($term_id, 'image_id', true)
     );
-
 
     return [
         'id' => (int) $term->term_id,
 
-        'name' => $term->name,
+        'name' => html_entity_decode(
+            $term->name,
+            ENT_QUOTES | ENT_HTML5,
+            get_bloginfo('charset') ?: 'UTF-8'
+        ),
 
         'slug' => $term->slug,
 
@@ -1141,15 +927,17 @@ function inventory_format_part($term_id)
 
         'category_id' => $category_id,
 
-        'series_id' => $series_id
-            ? $series_id
-            : null,
+        'series_id' => $series_id ?: null,
 
         'base_price' => $base_price,
 
-        'description' => $description ?: '',
-
         'part_number' => $part_number ?: '',
+
+        'gtin' => $gtin ?: '',
+
+        'google_product_category' => $google_product_category ?: '',
+
+        'description' => $description ?: '',
 
         'short_description' => $short_description ?: '',
 
@@ -1164,18 +952,15 @@ function inventory_format_part($term_id)
         'image_id' => $image_id,
 
         'image_url' => $image_id
-            ? wp_get_attachment_image_url(
-                $image_id,
-                'medium'
-            )
+            ? wp_get_attachment_image_url($image_id, 'medium')
             : null,
 
         'additional_image_urls' => array_values(
             array_filter(
                 array_map(
-                    function ($image_id) {
+                    function ($additional_image_id) {
                         return wp_get_attachment_image_url(
-                            $image_id,
+                            $additional_image_id,
                             'medium'
                         );
                     },

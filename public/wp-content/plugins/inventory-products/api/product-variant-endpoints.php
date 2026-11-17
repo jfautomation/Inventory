@@ -663,8 +663,8 @@ function inventory_variant_backfill_existing_products()
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log(
                     'Inventory variant sync failed for product ' .
-                    (int) $product_id . ': ' .
-                    $result->get_error_message()
+                        (int) $product_id . ': ' .
+                        $result->get_error_message()
                 );
             }
         }
@@ -725,6 +725,7 @@ function inventory_variant_get_available_quantity($variant_id)
  * Its WordPress post ID is the product_listing_id used
  * when associating serialized Products.
  */
+
 function inventory_variant_transform_listing($variant)
 {
     $variant_id = is_object($variant)
@@ -737,13 +738,14 @@ function inventory_variant_transform_listing($variant)
         return null;
     }
 
-    // Ensure the title always reflects the current Part and Condition.
+    // Keep title synchronized with the Part and Condition.
     $title = inventory_variant_sync_listing_title($variant_id);
 
-    if (is_wp_error($title)) {
+    if (is_wp_error($title) || $title === false) {
         $title = $post->post_title;
     }
 
+    // Get associated Part and Condition.
     $part_id = (int) get_post_meta(
         $variant_id,
         '_inventory_variant_part_id',
@@ -756,30 +758,80 @@ function inventory_variant_transform_listing($variant)
         true
     );
 
-    $image_id = (int) get_post_meta(
-        $variant_id,
-        'image_id',
+    // Retrieve the master Part record.
+    $part = get_term($part_id, 'part');
+
+    if (!$part || is_wp_error($part)) {
+        return null;
+    }
+
+    // Inherited Part information.
+    $brand_id = (int) get_term_meta($part_id, 'brand_id', true);
+    $category_id = (int) get_term_meta($part_id, 'category_id', true);
+    $series_id = (int) get_term_meta($part_id, 'series_id', true);
+
+    $part_number = get_term_meta($part_id, 'part_number', true);
+    $gtin = get_term_meta($part_id, 'gtin', true);
+
+    $google_product_category = get_term_meta(
+        $part_id,
+        'google_product_category',
         true
     );
 
-    $additional_image_ids = get_post_meta(
-        $variant_id,
+    $short_description = get_term_meta(
+        $part_id,
+        'short_description',
+        true
+    );
+
+    $long_description = get_term_meta(
+        $part_id,
+        'long_description',
+        true
+    );
+
+    $seo_title = get_term_meta($part_id, 'seo_title', true);
+
+    $meta_description = get_term_meta(
+        $part_id,
+        'meta_description',
+        true
+    );
+
+    $search_terms = get_term_meta(
+        $part_id,
+        'search_terms',
+        true
+    );
+
+    // Retrieve Part images.
+    $image_id = absint(
+        get_term_meta($part_id, 'image_id', true)
+    );
+
+    $additional_image_ids = get_term_meta(
+        $part_id,
         'additional_image_ids',
         true
     );
 
-    if (!is_array($additional_image_ids)) {
-        $additional_image_ids = [];
-    }
+    $additional_image_ids = is_array($additional_image_ids)
+        ? array_values(
+            array_filter(
+                array_map('absint', $additional_image_ids)
+            )
+        )
+        : [];
 
-    $additional_image_ids = array_values(
-        array_filter(array_map('intval', $additional_image_ids))
-    );
-
+    // Generate additional image URLs.
     $additional_image_urls = [];
 
     foreach ($additional_image_ids as $attachment_id) {
-        $url = wp_get_attachment_image_url($attachment_id, 'full');
+        $url = wp_get_attachment_image_url(
+            $attachment_id,
+            'full'
+        );
 
         if ($url) {
             $additional_image_urls[] = $url;
@@ -787,62 +839,68 @@ function inventory_variant_transform_listing($variant)
     }
 
     return [
-        'id'                    => $variant_id,
-        'title'                 => $title,
-        'sku'                   => (string) get_post_meta(
+        // Listing identity.
+        'id' => $variant_id,
+        'title' => $title,
+        'sku' => (string) get_post_meta(
             $variant_id,
             '_inventory_variant_sku',
             true
         ),
-        'part_id'               => $part_id,
-        'condition_id'          => $condition_id,
-        'list_price'            => get_post_meta(
+
+        // Associated Part.
+        'part_id' => $part_id,
+        'part_name' => html_entity_decode(
+            $part->name,
+            ENT_QUOTES | ENT_HTML5,
+            get_bloginfo('charset') ?: 'UTF-8'
+        ),
+        'part_number' => $part_number ?: '',
+        'brand_id' => $brand_id,
+        'category_id' => $category_id,
+        'series_id' => $series_id ?: null,
+
+        // Listing condition and pricing.
+        'condition_id' => $condition_id,
+        'list_price' => get_post_meta(
             $variant_id,
             'list_price',
             true
         ),
-        'price_mode'            => get_post_meta(
+        'price_mode' => get_post_meta(
             $variant_id,
             'price_mode',
             true
         ),
-        'short_description'     => get_post_meta(
-            $variant_id,
-            'short_description',
-            true
-        ),
-        'long_description'      => get_post_meta(
-            $variant_id,
-            'long_description',
-            true
-        ),
-        'seo_title'             => get_post_meta(
-            $variant_id,
-            'seo_title',
-            true
-        ),
-        'meta_description'      => get_post_meta(
-            $variant_id,
-            'meta_description',
-            true
-        ),
-        'search_terms'          => get_post_meta(
-            $variant_id,
-            'search_terms',
-            true
-        ),
-        'image_id'              => $image_id ?: null,
-        'image_url'             => $image_id
+
+        // Inherited descriptions and SEO.
+        'short_description' => $short_description ?: '',
+        'long_description' => $long_description ?: '',
+        'description' => $long_description ?: '',
+        'seo_title' => $seo_title ?: '',
+        'meta_description' => $meta_description ?: '',
+        'search_terms' => $search_terms ?: '',
+
+        // Google product information.
+        'gtin' => $gtin ?: '',
+        'google_product_category' => $google_product_category ?: '',
+
+        // Inherited Part images.
+        'image_id' => $image_id ?: null,
+        'image_url' => $image_id
             ? wp_get_attachment_image_url($image_id, 'full')
             : null,
-        'additional_image_ids'  => $additional_image_ids,
+        'additional_image_ids' => $additional_image_ids,
         'additional_image_urls' => $additional_image_urls,
-        'status'                => $post->post_status,
-        'quantity'              => inventory_variant_get_available_quantity(
+
+        // Listing availability.
+        'status' => $post->post_status,
+        'quantity' => inventory_variant_get_available_quantity(
             $variant_id
         ),
     ];
 }
+
 
 /**
  * Save editable fields for a Product Listing.
@@ -1081,23 +1139,24 @@ function inventory_variant_update_listing(WP_REST_Request $request)
     );
 }
 
-function inventory_variant_delete_listing( WP_REST_Request $request ) {
+function inventory_variant_delete_listing(WP_REST_Request $request)
+{
 
-    $variant_id = absint( $request['variant_id'] );
+    $variant_id = absint($request['variant_id']);
 
     // Confirm the Product Listing exists.
-    $variant = get_post( $variant_id );
+    $variant = get_post($variant_id);
 
-    if ( ! $variant || 'product_variant' !== $variant->post_type ) {
+    if (! $variant || 'product_variant' !== $variant->post_type) {
         return new WP_Error(
             'inventory_variant_not_found',
             'Product Listing not found.',
-            [ 'status' => 404 ]
+            ['status' => 404]
         );
     }
 
     // Check whether serialized Products are still attached.
-    $associated_products = new WP_Query( [
+    $associated_products = new WP_Query([
         'post_type'      => 'product',
         'post_status'    => 'any',
         'posts_per_page' => 1,
@@ -1109,31 +1168,31 @@ function inventory_variant_delete_listing( WP_REST_Request $request ) {
                 'compare' => '=',
             ],
         ],
-    ] );
+    ]);
 
-    if ( $associated_products->have_posts() ) {
+    if ($associated_products->have_posts()) {
         return new WP_Error(
             'inventory_variant_has_products',
             'This Product Listing cannot be deleted while serialized products are still associated with it. Remove or reassign those products first.',
-            [ 'status' => 409 ]
+            ['status' => 409]
         );
     }
 
     // Permanently delete the Product Listing.
-    $deleted = wp_delete_post( $variant_id, true );
+    $deleted = wp_delete_post($variant_id, true);
 
-    if ( ! $deleted ) {
+    if (! $deleted) {
         return new WP_Error(
             'inventory_variant_delete_failed',
             'Unable to delete the Product Listing.',
-            [ 'status' => 500 ]
+            ['status' => 500]
         );
     }
 
-    return rest_ensure_response( [
+    return rest_ensure_response([
         'deleted' => true,
         'id'      => $variant_id,
-    ] );
+    ]);
 }
 
 /**
@@ -1294,7 +1353,7 @@ function inventory_register_variant_api_routes()
         ],
     ]);
 
-        // Product Listing: update and delete.
+    // Product Listing: update and delete.
     register_rest_route(
         'inventory/v1',
         '/product-listings/(?P<variant_id>\d+)',
