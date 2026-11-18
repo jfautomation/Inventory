@@ -45,27 +45,30 @@ export const TaxonomyService = {
   //////////////////////////////////////////////////
 
   updatePart: async (
-    id: number,
-    data: {
-      name: string;
-      part_number: string;
-      brand_id: number;
-      category_id: number;
-      series_id?: number | null;
-      base_price?: number | null;
-      short_description: string;
-      long_description: string;
-      image_id?: number | null;
-      additional_image_ids?: number[];
-    }
-  ) => {
-    const res = await api.put(
-      `/inventory/v1/parts/${id}`,
-      data
-    );
+  id: number,
+  data: Partial<{
+    name: string;
+    part_number: string;
+    brand_id: number;
+    category_id: number;
+    series_id: number | null;
+    base_price: number | null;
+    short_description: string;
+    long_description: string;
+    seo_title: string;
+    meta_description: string;
+    search_terms: string;
+    image_id: number | null;
+    additional_image_ids: number[];
+  }>
+) => {
+  const res = await api.put(
+    `/inventory/v1/parts/${id}`,
+    data
+  );
 
-    return res.data;
-  },
+  return res.data;
+},
 
 
   //////////////////////////////////////////////////

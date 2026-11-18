@@ -14,7 +14,6 @@ type InventoryDetailProps = {
     additionalImages?: string[];
     imageAlt?: string;
 
-
     onDelete: () => void;
     onEdit: () => void;
     onAdd: () => void;
@@ -58,15 +57,6 @@ export default function InventoryDetail({
                             <Plus size={16} className="mr-2" />
                             {addButtonLabel}
                         </Button>
-
-                        <Button
-                            variant="secondary"
-                            onClick={onEdit}
-                        >
-                            <Pencil size={16} className="mr-2" />
-                            Edit
-                        </Button>
-
                         <Button
                             variant="danger"
                             onClick={onDelete}
@@ -113,17 +103,17 @@ export default function InventoryDetail({
                 {stats}
             </section>
 
-            {/* ASSOCIATED SERIALIZED PRODUCTS */}
-            {productsContent && (
-                <section className="mx-6 mt-4">
-                    {productsContent}
-                </section>
-            )}
-
             {/* ADDITIONAL CONTENT, INCLUDING SEO */}
             {bottomContent && (
                 <section className="mx-6 mt-4">
                     {bottomContent}
+                </section>
+            )}
+
+            {/* ASSOCIATED SERIALIZED PRODUCTS - LAST SECTION */}
+            {productsContent && (
+                <section className="mx-6 mt-4">
+                    {productsContent}
                 </section>
             )}
         </PageContainer>
