@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import PageContainer from "./UI/PageContainer";
 import PageHeader from "./UI/PageHeader";
 import Button from "../components/UI/Button/Button";
+import { exportProductListingsCSV } from "../utils/exportProductListingsCSV";
 
 import { useModal } from "../context/ModalContext";
 import { useInventory } from "../context/InventoryContext";
@@ -14,7 +15,7 @@ import InventoryFilters from "./ProductsPage/Inventory/InventoryFilters";
 import ProductListingTable from "./ProductsPage/ProductListingTable";
 
 import { filterProductListings } from "./ProductsPage/Inventory/productListingFilters";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, Download } from "lucide-react";
 
 const Inventory: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -69,13 +70,24 @@ const Inventory: React.FC = () => {
       <PageHeader
         title="Dashboard: Inventory"
         actions={
-          <Button
-            icon={<Plus size={18} />}
-            label="Add Product"
-            onClick={openProduct}
-          >
-            Add Product
-          </Button>
+          <>
+            <Button
+              icon={<Plus size={18} />}
+              label="Add Product"
+              onClick={openProduct}
+            >
+              Add Product
+            </Button>
+
+            <Button
+              icon={<Download size={18} />}
+              label="Export Products"
+              variant="grey"
+              onClick={() => exportProductListingsCSV(filteredListings)}
+            >
+              Export
+            </Button>
+          </>
         }
       />
 

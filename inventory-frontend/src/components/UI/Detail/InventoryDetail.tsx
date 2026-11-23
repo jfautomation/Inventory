@@ -1,7 +1,8 @@
 import PageContainer from "../PageContainer";
 import PageHeader from "../PageHeader";
 import Button from "../Button/Button";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+
 
 import DetailImageCard from "./DetailImageCard";
 
@@ -23,7 +24,6 @@ type InventoryDetailProps = {
     statsColumns?: 4 | 5;
     bottomContent?: React.ReactNode;
     productsContent?: React.ReactNode;
-
 };
 
 export default function InventoryDetail({
@@ -41,6 +41,7 @@ export default function InventoryDetail({
     stats,
     productsContent,
     addButtonLabel = "Add",
+
 }: InventoryDetailProps) {
     return (
         <PageContainer>

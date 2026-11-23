@@ -1,5 +1,6 @@
+
 import { Link } from "react-router-dom";
-import { ChevronRight, Home } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 export type BreadcrumbItem = {
   label: string;
@@ -10,91 +11,49 @@ type BreadcrumbsProps = {
   items: BreadcrumbItem[];
 };
 
-export default function Breadcrumbs({
-  items,
-}: BreadcrumbsProps) {
+export default function Breadcrumbs({ items }: BreadcrumbsProps) {
   return (
     <nav
-      className="
-        flex
-        items-center
-        gap-2
-        text-sm
-      "
+      className="flex min-w-0 w-full items-center gap-2 text-sm overflow-hidden"
       aria-label="Breadcrumb"
     >
-      {/* HOME ICON */}
-
-      <Link
-        to="/"
-        className="
-          flex
-          items-center
-          justify-center
-          w-7
-          h-7
-          rounded-full
-          bg-[#3F76ED]
-          text-white
-          hover:opacity-90
-          transition
-        "
-        aria-label="Home"
-      >
-        <Home size={15} />
-      </Link>
-
-      {/* HOME */}
-
-      <ChevronRight
-        size={16}
-        className="text-gray-400"
-      />
-
-      <Link
-        to="/"
-        className="
-          text-gray-500
-          hover:text-gray-900
-          transition
-        "
-      >
-        Home
-      </Link>
-
-      {/* OTHER BREADCRUMBS */}
-
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
 
         return (
           <div
             key={`${item.label}-${index}`}
-            className="flex items-center gap-2"
+            className={`flex min-w-0 items-center gap-2 ${
+              isLast ? "flex-1" : "shrink-0"
+            }`}
           >
-            <ChevronRight
-              size={16}
-              className="text-gray-400"
-            />
+            {index > 0 && (
+              <ChevronRight
+                size={16}
+                className="shrink-0 text-gray-400"
+              />
+            )}
 
             {item.path ? (
               <Link
                 to={item.path}
-                className={
+                className={`transition hover:text-[#3F76ED] ${
                   isLast
-                    ? "font-semibold text-[#3F76ED]"
-                    : "text-gray-500 hover:text-gray-900 transition"
-                }
+                    ? "min-w-0 truncate font-semibold text-[#3F76ED]"
+                    : "shrink-0 whitespace-nowrap text-gray-500"
+                }`}
+                title={item.label}
               >
                 {item.label}
               </Link>
             ) : (
               <span
-                className={
+                className={`${
                   isLast
-                    ? "font-semibold text-[#3F76ED]"
-                    : "text-gray-500"
-                }
+                    ? "min-w-0 truncate font-semibold text-gray-900"
+                    : "shrink-0 text-gray-500"
+                }`}
+                title={item.label}
               >
                 {item.label}
               </span>

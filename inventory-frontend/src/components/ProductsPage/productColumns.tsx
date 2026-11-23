@@ -18,17 +18,17 @@ export const productColumns = (
   onEdit: (product: Product) => void,
   onDelete: (product: Product) => void
 ): Column<Product>[] => [
-  {
-    key: "title",
-    label: "Product Title",
-    render: (product) => (
-      <Link
-        to={`/products/${product.id}/${createSlug(
-          product.title || `product-${product.id}`
-        )}`}
-        onClick={(e) => e.stopPropagation()}
-        title={product.title || ""}
-        className="
+    {
+      key: "title",
+      label: "Product Title",
+      render: (product) => (
+        <Link
+          to={`/products/${product.id}/${createSlug(
+            product.title || `product-${product.id}`
+          )}`}
+          onClick={(e) => e.stopPropagation()}
+          title={product.title || ""}
+          className="
           block
           max-w-[240px]
           truncate
@@ -37,100 +37,100 @@ export const productColumns = (
           hover:text-[#3F76ED]
           hover:underline
         "
-      >
-        {product.title || "-"}
-      </Link>
-    ),
-  },
-
-  {
-    key: "part",
-    label: "Part Name / Number",
-    render: (product) => {
-      const part = product.part?.[0];
-
-      if (!part) {
-        return "-";
-      }
-
-      return (
-        <div className="text-black">
-          <div>{part.name}</div>
-          {"part_number" in part &&
-            typeof part.part_number === "string" &&
-            part.part_number && (
-              <div className="text-sm">{part.part_number}</div>
-            )}
-        </div>
-      );
+        >
+          {product.title || "-"}
+        </Link>
+      ),
     },
-  },
 
-  {
-    key: "category",
-    label: "Category",
-    render: (product) => {
-      const partId = product.part?.[0]?.id;
+    {
+      key: "part",
+      label: "Part Name / Number",
+      render: (product) => {
+        const part = product.part?.[0];
 
-      if (!partId) {
-        return "-";
-      }
+        if (!part) {
+          return "-";
+        }
 
-      const fullPart = parts.find(
-        (part) => Number(part.id) === Number(partId)
-      );
-
-      const category = categories.find(
-        (category) =>
-          Number(category.id) === Number(fullPart?.category_id)
-      );
-
-      return category?.name ?? "-";
+        return (
+          <div className="text-black">
+            <div>{part.name}</div>
+            {"part_number" in part &&
+              typeof part.part_number === "string" &&
+              part.part_number && (
+                <div className="text-sm">{part.part_number}</div>
+              )}
+          </div>
+        );
+      },
     },
-  },
 
-  {
-    key: "brand",
-    label: "Brand",
-    render: (product) =>
-      product.brand?.[0]?.name ?? "-",
-  },
+    {
+      key: "category",
+      label: "Category",
+      render: (product) => {
+        const partId = product.part?.[0]?.id;
 
-  {
-    key: "condition",
-    label: "Condition",
-    render: (product) => {
-      const condition = product.condition?.[0]?.name;
+        if (!partId) {
+          return "-";
+        }
 
-      if (!condition) {
-        return "-";
-      }
+        const fullPart = parts.find(
+          (part) => Number(part.id) === Number(partId)
+        );
 
-      return <ConditionPill condition={condition} />;
+        const category = categories.find(
+          (category) =>
+            Number(category.id) === Number(fullPart?.category_id)
+        );
+
+        return category?.name ?? "-";
+      },
     },
-  },
 
-  {
-    key: "list_price",
-    label: "Price",
-    render: (product) =>
-      product.list_price
-        ? `$${Number(product.list_price).toLocaleString()}`
-        : "-",
-  },
+    {
+      key: "brand",
+      label: "Brand",
+      render: (product) =>
+        product.brand?.[0]?.name ?? "-",
+    },
 
-  {
-    key: "actions",
-    label: "Actions",
-    render: (product) => (
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(product);
-          }}
-          className="
+    {
+      key: "condition",
+      label: "Condition",
+      render: (product) => {
+        const condition = product.condition?.[0]?.name;
+
+        if (!condition) {
+          return "-";
+        }
+
+        return <ConditionPill condition={condition} />;
+      },
+    },
+
+    {
+      key: "list_price",
+      label: "Price",
+      render: (product) =>
+        product.list_price
+          ? `$${Number(product.list_price).toLocaleString()}`
+          : "-",
+    },
+
+    {
+      key: "actions",
+      label: "Actions",
+      render: (product) => (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(product);
+            }}
+            className="
             rounded-md
             border border-gray-300
             bg-gray-100
@@ -141,17 +141,17 @@ export const productColumns = (
             hover:bg-gray-200
             hover:text-gray-900
           "
-        >
-          Edit
-        </button>
+          >
+            Edit
+          </button>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(product);
-          }}
-          className="
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(product);
+            }}
+            className="
             rounded-md
             border border-gray-300
             bg-gray-100
@@ -163,10 +163,10 @@ export const productColumns = (
             hover:bg-red-50
             hover:text-red-600
           "
-        >
-          Delete
-        </button>
-      </div>
-    ),
-  },
-];
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ];

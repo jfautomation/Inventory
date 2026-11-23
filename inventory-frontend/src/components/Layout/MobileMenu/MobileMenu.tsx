@@ -100,11 +100,10 @@ export default function MobileMenu({
                   `
                     flex w-full items-center rounded-lg border
                     px-3 py-3 text-sm transition-colors
-                    ${
-                      isActive
-                        ? "border-[#3F76ED] bg-[#3F76ED] font-semibold text-white"
-                        : "border-transparent text-gray-700 hover:bg-gray-100"
-                    }
+                    ${isActive
+                    ? "border-[#3F76ED] bg-[#3F76ED] font-semibold text-white"
+                    : "border-transparent text-gray-700 hover:bg-gray-100"
+                  }
                   `
                 }
               >

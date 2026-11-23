@@ -58,14 +58,51 @@ export default function TopNavbar({
         </button>
 
         {/* MOBILE / TABLET CURRENT PAGE */}
-        <span
+        {/* MOBILE / TABLET BREADCRUMBS */}
+        <nav
+          aria-label="Breadcrumb"
           className="
-            min-w-0 truncate text-sm font-semibold text-gray-900
-            min-[890px]:hidden
-          "
+    flex min-w-0 flex-1 items-center gap-1.5
+    overflow-hidden whitespace-nowrap
+    min-[890px]:hidden
+  "
         >
-          {currentLabel}
-        </span>
+          {items.map((item, index) => {
+            const isLast = index === items.length - 1;
+
+            return (
+              <div
+                key={`${item.label}-${index}`}
+                className={`flex min-w-0 items-center gap-1.5 ${isLast ? "flex-1" : "shrink-0"
+                  }`}
+              >
+                {index > 0 && (
+                  <ChevronRight
+                    size={13}
+                    className="shrink-0 text-gray-400"
+                  />
+                )}
+
+                {item.path && !isLast ? (
+                  <Link
+                    to={item.path}
+                    className="shrink-0 text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <span
+                    aria-current="page"
+                    className="min-w-0 truncate text-sm font-semibold text-gray-900"
+                    title={item.label}
+                  >
+                    {item.label}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </nav>
 
         {/* DESKTOP BREADCRUMBS */}
         <nav

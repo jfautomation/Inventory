@@ -2,17 +2,14 @@
 import { useState } from "react";
 import { useModal } from "../../context/ModalContext";
 import { useInventory } from "../../context/InventoryContext";
-
+import { exportProductListingsCSV } from "../../utils/exportProductListingsCSV";
 import PageContainer from "../UI/PageContainer";
 import PageHeader from "../UI/PageHeader";
 import Button from "../UI/Button/Button";
-
 import InventoryFilters from "./Inventory/InventoryFilters";
 import ProductListingTable from "./ProductListingTable";
-
 import { filterProductListings } from "./Inventory/productListingFilters";
-
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, Download } from "lucide-react";
 
 const ProductsPage = () => {
   const { openProduct } = useModal();
@@ -48,18 +45,29 @@ const ProductsPage = () => {
 
   return (
     <PageContainer>
-      <PageHeader
-        title="Products"
-        actions={
-          <Button
-            icon={<Plus size={18} />}
-            label="Add Product"
-            onClick={openProduct}
-          >
-            Add Product
-          </Button>
-        }
-      />
+   <PageHeader
+  title="Products"
+  actions={
+    <>
+      <Button
+        icon={<Plus size={18} />}
+        label="Add Product"
+        onClick={openProduct}
+      >
+        Add Product
+      </Button>
+
+      <Button
+        icon={<Download size={18} />}
+        label="Export Products"
+        variant="grey"
+        onClick={() => exportProductListingsCSV(filteredListings)}
+      >
+        Export
+      </Button>
+    </>
+  }
+/>
 
       <ProductListingTable
         listings={filteredListings}

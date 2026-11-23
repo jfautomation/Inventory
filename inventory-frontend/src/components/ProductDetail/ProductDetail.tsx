@@ -383,12 +383,12 @@ const ProductDetail = () => {
                             ) : (
                               <span
                                 className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${product.inventory_status === "active"
-                                    ? "bg-green-100 text-green-800"
-                                    : product.inventory_status === "sold"
-                                      ? "bg-blue-100 text-blue-800"
-                                      : product.inventory_status === "archived"
-                                        ? "bg-gray-100 text-gray-700"
-                                        : "bg-gray-100 text-gray-600"
+                                  ? "bg-green-100 text-green-800"
+                                  : product.inventory_status === "sold"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : product.inventory_status === "archived"
+                                      ? "bg-gray-100 text-gray-700"
+                                      : "bg-gray-100 text-gray-600"
                                   }`}
                               >
                                 {product.inventory_status === "active"
