@@ -45,7 +45,7 @@ export default function DataTable<T>({
           )}
 
           {/* Desktop table */}
-          <div className={renderMobileCard ? "hidden min-[890px]:block" : "block"}>
+          <div className={renderMobileCard ? "hidden min-[1318px]:block" : "block"}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="border-b bg-gray-50">
@@ -106,7 +106,7 @@ export default function DataTable<T>({
 
           {/* Mobile and tablet cards */}
           {renderMobileCard && (
-            <div className="min-[890px]:hidden p-3">
+            <div className="min-[1318px]:hidden p-3">
               {loading ? (
                 <div className="py-8 text-center text-sm text-gray-500">
                   Loading...

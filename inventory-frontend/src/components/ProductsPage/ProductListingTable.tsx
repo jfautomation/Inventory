@@ -1,9 +1,14 @@
+
 import type { ReactNode } from "react";
+
 import DataTable from "../UI/DataTable/DataTable";
 import { productListingColumns } from "./productListingColumns";
+import ProductListingPreviewCard from "./ProductListingPreviewCard";
+
 import { useInventory } from "../../context/InventoryContext";
 import { useModal } from "../../context/ModalContext";
 import { ProductListingService } from "../../services/productListingService";
+
 import type { ProductListing } from "../../types";
 
 type ProductListingTableProps = {
@@ -65,6 +70,17 @@ const ProductListingTable = ({
       toolbar={toolbar}
       tableHeader={tableHeader}
       tableHeaderIcon={tableHeaderIcon}
+      renderMobileCard={(listing) => (
+        <ProductListingPreviewCard
+          listing={listing}
+          parts={parts}
+          brands={brands}
+          categories={categories}
+          conditions={conditions}
+          onEdit={openEditListing}
+          onDelete={handleDelete}
+        />
+      )}
     />
   );
 };
