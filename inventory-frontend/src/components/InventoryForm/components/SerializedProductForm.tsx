@@ -22,7 +22,9 @@ type SerializedProductFormProps = {
     workOrder: string;
     setWorkOrder: React.Dispatch<React.SetStateAction<string>>;
     inventoryStatus: "active" | "sold" | "archived";
-    setInventoryStatus: React.Dispatch<React.SetStateAction<"active" | "sold" | "archived">>;
+    setInventoryStatus: React.Dispatch<
+        React.SetStateAction<"active" | "sold" | "archived">
+    >;
 
     selectedShelf: Term | null;
     setSelectedShelf: React.Dispatch<React.SetStateAction<Term | null>>;
@@ -66,23 +68,11 @@ type SerializedProductFormProps = {
     newListingConditionId: number | "";
     setNewListingConditionId: React.Dispatch<React.SetStateAction<number | "">>;
     newListingPriceMode: "automatic" | "manual";
-    setNewListingPriceMode: React.Dispatch<React.SetStateAction<"automatic" | "manual">>;
+    setNewListingPriceMode: React.Dispatch<
+        React.SetStateAction<"automatic" | "manual">
+    >;
     newListingPrice: string;
     setNewListingPrice: React.Dispatch<React.SetStateAction<string>>;
-    newListingShortDescription: string;
-    setNewListingShortDescription: React.Dispatch<React.SetStateAction<string>>;
-    newListingLongDescription: string;
-    setNewListingLongDescription: React.Dispatch<React.SetStateAction<string>>;
-    newListingSeoTitle: string;
-    setNewListingSeoTitle: React.Dispatch<React.SetStateAction<string>>;
-    newListingSearchTerms: string;
-    setNewListingSearchTerms: React.Dispatch<React.SetStateAction<string>>;
-    newListingMetaDescription: string;
-    setNewListingMetaDescription: React.Dispatch<React.SetStateAction<string>>;
-    newListingImageFile: File | null;
-    setNewListingImageFile: React.Dispatch<React.SetStateAction<File | null>>;
-    newListingAdditionalImageFiles: File[];
-    setNewListingAdditionalImageFiles: React.Dispatch<React.SetStateAction<File[]>>;
     handleCreateListing: () => void;
 
     renderPartSelector: () => React.ReactNode;
@@ -96,7 +86,9 @@ type SerializedProductFormProps = {
         price: string,
         setPrice: (value: string) => void
     ) => React.ReactNode;
-    handleProductImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    handleProductImageChange: (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => void;
 };
 
 const inputClass =
@@ -104,8 +96,10 @@ const inputClass =
 
 const labelClass = "mb-1.5 block text-sm font-medium text-gray-700";
 const sectionClass = "mt-7 border-t border-gray-200 pt-6";
+
 const buttonClass =
     "rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60";
+
 const fileInputClass =
     "block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700";
 
@@ -171,20 +165,6 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
         setNewListingPriceMode,
         newListingPrice,
         setNewListingPrice,
-        newListingShortDescription,
-        setNewListingShortDescription,
-        newListingLongDescription,
-        setNewListingLongDescription,
-        newListingSeoTitle,
-        setNewListingSeoTitle,
-        newListingSearchTerms,
-        setNewListingSearchTerms,
-        newListingMetaDescription,
-        setNewListingMetaDescription,
-        newListingImageFile,
-        setNewListingImageFile,
-        newListingAdditionalImageFiles,
-        setNewListingAdditionalImageFiles,
         handleCreateListing,
         renderPartSelector,
         renderConditionSelector,
@@ -194,12 +174,9 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
 
     return (
         <>
-            {/* ====================================================
-                SERIALIZED PRODUCT FORM
-            ==================================================== */}
-
             {isProduct && (
                 <>
+                    {/* PART */}
                     <section>
                         <h3 className="mb-4 text-base font-semibold text-gray-900">
                             1. Part
@@ -230,19 +207,27 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
 
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div>
-                                        <label className={labelClass}>Part Name *</label>
+                                        <label className={labelClass}>
+                                            Part Name *
+                                        </label>
                                         <input
                                             value={newPartName}
-                                            onChange={(event) => setNewPartName(event.target.value)}
+                                            onChange={(event) =>
+                                                setNewPartName(event.target.value)
+                                            }
                                             className={inputClass}
                                         />
                                     </div>
 
                                     <div>
-                                        <label className={labelClass}>Part Number *</label>
+                                        <label className={labelClass}>
+                                            Part Number *
+                                        </label>
                                         <input
                                             value={newPartNumber}
-                                            onChange={(event) => setNewPartNumber(event.target.value)}
+                                            onChange={(event) =>
+                                                setNewPartNumber(event.target.value)
+                                            }
                                             className={inputClass}
                                         />
                                     </div>
@@ -253,7 +238,9 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                             value={newPartBrandId}
                                             onChange={(event) => {
                                                 setNewPartBrandId(
-                                                    event.target.value ? Number(event.target.value) : ""
+                                                    event.target.value
+                                                        ? Number(event.target.value)
+                                                        : ""
                                                 );
                                                 setNewPartSeriesId("");
                                             }}
@@ -269,19 +256,26 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                     </div>
 
                                     <div>
-                                        <label className={labelClass}>Category *</label>
+                                        <label className={labelClass}>
+                                            Category *
+                                        </label>
                                         <select
                                             value={newPartCategoryId}
                                             onChange={(event) =>
                                                 setNewPartCategoryId(
-                                                    event.target.value ? Number(event.target.value) : ""
+                                                    event.target.value
+                                                        ? Number(event.target.value)
+                                                        : ""
                                                 )
                                             }
                                             className={inputClass}
                                         >
                                             <option value="">Select Category</option>
                                             {categories.map((category) => (
-                                                <option key={category.id} value={category.id}>
+                                                <option
+                                                    key={category.id}
+                                                    value={category.id}
+                                                >
                                                     {category.name}
                                                 </option>
                                             ))}
@@ -295,7 +289,9 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                             disabled={!newPartBrandId}
                                             onChange={(event) =>
                                                 setNewPartSeriesId(
-                                                    event.target.value ? Number(event.target.value) : ""
+                                                    event.target.value
+                                                        ? Number(event.target.value)
+                                                        : ""
                                                 )
                                             }
                                             className={inputClass}
@@ -310,33 +306,49 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                     </div>
 
                                     <div>
-                                        <label className={labelClass}>Base Price</label>
+                                        <label className={labelClass}>
+                                            Base Price
+                                        </label>
                                         <input
                                             type="number"
                                             min="0"
                                             step="0.01"
                                             value={newPartBasePrice}
-                                            onChange={(event) => setNewPartBasePrice(event.target.value)}
+                                            onChange={(event) =>
+                                                setNewPartBasePrice(event.target.value)
+                                            }
                                             className={inputClass}
                                         />
                                     </div>
 
                                     <div className="md:col-span-2">
-                                        <label className={labelClass}>Short Description</label>
+                                        <label className={labelClass}>
+                                            Short Description
+                                        </label>
                                         <textarea
                                             rows={2}
                                             value={newPartShortDescription}
-                                            onChange={(event) => setNewPartShortDescription(event.target.value)}
+                                            onChange={(event) =>
+                                                setNewPartShortDescription(
+                                                    event.target.value
+                                                )
+                                            }
                                             className={inputClass}
                                         />
                                     </div>
 
                                     <div className="md:col-span-2">
-                                        <label className={labelClass}>Long Description</label>
+                                        <label className={labelClass}>
+                                            Long Description
+                                        </label>
                                         <textarea
                                             rows={4}
                                             value={newPartLongDescription}
-                                            onChange={(event) => setNewPartLongDescription(event.target.value)}
+                                            onChange={(event) =>
+                                                setNewPartLongDescription(
+                                                    event.target.value
+                                                )
+                                            }
                                             className={inputClass}
                                         />
                                     </div>
@@ -349,7 +361,9 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                         onClick={handleCreatePart}
                                         className={buttonClass}
                                     >
-                                        {creatingPart ? "Creating Part..." : "Create Part"}
+                                        {creatingPart
+                                            ? "Creating Part..."
+                                            : "Create Part"}
                                     </button>
                                 </div>
                             </div>
@@ -370,6 +384,7 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                         )}
                     </section>
 
+                    {/* PRODUCT LISTING */}
                     <section className={sectionClass}>
                         <h3 className="mb-4 text-base font-semibold text-gray-900">
                             2. Product Listing
@@ -377,7 +392,8 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
 
                         <div>
                             <label className={labelClass}>
-                                Product Listing <span className="text-red-500">*</span>
+                                Product Listing{" "}
+                                <span className="text-red-500">*</span>
                             </label>
 
                             <select
@@ -385,7 +401,9 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                 disabled={!selectedPart || isProductEditing}
                                 onChange={(event) =>
                                     setSelectedListingId(
-                                        event.target.value ? Number(event.target.value) : ""
+                                        event.target.value
+                                            ? Number(event.target.value)
+                                            : ""
                                     )
                                 }
                                 className={inputClass}
@@ -394,19 +412,25 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                     {!selectedPart
                                         ? "Select a Part First"
                                         : listingsForSelectedPart.length === 0
-                                            ? "No Product Listings Available"
-                                            : "Select Product Listing"}
+                                          ? "No Product Listings Available"
+                                          : "Select Product Listing"}
                                 </option>
 
                                 {listingsForSelectedPart.map((listing) => {
                                     const condition = conditions.find(
                                         (item) =>
-                                            Number(item.id) === Number(listing.condition_id)
+                                            Number(item.id) ===
+                                            Number(listing.condition_id)
                                     );
 
                                     return (
-                                        <option key={listing.id} value={listing.id}>
-                                            {listing.title} — {condition?.name || "Condition"} — SKU: {listing.sku}
+                                        <option
+                                            key={listing.id}
+                                            value={listing.id}
+                                        >
+                                            {listing.title} —{" "}
+                                            {condition?.name || "Condition"} — SKU:{" "}
+                                            {listing.sku}
                                         </option>
                                     );
                                 })}
@@ -418,9 +442,11 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                 <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                                     Selected Product Listing
                                 </p>
+
                                 <p className="mt-1 font-semibold text-gray-900">
                                     {selectedListing.title}
                                 </p>
+
                                 <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
                                     <div>
                                         <span className="text-gray-500">SKU</span>
@@ -428,24 +454,37 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                             {selectedListing.sku || "—"}
                                         </p>
                                     </div>
+
                                     <div>
-                                        <span className="text-gray-500">Condition</span>
+                                        <span className="text-gray-500">
+                                            Condition
+                                        </span>
                                         <p className="font-medium text-gray-900">
                                             {conditions.find(
-                                                (item) => Number(item.id) === Number(selectedListing.condition_id)
+                                                (item) =>
+                                                    Number(item.id) ===
+                                                    Number(selectedListing.condition_id)
                                             )?.name || "—"}
                                         </p>
                                     </div>
+
                                     <div>
-                                        <span className="text-gray-500">Listing Price</span>
+                                        <span className="text-gray-500">
+                                            Listing Price
+                                        </span>
                                         <p className="font-medium text-gray-900">
                                             {selectedListing.list_price != null
-                                                ? `$${Number(selectedListing.list_price).toFixed(2)}`
+                                                ? `$${Number(
+                                                      selectedListing.list_price
+                                                  ).toFixed(2)}`
                                                 : "—"}
                                         </p>
                                     </div>
+
                                     <div>
-                                        <span className="text-gray-500">Available Quantity</span>
+                                        <span className="text-gray-500">
+                                            Available Quantity
+                                        </span>
                                         <p className="font-medium text-gray-900">
                                             {selectedListing.quantity ?? 0}
                                         </p>
@@ -487,94 +526,6 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                         newListingPrice,
                                         setNewListingPrice
                                     )}
-
-                                    <div className="md:col-span-2">
-                                        <label className={labelClass}>Short Description</label>
-                                        <textarea
-                                            rows={2}
-                                            value={newListingShortDescription}
-                                            onChange={(event) => setNewListingShortDescription(event.target.value)}
-                                            className={inputClass}
-                                        />
-                                    </div>
-
-                                    <div className="md:col-span-2">
-                                        <label className={labelClass}>Long Description</label>
-                                        <textarea
-                                            rows={4}
-                                            value={newListingLongDescription}
-                                            onChange={(event) => setNewListingLongDescription(event.target.value)}
-                                            className={inputClass}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className={labelClass}>SEO Title</label>
-                                        <input
-                                            value={newListingSeoTitle}
-                                            onChange={(event) => setNewListingSeoTitle(event.target.value)}
-                                            className={inputClass}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className={labelClass}>Search Terms</label>
-                                        <input
-                                            value={newListingSearchTerms}
-                                            onChange={(event) => setNewListingSearchTerms(event.target.value)}
-                                            className={inputClass}
-                                        />
-                                    </div>
-
-                                    <div className="md:col-span-2">
-                                        <label className={labelClass}>Meta Description</label>
-                                        <textarea
-                                            rows={3}
-                                            value={newListingMetaDescription}
-                                            onChange={(event) => setNewListingMetaDescription(event.target.value)}
-                                            className={inputClass}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className={labelClass}>Listing Image</label>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(event) => {
-                                                setNewListingImageFile(event.target.files?.[0] || null);
-                                                event.target.value = "";
-                                            }}
-                                            className={fileInputClass}
-                                        />
-                                        {newListingImageFile && (
-                                            <p className="mt-1 text-xs text-gray-500">
-                                                {newListingImageFile.name}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className={labelClass}>Additional Images</label>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            multiple
-                                            onChange={(event) => {
-                                                setNewListingAdditionalImageFiles((current) => [
-                                                    ...current,
-                                                    ...Array.from(event.target.files || []),
-                                                ]);
-                                                event.target.value = "";
-                                            }}
-                                            className={fileInputClass}
-                                        />
-                                        {newListingAdditionalImageFiles.length > 0 && (
-                                            <p className="mt-1 text-xs text-gray-500">
-                                                {newListingAdditionalImageFiles.length} image(s) selected
-                                            </p>
-                                        )}
-                                    </div>
                                 </div>
 
                                 <div className="mt-4 flex justify-end">
@@ -584,13 +535,16 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                         onClick={handleCreateListing}
                                         className={buttonClass}
                                     >
-                                        {creatingListing ? "Creating Listing..." : "Create Product Listing"}
+                                        {creatingListing
+                                            ? "Creating Listing..."
+                                            : "Create Product Listing"}
                                     </button>
                                 </div>
                             </div>
                         )}
                     </section>
 
+                    {/* SERIALIZED PRODUCT DETAILS */}
                     <section className={sectionClass}>
                         <h3 className="mb-4 text-base font-semibold text-gray-900">
                             3. Serialized Product Details
@@ -599,11 +553,14 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                             <div>
                                 <label className={labelClass}>
-                                    Serial Number <span className="text-red-500">*</span>
+                                    Serial Number{" "}
+                                    <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     value={serialNumber}
-                                    onChange={(event) => setSerialNumber(event.target.value)}
+                                    onChange={(event) =>
+                                        setSerialNumber(event.target.value)
+                                    }
                                     className={inputClass}
                                     placeholder="Enter serial number"
                                 />
@@ -613,19 +570,26 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                 <label className={labelClass}>Work Order</label>
                                 <input
                                     value={workOrder}
-                                    onChange={(event) => setWorkOrder(event.target.value)}
+                                    onChange={(event) =>
+                                        setWorkOrder(event.target.value)
+                                    }
                                     className={inputClass}
                                     placeholder="Enter work order"
                                 />
                             </div>
 
                             <div>
-                                <label className={labelClass}>Inventory Status</label>
+                                <label className={labelClass}>
+                                    Inventory Status
+                                </label>
                                 <select
                                     value={inventoryStatus}
                                     onChange={(event) =>
                                         setInventoryStatus(
-                                            event.target.value as "active" | "sold" | "archived"
+                                            event.target.value as
+                                                | "active"
+                                                | "sold"
+                                                | "archived"
                                         )
                                     }
                                     className={inputClass}
@@ -643,7 +607,9 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                     onChange={(event) =>
                                         setSelectedShelf(
                                             shelves.find(
-                                                (item) => item.id === Number(event.target.value)
+                                                (item) =>
+                                                    item.id ===
+                                                    Number(event.target.value)
                                             ) || null
                                         )
                                     }
@@ -660,6 +626,7 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                         </div>
                     </section>
 
+                    {/* TESTING */}
                     <section className={sectionClass}>
                         <h3 className="mb-4 text-base font-semibold text-gray-900">
                             Testing
@@ -673,14 +640,16 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                         testStatus === null
                                             ? ""
                                             : testStatus
-                                                ? "passed"
-                                                : "failed"
+                                              ? "passed"
+                                              : "failed"
                                     }
                                     onChange={(event) => {
                                         if (!event.target.value) {
                                             setTestStatus(null);
                                         } else {
-                                            setTestStatus(event.target.value === "passed");
+                                            setTestStatus(
+                                                event.target.value === "passed"
+                                            );
                                         }
                                     }}
                                     className={inputClass}
@@ -696,13 +665,16 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                 <input
                                     type="date"
                                     value={testDate}
-                                    onChange={(event) => setTestDate(event.target.value)}
+                                    onChange={(event) =>
+                                        setTestDate(event.target.value)
+                                    }
                                     className={inputClass}
                                 />
                             </div>
                         </div>
                     </section>
 
+                    {/* ADDITIONAL INFORMATION */}
                     <section className={sectionClass}>
                         <h3 className="mb-4 text-base font-semibold text-gray-900">
                             Additional Information
@@ -714,14 +686,18 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                 <textarea
                                     rows={4}
                                     value={notes}
-                                    onChange={(event) => setNotes(event.target.value)}
+                                    onChange={(event) =>
+                                        setNotes(event.target.value)
+                                    }
                                     className={inputClass}
                                     placeholder="Enter notes about this individual unit..."
                                 />
                             </div>
 
                             <div>
-                                <label className={labelClass}>Serialized Product Image</label>
+                                <label className={labelClass}>
+                                    Serialized Product Image
+                                </label>
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -737,6 +713,7 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                             <p className="mb-2 text-sm font-medium text-gray-700">
                                                 Current Image
                                             </p>
+
                                             <div className="h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
                                                 <img
                                                     src={editingProduct.image}
@@ -744,6 +721,7 @@ const SerializedProductForm: React.FC<SerializedProductFormProps> = (props) => {
                                                     className="h-full w-full object-contain"
                                                 />
                                             </div>
+
                                             <button
                                                 type="button"
                                                 onClick={() => {

@@ -1,9 +1,16 @@
 <?php
+
 if (!defined('ABSPATH')) {
     exit;
 }
 
-error_log('🔥 BOOTSTRAP ENDPOINT FILE LOADED');
+/*
+|--------------------------------------------------------------------------
+| BOOTSTRAP ENDPOINT FILE
+|--------------------------------------------------------------------------
+*/
+
+error_log('BOOTSTRAP ENDPOINT FILE LOADED');
 
 
 /*
@@ -19,6 +26,7 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
         'callback'            => 'inventory_bootstrap',
     ]);
+
 });
 
 
@@ -32,21 +40,26 @@ function inventory_bootstrap($request)
 {
     $start = microtime(true);
 
-    error_log('🔥 BOOTSTRAP ENDPOINT CALLED');
+    error_log('BOOTSTRAP ENDPOINT CALLED');
 
 
     /*
     |--------------------------------------------------------------------------
-    | PRODUCTS
+    | SERIALIZED PRODUCTS
     |--------------------------------------------------------------------------
+    |
+    | Retrieve all published and draft serialized products.
+    |
     */
 
     $products = [];
 
     $product_query = new WP_Query([
         'post_type'              => 'product',
-        'post_status'            => 'publish',
+        'post_status'            => ['publish', 'draft'],
         'posts_per_page'         => -1,
+        'orderby'                => 'ID',
+        'order'                  => 'ASC',
         'no_found_rows'          => true,
         'update_post_meta_cache' => true,
         'update_post_term_cache' => true,
@@ -54,21 +67,26 @@ function inventory_bootstrap($request)
 
     error_log(
         'BOOTSTRAP | PRODUCT QUERY: ' .
-            round((microtime(true) - $start) * 1000, 2) .
-            ' ms'
+        round((microtime(true) - $start) * 1000, 2) .
+        ' ms'
     );
 
 
     foreach ($product_query->posts as $post) {
 
-        $products[] = inventory_transform_product($post);
+        $formatted_product = inventory_transform_product($post);
+
+        if ($formatted_product !== null) {
+            $products[] = $formatted_product;
+        }
+
     }
 
 
     error_log(
         'BOOTSTRAP | PRODUCT TRANSFORM: ' .
-            round((microtime(true) - $start) * 1000, 2) .
-            ' ms'
+        round((microtime(true) - $start) * 1000, 2) .
+        ' ms'
     );
 
 
@@ -76,13 +94,16 @@ function inventory_bootstrap($request)
     |--------------------------------------------------------------------------
     | PRODUCT LISTINGS
     |--------------------------------------------------------------------------
+    |
+    | Retrieve all published and draft Product Variations.
+    |
     */
 
     $product_listings = [];
 
     $listing_query = new WP_Query([
         'post_type'              => 'product_variant',
-        'post_status'            => 'publish',
+        'post_status'            => ['publish', 'draft'],
         'posts_per_page'         => -1,
         'orderby'                => 'ID',
         'order'                  => 'ASC',
@@ -91,6 +112,7 @@ function inventory_bootstrap($request)
         'update_post_term_cache' => false,
     ]);
 
+
     foreach ($listing_query->posts as $listing) {
 
         $formatted_listing = inventory_variant_transform_listing($listing);
@@ -98,20 +120,24 @@ function inventory_bootstrap($request)
         if ($formatted_listing !== null) {
             $product_listings[] = $formatted_listing;
         }
+
     }
+
 
     error_log(
         'BOOTSTRAP | PRODUCT LISTINGS: ' .
-            round((microtime(true) - $start) * 1000, 2) .
-            ' ms'
+        round((microtime(true) - $start) * 1000, 2) .
+        ' ms'
     );
-
 
 
     /*
     |--------------------------------------------------------------------------
     | PARTS
     |--------------------------------------------------------------------------
+    |
+    | Retrieve all Part taxonomy terms, including unused Parts.
+    |
     */
 
     $parts = [];
@@ -119,23 +145,30 @@ function inventory_bootstrap($request)
     $part_terms = get_terms([
         'taxonomy'   => 'part',
         'hide_empty' => false,
+        'orderby'    => 'term_id',
+        'order'      => 'ASC',
     ]);
+
 
     if (!is_wp_error($part_terms)) {
 
         foreach ($part_terms as $term) {
 
-            $parts[] = inventory_format_part(
-                $term->term_id
-            );
+            $formatted_part = inventory_format_part($term->term_id);
+
+            if ($formatted_part !== null) {
+                $parts[] = $formatted_part;
+            }
+
         }
+
     }
 
 
     error_log(
         'BOOTSTRAP | PARTS: ' .
-            round((microtime(true) - $start) * 1000, 2) .
-            ' ms'
+        round((microtime(true) - $start) * 1000, 2) .
+        ' ms'
     );
 
 
@@ -143,6 +176,9 @@ function inventory_bootstrap($request)
     |--------------------------------------------------------------------------
     | TAXONOMIES
     |--------------------------------------------------------------------------
+    |
+    | Retrieve all taxonomy terms required by the inventory application.
+    |
     */
 
     $taxonomies = [
@@ -161,13 +197,17 @@ function inventory_bootstrap($request)
         $terms = get_terms([
             'taxonomy'   => $taxonomy,
             'hide_empty' => false,
+            'orderby'    => 'term_id',
+            'order'      => 'ASC',
         ]);
+
 
         if (is_wp_error($terms)) {
 
             $taxonomy_data[$taxonomy] = [];
 
             continue;
+
         }
 
 
@@ -184,24 +224,30 @@ function inventory_bootstrap($request)
                     'slug' => $term->slug,
                 ];
 
+
                 if ($taxonomy === 'condition') {
+
                     $data['price_percentage'] =
                         inventory_get_condition_price_percentage(
                             $term->slug
                         );
+
                 }
 
+
                 return $data;
+
             },
             $terms
         );
+
     }
 
 
     error_log(
         'BOOTSTRAP | TAXONOMIES: ' .
-            round((microtime(true) - $start) * 1000, 2) .
-            ' ms'
+        round((microtime(true) - $start) * 1000, 2) .
+        ' ms'
     );
 
 
@@ -212,49 +258,73 @@ function inventory_bootstrap($request)
     */
 
     $response = [
-    'products'         => $products,
-    'product_listings' => $product_listings,
-    'parts'            => $parts,
 
-    'brands'            => $taxonomy_data['brand'] ?? [],
-    'shelves'            => $taxonomy_data['shelf'] ?? [],
-    'conditions'         => $taxonomy_data['condition'] ?? [],
-    'categories'         => $taxonomy_data['inventory_category'] ?? [],
-    'series'              => $taxonomy_data['series'] ?? [],
-];
+        'products'         => $products,
+
+        'product_listings' => $product_listings,
+
+        'parts'            => $parts,
+
+        'brands'            => $taxonomy_data['brand'] ?? [],
+
+        'shelves'           => $taxonomy_data['shelf'] ?? [],
+
+        'conditions'        => $taxonomy_data['condition'] ?? [],
+
+        'categories'        => $taxonomy_data['inventory_category'] ?? [],
+
+        'series'            => $taxonomy_data['series'] ?? [],
+
+    ];
 
 
     /*
     |--------------------------------------------------------------------------
-    | PERFORMANCE
+    | PERFORMANCE LOGGING
     |--------------------------------------------------------------------------
     */
 
     $elapsed = (microtime(true) - $start) * 1000;
 
-    error_log(
-        '🔥 BOOTSTRAP TOTAL: ' .
-            round($elapsed, 2) .
-            ' ms'
-    );
 
     error_log(
-        '🔥 BOOTSTRAP PRODUCTS: ' .
-            count($products)
-    );
-
-    error_log(
-        '🔥 BOOTSTRAP PARTS: ' .
-            count($parts)
-    );
-
-    error_log(
-        '🔥 BOOTSTRAP RESPONSE SIZE: ' .
-            strlen(wp_json_encode($response)) .
-            ' bytes'
+        'BOOTSTRAP TOTAL: ' .
+        round($elapsed, 2) .
+        ' ms'
     );
 
 
+    error_log(
+        'BOOTSTRAP PRODUCTS: ' .
+        count($products)
+    );
+
+
+    error_log(
+        'BOOTSTRAP PRODUCT LISTINGS: ' .
+        count($product_listings)
+    );
+
+
+    error_log(
+        'BOOTSTRAP PARTS: ' .
+        count($parts)
+    );
+
+
+    error_log(
+        'BOOTSTRAP RESPONSE SIZE: ' .
+        strlen(wp_json_encode($response)) .
+        ' bytes'
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RETURN RESPONSE
+    |--------------------------------------------------------------------------
+    */
 
     return rest_ensure_response($response);
+
 }

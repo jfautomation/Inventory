@@ -19,24 +19,26 @@ export const exportProductListingsCSV = (
     "Meta Description",
     "Search Terms",
     "Image ID",
+    "Additional Image IDs",
   ];
 
   const rows = listings.map((listing) => [
     listing.id,
-    listing.title || "",
-    listing.sku || "",
+    listing.title ?? "",
+    listing.sku ?? "",
     listing.part_id,
     listing.condition_id,
-    listing.price_mode || "",
+    listing.price_mode ?? "",
     listing.list_price ?? "",
     listing.quantity ?? "",
-    listing.status || "",
-    listing.short_description || "",
-    listing.long_description || "",
-    listing.seo_title || "",
-    listing.meta_description || "",
-    listing.search_terms || "",
+    listing.status ?? "",
+    listing.short_description ?? "",
+    listing.long_description ?? "",
+    listing.seo_title ?? "",
+    listing.meta_description ?? "",
+    listing.search_terms ?? "",
     listing.image_id ?? "",
+    (listing.additional_image_ids ?? []).join(";"),
   ]);
 
   const csvContent = [

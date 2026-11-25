@@ -13,7 +13,6 @@ import { useInventory } from "../../context/InventoryContext";
 import { ProductListingService } from "../../services/productListingService";
 import { ProductService } from "../../services/productService";
 
-import EditableField from "../UI/EditableField";
 import type {
   Product,
   ProductPayload,
@@ -23,7 +22,6 @@ import type {
 import InventoryDetail from "../UI/Detail/InventoryDetail";
 import StatCard from "../UI/Detail/StatCard";
 import DetailCard from "../UI/Detail/DetailCard";
-import SEOCard from "../UI/Detail/SEOCard";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -93,6 +91,7 @@ const ProductDetail = () => {
       Number(product.product_listing_id) === Number(listing.id)
   );
 
+  // DELETE PRODUCT LISTING
   const handleDelete = async () => {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${listing.title}"? This cannot be undone.`
@@ -126,23 +125,17 @@ const ProductDetail = () => {
     }
   };
 
+  // UPDATE PRODUCT LISTING
+  // Only variation-specific fields are sent.
   const handleUpdateListing = async (
     updates: Partial<ProductListingPayload>
   ) => {
     const payload: ProductListingPayload = {
-      title: listing.title,
       sku: listing.sku,
       part_id: listing.part_id,
       condition_id: listing.condition_id,
       price_mode: listing.price_mode ?? "automatic",
       list_price: listing.list_price,
-      short_description: listing.short_description,
-      long_description: listing.long_description,
-      seo_title: listing.seo_title,
-      meta_description: listing.meta_description,
-      search_terms: listing.search_terms,
-      image_id: listing.image_id,
-      additional_image_ids: listing.additional_image_ids,
       status: listing.status ?? "publish",
       ...updates,
     };
@@ -151,6 +144,7 @@ const ProductDetail = () => {
     await fetchProductListings();
   };
 
+  // EDIT SERIALIZED PRODUCT
   const handleEditProduct = (product: Product) => {
     setEditingProductId(product.id);
 
@@ -165,8 +159,10 @@ const ProductDetail = () => {
     });
   };
 
+  // CANCEL SERIALIZED PRODUCT EDIT
   const handleCancelEdit = () => {
     setEditingProductId(null);
+
     setProductDraft({
       serial_number: "",
       work_order: "",
@@ -176,6 +172,7 @@ const ProductDetail = () => {
     });
   };
 
+  // SAVE SERIALIZED PRODUCT
   const handleSaveProduct = async (product: Product) => {
     if (!productDraft.serial_number.trim()) {
       alert("Serial Number is required.");
@@ -210,6 +207,7 @@ const ProductDetail = () => {
     }
   };
 
+  // DELETE SERIALIZED PRODUCT
   const handleDeleteProduct = async (product: Product) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete serialized product "${product.serial_number || product.id}"? This cannot be undone.`
@@ -234,6 +232,7 @@ const ProductDetail = () => {
     }
   };
 
+  // UPDATE SERIALIZED PRODUCT FORM
   const updateDraft = (field: string, value: string | boolean) => {
     setProductDraft((current) => ({
       ...current,
@@ -265,39 +264,6 @@ const ProductDetail = () => {
             type="stock"
           />
         </>
-      }
-      bottomContent={
-        <SEOCard
-          customSeoTitle={
-            <EditableField
-              label="SEO Title"
-              value={listing.seo_title}
-              onSave={(value) =>
-                handleUpdateListing({ seo_title: value })
-              }
-            />
-          }
-          customMetaDescription={
-            <EditableField
-              label="Meta Description"
-              value={listing.meta_description}
-              type="textarea"
-              onSave={(value) =>
-                handleUpdateListing({ meta_description: value })
-              }
-            />
-          }
-          customSearchTerms={
-            <EditableField
-              label="Search Terms"
-              value={listing.search_terms}
-              type="textarea"
-              onSave={(value) =>
-                handleUpdateListing({ search_terms: value })
-              }
-            />
-          }
-        />
       }
       productsContent={
         <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
@@ -366,7 +332,6 @@ const ProductDetail = () => {
                             {product.shelf?.[0]?.name || "-"}
                           </td>
 
-
                           <td className="p-3">
                             {isEditing ? (
                               <select
@@ -382,14 +347,15 @@ const ProductDetail = () => {
                               </select>
                             ) : (
                               <span
-                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${product.inventory_status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : product.inventory_status === "sold"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : product.inventory_status === "archived"
-                                      ? "bg-gray-100 text-gray-700"
-                                      : "bg-gray-100 text-gray-600"
-                                  }`}
+                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                                  product.inventory_status === "active"
+                                    ? "bg-green-100 text-green-800"
+                                    : product.inventory_status === "sold"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : product.inventory_status === "archived"
+                                        ? "bg-gray-100 text-gray-700"
+                                        : "bg-gray-100 text-gray-600"
+                                }`}
                               >
                                 {product.inventory_status === "active"
                                   ? "In Stock"
@@ -401,12 +367,6 @@ const ProductDetail = () => {
                               </span>
                             )}
                           </td>
-
-
-
-
-
-
 
                           <td className="p-3">
                             {isEditing ? (
@@ -598,14 +558,15 @@ const ProductDetail = () => {
                             </span>
 
                             <span
-                              className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${product.inventory_status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : product.inventory_status === "sold"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : product.inventory_status === "archived"
-                                    ? "bg-gray-100 text-gray-700"
-                                    : "bg-gray-100 text-gray-600"
-                                }`}
+                              className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${
+                                product.inventory_status === "active"
+                                  ? "bg-green-100 text-green-800"
+                                  : product.inventory_status === "sold"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : product.inventory_status === "archived"
+                                      ? "bg-gray-100 text-gray-700"
+                                      : "bg-gray-100 text-gray-600"
+                              }`}
                             >
                               {product.inventory_status === "active"
                                 ? "In Stock"
@@ -615,10 +576,6 @@ const ProductDetail = () => {
                                     ? "Archived"
                                     : "Unknown"}
                             </span>
-
-
-
-
                           </div>
 
                           <div className="grid grid-cols-2 gap-3 text-sm">
@@ -652,7 +609,6 @@ const ProductDetail = () => {
                           </div>
                         </>
                       )}
-
 
                       <div className="mt-3 flex items-center gap-4 border-t border-gray-100 pt-3">
                         {isEditing ? (
@@ -703,7 +659,6 @@ const ProductDetail = () => {
                           <Trash2 size={18} />
                         </button>
                       </div>
-
                     </div>
                   );
                 })}
@@ -722,15 +677,6 @@ const ProductDetail = () => {
       <DetailCard
         title={listing.title}
         titleLabel="Listing Title"
-        onSaveTitle={async (value) => {
-          if (!value.trim()) {
-            throw new Error("Title is required.");
-          }
-
-          await handleUpdateListing({
-            title: value.trim(),
-          });
-        }}
         editableFields={[
           {
             label: "Part",
@@ -797,17 +743,7 @@ const ProductDetail = () => {
           },
         ]}
         shortDescription={listing.short_description}
-        onSaveShortDescription={(value) =>
-          handleUpdateListing({
-            short_description: value,
-          })
-        }
         longDescription={listing.long_description}
-        onSaveLongDescription={(value) =>
-          handleUpdateListing({
-            long_description: value,
-          })
-        }
       />
     </InventoryDetail>
   );

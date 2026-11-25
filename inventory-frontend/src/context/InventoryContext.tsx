@@ -9,6 +9,7 @@ import React, {
 
 import { api } from "../api/client";
 import { ProductListingService } from "../services/productListingService";
+import { normalizeProduct } from "../utils/normalizeProduct";
 
 import type {
     Product,
@@ -57,7 +58,7 @@ type InventoryContextType = {
 // ============================================================
 
 type BootstrapResponse = {
-    products: Product[];
+    products: any[];
     product_listings: ProductListing[];
     parts: Part[];
 
@@ -119,7 +120,12 @@ export const InventoryProvider = ({
 
             const data = response.data;
 
-            setProducts(data?.products ?? []);
+            // Always normalize serialized Products
+            const normalizedProducts = (data?.products ?? []).map(
+                normalizeProduct
+            );
+
+            setProducts(normalizedProducts);
             setProductListings(data?.product_listings ?? []);
             setParts(data?.parts ?? []);
 
@@ -130,7 +136,7 @@ export const InventoryProvider = ({
             setSeries(data?.series ?? []);
 
             console.log("BOOTSTRAP: COMPLETE");
-            console.log("PRODUCTS:", data?.products?.length ?? 0);
+            console.log("PRODUCTS:", normalizedProducts.length);
             console.log("PRODUCT LISTINGS:", data?.product_listings?.length ?? 0);
             console.log("PARTS:", data?.parts?.length ?? 0);
 
@@ -153,11 +159,15 @@ export const InventoryProvider = ({
 
     const fetchProducts = useCallback(async () => {
         try {
-            const response = await api.get<Product[]>(
+            const response = await api.get<any[]>(
                 "/wp/v2/product"
             );
 
-            setProducts(response.data ?? []);
+            const normalizedProducts = (response.data ?? []).map(
+                normalizeProduct
+            );
+
+            setProducts(normalizedProducts);
 
         } catch (err: any) {
             console.error(

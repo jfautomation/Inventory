@@ -313,6 +313,10 @@ function inventory_transform_product($post)
         'serial_number',
         'work_order',
         'list_price',
+
+
+
+        
         'price_mode',
         'notes',
         'short_description',

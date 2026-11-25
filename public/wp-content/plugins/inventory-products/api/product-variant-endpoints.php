@@ -311,10 +311,16 @@ function inventory_variant_get_or_create($part_id, $condition_id)
 /**
  * Validate Product Listing fields before creating or updating a listing.
  *
- * Returns normalized data or a WP_Error.
+ * Product Variations own only:
+ * - SKU
+ * - Price mode
+ * - Listing price
+ * - Publish/draft status
  *
- * Product Listing titles are intentionally not accepted from the request.
- * They are always generated from the associated Part and Condition.
+ * Descriptions, SEO fields, search terms, and images belong to the
+ * associated Part and are inherited when the listing is retrieved.
+ *
+ * Returns normalized data or a WP_Error.
  */
 function inventory_variant_validate_listing_data(
     WP_REST_Request $request,
@@ -438,87 +444,6 @@ function inventory_variant_validate_listing_data(
     }
 
     /*
-     * Validate optional text fields.
-     */
-    $text_fields = [
-        'short_description',
-        'long_description',
-        'seo_title',
-        'meta_description',
-        'search_terms',
-    ];
-
-    $validated_text = [];
-
-    foreach ($text_fields as $field) {
-        if ($request->has_param($field)) {
-            $validated_text[$field] = sanitize_textarea_field(
-                (string) $request->get_param($field)
-            );
-        }
-    }
-
-    /*
-     * Validate main image.
-     */
-    $image_id = null;
-
-    if ($request->has_param('image_id')) {
-        $image_id = absint($request->get_param('image_id'));
-
-        if (
-            $image_id &&
-            get_post_type($image_id) !== 'attachment'
-        ) {
-            return new WP_Error(
-                'inventory_variant_invalid_image',
-                'The selected main image is not a valid attachment.',
-                ['status' => 400]
-            );
-        }
-    }
-
-    /*
-     * Validate additional images.
-     */
-    $image_ids = null;
-
-    if ($request->has_param('additional_image_ids')) {
-        $submitted_images = $request->get_param(
-            'additional_image_ids'
-        );
-
-        if (!is_array($submitted_images)) {
-            return new WP_Error(
-                'inventory_variant_invalid_images',
-                'Additional image IDs must be an array.',
-                ['status' => 400]
-            );
-        }
-
-        $image_ids = [];
-
-        foreach ($submitted_images as $submitted_image_id) {
-            $attachment_id = absint($submitted_image_id);
-
-            if (
-                !$attachment_id ||
-                get_post_type($attachment_id) !== 'attachment'
-            ) {
-                return new WP_Error(
-                    'inventory_variant_invalid_images',
-                    'One or more additional image IDs are invalid.',
-                    ['status' => 400]
-                );
-            }
-
-            $image_ids[] = $attachment_id;
-        }
-
-        $image_ids = array_values(array_unique($image_ids));
-    }
-
-    /*
      * Validate listing status.
      */
     $status = null;
@@ -538,13 +463,10 @@ function inventory_variant_validate_listing_data(
     }
 
     return [
-        'sku'          => $sku,
-        'price_mode'   => $price_mode,
-        'list_price'   => $list_price,
-        'text_fields'  => $validated_text,
-        'image_id'     => $image_id,
-        'image_ids'    => $image_ids,
-        'status'       => $status,
+        'sku'        => $sku,
+        'price_mode' => $price_mode,
+        'list_price' => $list_price,
+        'status'     => $status,
     ];
 }
 
@@ -724,8 +646,11 @@ function inventory_variant_get_available_quantity($variant_id)
  * A Product Listing is an existing product_variant post.
  * Its WordPress post ID is the product_listing_id used
  * when associating serialized Products.
+ *
+ * Catalogue information is always inherited from the associated Part.
+ * No descriptions, SEO fields, or images are read from Product Listing
+ * metadata.
  */
-
 function inventory_variant_transform_listing($variant)
 {
     $variant_id = is_object($variant)
@@ -873,7 +798,7 @@ function inventory_variant_transform_listing($variant)
             true
         ),
 
-        // Inherited descriptions and SEO.
+        // Inherited descriptions and SEO from Part.
         'short_description' => $short_description ?: '',
         'long_description' => $long_description ?: '',
         'description' => $long_description ?: '',
@@ -881,11 +806,11 @@ function inventory_variant_transform_listing($variant)
         'meta_description' => $meta_description ?: '',
         'search_terms' => $search_terms ?: '',
 
-        // Google product information.
+        // Inherited Google product information from Part.
         'gtin' => $gtin ?: '',
         'google_product_category' => $google_product_category ?: '',
 
-        // Inherited Part images.
+        // Inherited images from Part.
         'image_id' => $image_id ?: null,
         'image_url' => $image_id
             ? wp_get_attachment_image_url($image_id, 'full')
@@ -901,12 +826,11 @@ function inventory_variant_transform_listing($variant)
     ];
 }
 
-
 /**
  * Save editable fields for a Product Listing.
  *
- * All submitted fields are validated before any changes are made.
- * The title is always generated from the Part and Condition.
+ * Only variation-specific fields are saved here.
+ * Part-owned catalogue information is never saved to the listing.
  */
 function inventory_variant_save_listing_fields(
     $variant_id,
@@ -949,7 +873,7 @@ function inventory_variant_save_listing_fields(
         return $data;
     }
 
-    // Only listing status is editable on the WordPress post itself.
+    // Save listing status on the WordPress post.
     if ($data['status'] !== null) {
         $updated = wp_update_post(
             [
@@ -973,7 +897,7 @@ function inventory_variant_save_listing_fields(
         );
     }
 
-    // Save pricing.
+    // Save variation-specific pricing.
     update_post_meta(
         $variant_id,
         'price_mode',
@@ -985,33 +909,6 @@ function inventory_variant_save_listing_fields(
         'list_price',
         $data['list_price']
     );
-
-    // Save text fields.
-    foreach ($data['text_fields'] as $field => $value) {
-        update_post_meta($variant_id, $field, $value);
-    }
-
-    // Save main image.
-    if ($data['image_id'] !== null) {
-        if ($data['image_id']) {
-            update_post_meta(
-                $variant_id,
-                'image_id',
-                $data['image_id']
-            );
-        } else {
-            delete_post_meta($variant_id, 'image_id');
-        }
-    }
-
-    // Save additional images.
-    if ($data['image_ids'] !== null) {
-        update_post_meta(
-            $variant_id,
-            'additional_image_ids',
-            $data['image_ids']
-        );
-    }
 
     return inventory_variant_transform_listing($variant_id);
 }
@@ -1139,27 +1036,30 @@ function inventory_variant_update_listing(WP_REST_Request $request)
     );
 }
 
+/**
+ * Delete a Product Listing when no serialized Products are associated.
+ */
+
 function inventory_variant_delete_listing(WP_REST_Request $request)
 {
-
     $variant_id = absint($request['variant_id']);
-
-    // Confirm the Product Listing exists.
     $variant = get_post($variant_id);
 
-    if (! $variant || 'product_variant' !== $variant->post_type) {
+    if (!$variant || $variant->post_type !== 'product_variant') {
         return new WP_Error(
-            'inventory_variant_not_found',
-            'Product Listing not found.',
+            'invalid_product_listing',
+            'The Product Listing does not exist.',
             ['status' => 404]
         );
     }
 
-    // Check whether serialized Products are still attached.
+    /**
+     * FIND ALL SERIALIZED PRODUCTS ASSOCIATED WITH THIS LISTING.
+     */
     $associated_products = new WP_Query([
         'post_type'      => 'product',
         'post_status'    => 'any',
-        'posts_per_page' => 1,
+        'posts_per_page' => -1,
         'fields'         => 'ids',
         'meta_query'     => [
             [
@@ -1170,30 +1070,124 @@ function inventory_variant_delete_listing(WP_REST_Request $request)
         ],
     ]);
 
-    if ($associated_products->have_posts()) {
+    $active_products = [];
+    $sold_products = [];
+    $other_products = [];
+
+    /**
+     * CLASSIFY PRODUCTS BEFORE DELETING ANYTHING.
+     */
+    foreach ($associated_products->posts as $product_id) {
+
+        $raw_status = get_post_meta(
+            $product_id,
+            'inventory_status',
+            true
+        );
+
+        $status = inventory_normalize_status(
+            $raw_status ?: 'active'
+        );
+
+        if ($status === 'sold') {
+
+            $sold_products[] = (int) $product_id;
+
+        } elseif ($status === 'active') {
+
+            $active_products[] = (int) $product_id;
+
+        } else {
+
+            // Unknown or other statuses are protected.
+            $other_products[] = [
+                'id'     => (int) $product_id,
+                'status' => $status,
+            ];
+        }
+    }
+
+    /**
+     * BLOCK DELETION IF SOLD PRODUCTS EXIST.
+     */
+    if (!empty($sold_products)) {
         return new WP_Error(
-            'inventory_variant_has_products',
-            'This Product Listing cannot be deleted while serialized products are still associated with it. Remove or reassign those products first.',
-            ['status' => 409]
+            'inventory_variant_has_sold_products',
+            'This Product Listing cannot be deleted because it has sold Serialized Products associated with it. Sold inventory records must be preserved.',
+            [
+                'status'             => 409,
+                'sold_product_ids'   => $sold_products,
+            ]
         );
     }
 
-    // Permanently delete the Product Listing.
-    $deleted = wp_delete_post($variant_id, true);
-
-    if (! $deleted) {
+    /**
+     * PROTECT PRODUCTS WITH OTHER STATUSES.
+     *
+     * Only active products are automatically deleted.
+     * Other statuses must be reviewed before deletion.
+     */
+    if (!empty($other_products)) {
         return new WP_Error(
-            'inventory_variant_delete_failed',
-            'Unable to delete the Product Listing.',
-            ['status' => 500]
+            'inventory_variant_has_protected_products',
+            'This Product Listing cannot be deleted because it has associated Serialized Products with statuses other than Active. Review or reassign those records first.',
+            [
+                'status'              => 409,
+                'protected_products'  => $other_products,
+            ]
+        );
+    }
+
+    /**
+     * DELETE ACTIVE SERIALIZED PRODUCTS.
+     */
+    foreach ($active_products as $product_id) {
+
+        $deleted_product = wp_delete_post(
+            $product_id,
+            true
+        );
+
+        if (!$deleted_product) {
+            return new WP_Error(
+                'serialized_product_delete_failed',
+                'Failed to delete Serialized Product ID ' . $product_id . '. The Product Listing has not been deleted.',
+                [
+                    'status' => 500,
+                    'product_id' => $product_id,
+                ]
+            );
+        }
+    }
+
+    /**
+     * DELETE THE PRODUCT LISTING.
+     */
+    $deleted_listing = wp_delete_post(
+        $variant_id,
+        true
+    );
+
+    if (!$deleted_listing) {
+        return new WP_Error(
+            'product_listing_delete_failed',
+            'The associated active Serialized Products were deleted, but the Product Listing itself could not be deleted.',
+            [
+                'status' => 500,
+                'variant_id' => $variant_id,
+                'deleted_product_ids' => $active_products,
+            ]
         );
     }
 
     return rest_ensure_response([
-        'deleted' => true,
-        'id'      => $variant_id,
+        'success' => true,
+        'message' => 'Product Listing and its associated active Serialized Products were successfully deleted.',
+        'deleted_listing_id' => $variant_id,
+        'deleted_product_ids' => $active_products,
     ]);
 }
+
 
 /**
  * Return Stock Summary rows.
@@ -1281,7 +1275,6 @@ function inventory_variant_get_stock_summary(WP_REST_Request $request)
 
     return rest_ensure_response($rows);
 }
-
 
 /**
  * Register Stock Summary and Product Listing API routes.

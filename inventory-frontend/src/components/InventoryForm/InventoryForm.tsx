@@ -5,6 +5,7 @@ import { ProductService } from "../../services/productService";
 import { ProductListingService } from "../../services/productListingService";
 import { TaxonomyService } from "../../services/taxonomyService";
 import { uploadImage } from "../../services/mediaService";
+
 import SerializedProductForm from "./components/SerializedProductForm";
 import PartForm from "./components/PartForm";
 import ListingForm from "./components/ListingForm";
@@ -49,8 +50,6 @@ const inputClass =
 const labelClass = "mb-1.5 block text-sm font-medium text-gray-700";
 
 const sectionClass = "mt-7 border-t border-gray-200 pt-6";
-
-
 
 const fileInputClass =
     "block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700";
@@ -103,6 +102,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
 
     const [serialNumber, setSerialNumber] = useState("");
     const [workOrder, setWorkOrder] = useState("");
+
     const [inventoryStatus, setInventoryStatus] =
         useState<"active" | "sold" | "archived">("active");
 
@@ -164,7 +164,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
     const [availablePartSeries, setAvailablePartSeries] = useState<Term[]>([]);
 
     // ============================================================
-    // INLINE LISTING CREATION STATE
+    // INLINE PRODUCT LISTING CREATION STATE
     // ============================================================
 
     const [showCreateListing, setShowCreateListing] = useState(false);
@@ -177,20 +177,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         useState<"automatic" | "manual">("automatic");
 
     const [newListingPrice, setNewListingPrice] = useState("");
-    const [newListingShortDescription, setNewListingShortDescription] =
-        useState("");
-    const [newListingLongDescription, setNewListingLongDescription] =
-        useState("");
-    const [newListingSeoTitle, setNewListingSeoTitle] = useState("");
-    const [newListingMetaDescription, setNewListingMetaDescription] =
-        useState("");
-    const [newListingSearchTerms, setNewListingSearchTerms] = useState("");
-
-    const [newListingImageFile, setNewListingImageFile] =
-        useState<File | null>(null);
-
-    const [newListingAdditionalImageFiles, setNewListingAdditionalImageFiles] =
-        useState<File[]>([]);
 
     // ============================================================
     // STANDALONE PART FORM STATE
@@ -231,21 +217,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         useState<"automatic" | "manual">("automatic");
 
     const [listingPrice, setListingPrice] = useState("");
-    const [listingShortDescription, setListingShortDescription] = useState("");
-    const [listingLongDescription, setListingLongDescription] = useState("");
-
-    const [listingSeoTitle, setListingSeoTitle] = useState("");
-    const [listingMetaDescription, setListingMetaDescription] = useState("");
-    const [listingSearchTerms, setListingSearchTerms] = useState("");
-
-    const [listingImageFile, setListingImageFile] = useState<File | null>(null);
-    const [listingImageRemoved, setListingImageRemoved] = useState(false);
-
-    const [listingAdditionalImageFiles, setListingAdditionalImageFiles] =
-        useState<File[]>([]);
-
-    const [existingListingAdditionalImageIds, setExistingListingAdditionalImageIds] =
-        useState<number[]>([]);
 
     // ============================================================
     // EDIT MODE — SERIALIZED PRODUCT
@@ -301,7 +272,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     (item) =>
                         Number(item.part_id) === Number(partId) &&
                         Number(item.condition_id) ===
-                        Number(editingProduct.condition?.[0]?.id)
+                            Number(editingProduct.condition?.[0]?.id)
                 );
 
                 if (matchingListing) {
@@ -374,22 +345,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             editingListing.list_price != null
                 ? String(editingListing.list_price)
                 : ""
-        );
-
-        setListingShortDescription(editingListing.short_description || "");
-        setListingLongDescription(editingListing.long_description || "");
-
-        setListingSeoTitle(editingListing.seo_title || "");
-        setListingMetaDescription(editingListing.meta_description || "");
-        setListingSearchTerms(editingListing.search_terms || "");
-
-        setListingImageFile(null);
-        setListingImageRemoved(false);
-
-        setListingAdditionalImageFiles([]);
-
-        setExistingListingAdditionalImageIds(
-            editingListing.additional_image_ids || []
         );
     }, [isListing, editingListing]);
 
@@ -501,14 +456,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         event.target.value = "";
     };
 
-    const handleListingImageChange = (
-        event: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        setListingImageFile(event.target.files?.[0] || null);
-        setListingImageRemoved(false);
-        event.target.value = "";
-    };
-
     // ============================================================
     // INLINE CREATE PART
     // ============================================================
@@ -522,7 +469,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         ) {
             alert(
                 "Please complete the required Part fields:\n\n" +
-                "Part Name\nPart Number\nBrand\nCategory"
+                    "Part Name\nPart Number\nBrand\nCategory"
             );
             return;
         }
@@ -569,8 +516,8 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             alert(
                 JSON.stringify(
                     error?.response?.data ||
-                    error?.message ||
-                    "Failed to create Part."
+                        error?.message ||
+                        "Failed to create Part."
                 )
             );
         } finally {
@@ -608,24 +555,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         try {
             setCreatingListing(true);
 
-            const condition = conditions.find(
-                (item) =>
-                    Number(item.id) === Number(newListingConditionId)
-            );
-
-            const imageId = newListingImageFile
-                ? await uploadImage(newListingImageFile)
-                : undefined;
-
-            const additionalImageIds =
-                newListingAdditionalImageFiles.length > 0
-                    ? await Promise.all(
-                        newListingAdditionalImageFiles.map(uploadImage)
-                    )
-                    : [];
-
             const payload: ProductListingPayload = {
-                title: `${selectedPart.name} - ${condition?.name || "Condition"}`,
                 part_id: selectedPart.id,
                 condition_id: Number(newListingConditionId),
                 price_mode: newListingPriceMode,
@@ -633,32 +563,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
 
                 ...(newListingPriceMode === "manual"
                     ? { list_price: Number(newListingPrice) }
-                    : {}),
-
-                ...(newListingShortDescription.trim()
-                    ? { short_description: newListingShortDescription.trim() }
-                    : {}),
-
-                ...(newListingLongDescription.trim()
-                    ? { long_description: newListingLongDescription.trim() }
-                    : {}),
-
-                ...(newListingSeoTitle.trim()
-                    ? { seo_title: newListingSeoTitle.trim() }
-                    : {}),
-
-                ...(newListingMetaDescription.trim()
-                    ? { meta_description: newListingMetaDescription.trim() }
-                    : {}),
-
-                ...(newListingSearchTerms.trim()
-                    ? { search_terms: newListingSearchTerms.trim() }
-                    : {}),
-
-                ...(imageId ? { image_id: imageId } : {}),
-
-                ...(additionalImageIds.length > 0
-                    ? { additional_image_ids: additionalImageIds }
                     : {}),
             };
 
@@ -673,13 +577,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             setNewListingConditionId("");
             setNewListingPriceMode("automatic");
             setNewListingPrice("");
-            setNewListingShortDescription("");
-            setNewListingLongDescription("");
-            setNewListingSeoTitle("");
-            setNewListingMetaDescription("");
-            setNewListingSearchTerms("");
-            setNewListingImageFile(null);
-            setNewListingAdditionalImageFiles([]);
         } catch (error: any) {
             console.error("Failed to create Product Listing:", error);
             console.error("API ERROR:", error?.response?.data);
@@ -687,8 +584,8 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             alert(
                 JSON.stringify(
                     error?.response?.data ||
-                    error?.message ||
-                    "Failed to create Product Listing."
+                        error?.message ||
+                        "Failed to create Product Listing."
                 )
             );
         } finally {
@@ -737,7 +634,9 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
 
     const handleProductSubmit = async () => {
         if (!selectedListing || !serialNumber.trim()) {
-            throw new Error("A Product Listing and Serial Number are required.");
+            throw new Error(
+                "A Product Listing and Serial Number are required."
+            );
         }
 
         const imageId = productImageFile
@@ -869,25 +768,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             throw new Error("Enter a valid manual listing price.");
         }
 
-        const condition = conditions.find(
-            (item) => Number(item.id) === Number(listingConditionId)
-        );
-
-        const imageId = listingImageFile
-            ? await uploadImage(listingImageFile)
-            : listingImageRemoved
-                ? null
-                : editingListing?.image_id ?? null;
-
-        const newAdditionalImageIds =
-            listingAdditionalImageFiles.length > 0
-                ? await Promise.all(
-                    listingAdditionalImageFiles.map(uploadImage)
-                )
-                : [];
-
         const payload: ProductListingPayload = {
-            title: `${selectedPart.name} - ${condition?.name || "Condition"}`,
             part_id: selectedPart.id,
             condition_id: Number(listingConditionId),
             price_mode: listingPriceMode,
@@ -896,19 +777,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             ...(listingPriceMode === "manual"
                 ? { list_price: Number(listingPrice) }
                 : {}),
-
-            short_description: listingShortDescription.trim(),
-            long_description: listingLongDescription.trim(),
-            seo_title: listingSeoTitle.trim(),
-            meta_description: listingMetaDescription.trim(),
-            search_terms: listingSearchTerms.trim(),
-
-            image_id: imageId,
-
-            additional_image_ids: [
-                ...existingListingAdditionalImageIds,
-                ...newAdditionalImageIds,
-            ],
         };
 
         const response = isListingEditing
@@ -932,7 +800,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         if (missingFields.length > 0) {
             alert(
                 "Please complete the following required fields:\n\n" +
-                missingFields.join("\n")
+                    missingFields.join("\n")
             );
             return;
         }
@@ -954,8 +822,8 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             alert(
                 JSON.stringify(
                     error?.response?.data ||
-                    error?.message ||
-                    "Failed to save."
+                        error?.message ||
+                        "Failed to save."
                 )
             );
         } finally {
@@ -1090,26 +958,28 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             <div className="mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900">
                     {isEditing
-                        ? `Edit ${isProduct
-                            ? "Product"
-                            : isPart
-                                ? "Part"
-                                : "Product Listing"
-                        }`
-                        : `Add ${isProduct
-                            ? "Product"
-                            : isPart
-                                ? "Part"
-                                : "Product Listing"
-                        }`}
+                        ? `Edit ${
+                              isProduct
+                                  ? "Product"
+                                  : isPart
+                                    ? "Part"
+                                    : "Product Listing"
+                          }`
+                        : `Add ${
+                              isProduct
+                                  ? "Product"
+                                  : isPart
+                                    ? "Part"
+                                    : "Product Listing"
+                          }`}
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-500">
                     {isProduct
                         ? "Add or update an individual serialized inventory unit."
                         : isPart
-                            ? "Create or update a master Part catalogue record."
-                            : "Create or update a Part and Condition listing."}
+                          ? "Create or update a master Part catalogue record."
+                          : "Create or update a Part and Condition listing."}
                 </p>
             </div>
 
@@ -1123,24 +993,20 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     isProduct={isProduct}
                     isProductEditing={isProductEditing}
                     editingProduct={editingProduct}
-
                     brands={brands}
                     categories={categories}
                     conditions={conditions}
                     shelves={shelves}
-
                     selectedPart={selectedPart}
                     selectedListing={selectedListing}
                     listingsForSelectedPart={listingsForSelectedPart}
                     setSelectedListingId={setSelectedListingId}
-
                     serialNumber={serialNumber}
                     setSerialNumber={setSerialNumber}
                     workOrder={workOrder}
                     setWorkOrder={setWorkOrder}
                     inventoryStatus={inventoryStatus}
                     setInventoryStatus={setInventoryStatus}
-
                     selectedShelf={selectedShelf}
                     setSelectedShelf={setSelectedShelf}
                     testStatus={testStatus}
@@ -1149,12 +1015,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     setTestDate={setTestDate}
                     notes={notes}
                     setNotes={setNotes}
-
                     productImageFile={productImageFile}
                     productImageRemoved={productImageRemoved}
                     setProductImageFile={setProductImageFile}
                     setProductImageRemoved={setProductImageRemoved}
-
                     showCreatePart={showCreatePart}
                     setShowCreatePart={setShowCreatePart}
                     creatingPart={creatingPart}
@@ -1176,7 +1040,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     setNewPartLongDescription={setNewPartLongDescription}
                     availablePartSeries={availablePartSeries}
                     handleCreatePart={handleCreatePart}
-
                     showCreateListing={showCreateListing}
                     setShowCreateListing={setShowCreateListing}
                     creatingListing={creatingListing}
@@ -1186,22 +1049,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     setNewListingPriceMode={setNewListingPriceMode}
                     newListingPrice={newListingPrice}
                     setNewListingPrice={setNewListingPrice}
-                    newListingShortDescription={newListingShortDescription}
-                    setNewListingShortDescription={setNewListingShortDescription}
-                    newListingLongDescription={newListingLongDescription}
-                    setNewListingLongDescription={setNewListingLongDescription}
-                    newListingSeoTitle={newListingSeoTitle}
-                    setNewListingSeoTitle={setNewListingSeoTitle}
-                    newListingSearchTerms={newListingSearchTerms}
-                    setNewListingSearchTerms={setNewListingSearchTerms}
-                    newListingMetaDescription={newListingMetaDescription}
-                    setNewListingMetaDescription={setNewListingMetaDescription}
-                    newListingImageFile={newListingImageFile}
-                    setNewListingImageFile={setNewListingImageFile}
-                    newListingAdditionalImageFiles={newListingAdditionalImageFiles}
-                    setNewListingAdditionalImageFiles={setNewListingAdditionalImageFiles}
                     handleCreateListing={handleCreateListing}
-
                     renderPartSelector={renderPartSelector}
                     renderConditionSelector={renderConditionSelector}
                     renderListingPricing={renderListingPricing}
@@ -1220,46 +1068,38 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     initialBrand={initialBrand}
                     brands={brands}
                     categories={categories}
-
                     selectedBrand={selectedBrand}
                     setSelectedBrand={setSelectedBrand}
                     selectedCategory={selectedCategory}
                     setSelectedCategory={setSelectedCategory}
                     selectedSeries={selectedSeries}
                     setSelectedSeries={setSelectedSeries}
-
                     partName={partName}
                     setPartName={setPartName}
                     partNumber={partNumber}
                     setPartNumber={setPartNumber}
                     partBasePrice={partBasePrice}
                     setPartBasePrice={setPartBasePrice}
-
                     shortDescription={shortDescription}
                     setShortDescription={setShortDescription}
                     longDescription={longDescription}
                     setLongDescription={setLongDescription}
-
                     seoTitle={seoTitle}
                     setSeoTitle={setSeoTitle}
                     metaDescription={metaDescription}
                     setMetaDescription={setMetaDescription}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-
                     availableSeries={availableSeries}
-
                     partImageFile={partImageFile}
                     partImageRemoved={partImageRemoved}
                     setPartImageFile={setPartImageFile}
                     setPartImageRemoved={setPartImageRemoved}
                     handlePartImageChange={handlePartImageChange}
-
                     additionalImageFiles={additionalImageFiles}
                     setAdditionalImageFiles={setAdditionalImageFiles}
                     existingAdditionalImageIds={existingAdditionalImageIds}
                     setExistingAdditionalImageIds={setExistingAdditionalImageIds}
-
                     inputClass={inputClass}
                     labelClass={labelClass}
                     sectionClass={sectionClass}
@@ -1270,55 +1110,22 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             {/* ====================================================
                 STANDALONE PRODUCT LISTING FORM
             ==================================================== */}
+
             {isListing && (
                 <ListingForm
                     sectionClass={sectionClass}
-                    labelClass={labelClass}
-                    inputClass={inputClass}
-                    fileInputClass={fileInputClass}
-
                     selectedPart={selectedPart}
                     renderPartSelector={renderPartSelector}
-
                     listingConditionId={listingConditionId}
                     setListingConditionId={setListingConditionId}
                     renderConditionSelector={renderConditionSelector}
-
                     listingPriceMode={listingPriceMode}
                     setListingPriceMode={setListingPriceMode}
                     listingPrice={listingPrice}
                     setListingPrice={setListingPrice}
                     renderListingPricing={renderListingPricing}
-
-                    listingShortDescription={listingShortDescription}
-                    setListingShortDescription={setListingShortDescription}
-                    listingLongDescription={listingLongDescription}
-                    setListingLongDescription={setListingLongDescription}
-
-                    listingSeoTitle={listingSeoTitle}
-                    setListingSeoTitle={setListingSeoTitle}
-                    listingMetaDescription={listingMetaDescription}
-                    setListingMetaDescription={setListingMetaDescription}
-                    listingSearchTerms={listingSearchTerms}
-                    setListingSearchTerms={setListingSearchTerms}
-
-                    isListingEditing={isListingEditing}
-                    editingListing={editingListing}
-
-                    listingImageFile={listingImageFile}
-                    listingImageRemoved={listingImageRemoved}
-                    setListingImageRemoved={setListingImageRemoved}
-                    handleListingImageChange={handleListingImageChange}
-
-                    listingAdditionalImageFiles={listingAdditionalImageFiles}
-                    setListingAdditionalImageFiles={setListingAdditionalImageFiles}
-                    existingListingAdditionalImageIds={existingListingAdditionalImageIds}
-                    setExistingListingAdditionalImageIds={
-                        setExistingListingAdditionalImageIds
-                    }
                 />
             )}
-
 
             <SaveCancelButtons
                 handleCancel={handleCancel}

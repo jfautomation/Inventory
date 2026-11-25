@@ -1,4 +1,3 @@
-
 <?php
 
 if (!defined('ABSPATH')) {
@@ -22,7 +21,9 @@ add_action('rest_api_init', function () {
             ],
             [
                 'methods'  => WP_REST_Server::CREATABLE,
-                'permission_callback' => '__return_true',
+                'permission_callback' => function () {
+                    return current_user_can('edit_posts');
+                },
                 'callback' => 'inventory_create_part',
             ],
         ]
@@ -34,12 +35,16 @@ add_action('rest_api_init', function () {
         [
             [
                 'methods'  => WP_REST_Server::EDITABLE,
-                'permission_callback' => '__return_true',
+                'permission_callback' => function () {
+                    return current_user_can('edit_posts');
+                },
                 'callback' => 'inventory_update_part',
             ],
             [
                 'methods'  => WP_REST_Server::DELETABLE,
-                'permission_callback' => '__return_true',
+                'permission_callback' => function () {
+                    return current_user_can('edit_posts');
+                },
                 'callback' => 'inventory_delete_part',
             ],
         ]
@@ -741,25 +746,190 @@ function inventory_delete_part($request)
         );
     }
 
-    // DELETE
-    $deleted = wp_delete_term($term_id, 'part');
+    // INCLUDE ALL REGISTERED POST STATUSES, INCLUDING TRASH
+    $query_post_statuses = array_values(
+        array_unique(
+            array_merge(
+                get_post_stati([], 'names'),
+                ['trash']
+            )
+        )
+    );
 
-    if (is_wp_error($deleted)) {
-        return $deleted;
+    // FIND ALL PRODUCT VARIATIONS LINKED TO THIS PART
+    $variant_query = new WP_Query([
+        'post_type'      => 'product_variant',
+        'post_status'    => $query_post_statuses,
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+        'meta_query'     => [
+            [
+                'key'     => '_inventory_variant_part_id',
+                'value'   => (string) $term_id,
+                'compare' => '=',
+            ],
+        ],
+    ]);
+
+    $variant_ids = array_map('absint', $variant_query->posts);
+
+    $active_products = [];
+    $sold_products = [];
+    $protected_products = [];
+
+    // FIND AND CLASSIFY ALL SERIALIZED PRODUCTS
+    foreach ($variant_ids as $variant_id) {
+
+        $product_query = new WP_Query([
+            'post_type'      => 'product',
+            'post_status'    => $query_post_statuses,
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'meta_query'     => [
+                [
+                    'key'     => '_inventory_variant_id',
+                    'value'   => (string) $variant_id,
+                    'compare' => '=',
+                ],
+            ],
+        ]);
+
+        foreach ($product_query->posts as $product_id) {
+
+            $product_id = absint($product_id);
+
+            $raw_status = get_post_meta(
+                $product_id,
+                'inventory_status',
+                true
+            );
+
+            // MATCH THE DEFAULT USED BY THE SERIALIZED PRODUCT API
+            $status = inventory_normalize_status(
+                $raw_status ?: 'active'
+            );
+
+            if ($status === 'active') {
+
+                $active_products[] = $product_id;
+
+            } elseif ($status === 'sold') {
+
+                $sold_products[] = $product_id;
+
+            } else {
+
+                $protected_products[] = [
+                    'product_id' => $product_id,
+                    'status'     => $status,
+                ];
+            }
+        }
     }
 
-    if (!$deleted) {
+    $active_products = array_values(
+        array_unique($active_products)
+    );
+
+    $sold_products = array_values(
+        array_unique($sold_products)
+    );
+
+    // BLOCK DELETION IF SOLD PRODUCTS EXIST
+    if (!empty($sold_products)) {
         return new WP_Error(
-            'delete_failed',
-            'Failed to delete part.',
-            ['status' => 500]
+            'part_has_sold_products',
+            'This Part cannot be deleted because it has sold Serialized Products associated with it. Deletion is blocked to preserve sales history.',
+            [
+                'status' => 409,
+                'sold_product_ids' => $sold_products,
+                'product_variation_ids' => $variant_ids,
+            ]
         );
     }
 
+    // BLOCK DELETION IF OTHER PROTECTED STATUSES EXIST
+    if (!empty($protected_products)) {
+        return new WP_Error(
+            'part_has_protected_products',
+            'This Part cannot be deleted because some associated Serialized Products have statuses that are not eligible for automatic deletion.',
+            [
+                'status' => 409,
+                'protected_products' => $protected_products,
+                'product_variation_ids' => $variant_ids,
+            ]
+        );
+    }
+
+    // DELETE ACTIVE SERIALIZED PRODUCTS FIRST
+    $deleted_product_ids = [];
+
+    foreach ($active_products as $product_id) {
+
+        $deleted = wp_delete_post($product_id, true);
+
+        if (!$deleted) {
+            return new WP_Error(
+                'serialized_product_delete_failed',
+                'Failed to delete a Serialized Product. The Part and remaining Product Variations have been left in place.',
+                [
+                    'status' => 500,
+                    'failed_product_id' => $product_id,
+                    'deleted_product_ids' => $deleted_product_ids,
+                ]
+            );
+        }
+
+        $deleted_product_ids[] = $product_id;
+    }
+
+    // DELETE PRODUCT VARIATIONS
+    $deleted_variant_ids = [];
+
+    foreach ($variant_ids as $variant_id) {
+
+        $deleted = wp_delete_post($variant_id, true);
+
+        if (!$deleted) {
+            return new WP_Error(
+                'product_variation_delete_failed',
+                'Failed to delete a Product Variation. The Part has been left in place.',
+                [
+                    'status' => 500,
+                    'failed_variant_id' => $variant_id,
+                    'deleted_product_ids' => $deleted_product_ids,
+                    'deleted_product_variation_ids' => $deleted_variant_ids,
+                ]
+            );
+        }
+
+        $deleted_variant_ids[] = $variant_id;
+    }
+
+    // DELETE THE PART LAST
+    $deleted = wp_delete_term($term_id, 'part');
+
+    if (is_wp_error($deleted) || !$deleted) {
+        return new WP_Error(
+            'part_delete_failed',
+            'The associated Serialized Products and Product Variations were deleted, but the Part itself could not be deleted.',
+            [
+                'status' => 500,
+                'deleted_product_ids' => $deleted_product_ids,
+                'deleted_product_variation_ids' => $deleted_variant_ids,
+            ]
+        );
+    }
+
+    // SUCCESS
     return rest_ensure_response([
         'success' => true,
-        'id'      => $term_id,
-        'message' => 'Part deleted successfully.',
+        'id' => $term_id,
+        'deleted_product_ids' => $deleted_product_ids,
+        'deleted_product_variation_ids' => $deleted_variant_ids,
+        'message' => 'Part and all eligible associated inventory records deleted successfully.',
     ]);
 }
 
